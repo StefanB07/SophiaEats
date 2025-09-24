@@ -8,7 +8,10 @@ _Template for classroom SI4-COO_
 
 ## TEAM
 
-Présentez-vous! 
+PO : BUCUR Stefan
+SA : ILIESCU Miruna
+QA : CRISTEA Ana
+Ops : NEATA Mihnea
 
 ## doc
 Contient vos rapports et les documents qui présentent votre projet.
