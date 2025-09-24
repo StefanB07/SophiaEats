@@ -1,0 +1,56 @@
+@startuml
+left to right direction
+
+' --- Actors ---
+actor "Internet User" as user #Blue
+actor "Campus user" as regUser #Blue
+actor "Restaurant Staff" as restaurantStaff #Red
+actor "External Payment Service" as externalPayment #LightGreen
+
+' --- Actor Inheritance ---
+user <|-- regUser
+
+rectangle "SophiaTech Eats System" {
+
+  ' --- Customer-side Use Cases (C1, C2, C5, C6, C7) ---
+  usecase "Browse Dishes" as C1
+  usecase "Filter Restaurants" as C2
+  usecase "Manage Order" as C5_C6_C7
+  usecase "Select Restaurant & Items" as selectItems
+  usecase "View & Select Delivery Slot" as selectSlot
+  usecase "Validate Order" as validateOrder
+
+
+  ' --- Payment-side Use Cases (P1, P2, P3, P6) ---
+  usecase "Pay for Order" as P1_P3
+  usecase "Pay via External Service" as P6_payExternal
+  usecase "Pay with Student Credit" as P6_payCredit
+  usecase "Register Order in Account" as P2
+
+  ' --- Restaurant-side Use Cases (R2, R5) ---
+  usecase "Manage Dishes" as R2
+  usecase "Update Opening Hours & Capacity" as R5
+}
+
+' --- Actor to Use Case Relationships ---
+user -- C1
+user -- C2
+
+regUser -- C5_C6_C7
+
+restaurantStaff -- R2
+restaurantStaff -- R5
+
+P1_P3 -- externalPayment
+
+' --- Use Case Relationships ---
+C5_C6_C7 .> selectItems : <<include>>
+C5_C6_C7 .> selectSlot : <<include>>
+C5_C6_C7 .> validateOrder : <<include>>
+validateOrder .> P1_P3 : <<include>>
+P1_P3 .> P2 : <<include>>
+
+' Payment specialization (P1, P3, P6)
+P1_P3 <|-- P6_payExternal
+P1_P3 <|-- P6_payCredit
+@enduml

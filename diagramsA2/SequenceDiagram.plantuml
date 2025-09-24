@@ -1,0 +1,100 @@
+@startuml
+' --- Settings ---
+autonumber
+skinparam actorStyle awesome
+skinparam sequenceMessageAlign center
+
+
+' --- Participants ---
+actor "CampusUser" as user
+boundary "User Interface" as ui
+control "STEats Facade" as steats
+entity "Cart" as cart
+entity "Restaurant" as restaurant
+control "Order Repository" as orderRepo
+actor "External Payment Service" as paymentService
+control "Notification Service" as notificationService
+
+' --- Scenario ---
+activate user
+user -> ui: Start order process
+activate ui
+
+loop For each product added to the cart
+  user -> ui: Add product to cart(dish)
+  ui -> steats: addProductToCart(dish, potentialCart)
+  activate steats
+
+  opt Cart does not exist yet
+    create cart
+    steats -> cart: new()
+  end
+
+  steats -> cart: addItem(dish)
+  activate cart
+  cart --> steats: updatedCart
+  deactivate cart
+
+  steats -> restaurant: requestCurrentAvailability()
+  activate restaurant
+  restaurant --> steats: availableSlots
+  deactivate restaurant
+
+  steats --> ui: updatedCart, availableSlots
+  deactivate steats
+
+  ui --> user: Display updated cart and delivery time slots
+end
+
+' --- Registration check after loop (C3) ---
+ui -> steats: verifyUserIsRegistered(userId)
+steats -> ui: registered
+alt User is registered
+  user -> ui: Finalize order(cart, deliverySlot)
+  ui -> steats: finalizeOrder(cart, deliverySlot)
+  activate steats
+
+  create Order
+  steats -> Order: <<create>>(fromCart, deliverySlot)
+  activate Order
+  Order --> steats: order
+  deactivate Order
+
+  steats -> orderRepo: saveOrder(order)
+  activate orderRepo
+  orderRepo --> steats: orderWithId
+  deactivate orderRepo
+
+  steats -> paymentService: processPayment(order.total, userInfo)
+  activate paymentService
+  paymentService --> steats: paymentSuccess
+  deactivate paymentService
+
+  alt Payment_Success
+    steats -> orderRepo: updateOrderStatus(order.id, "PAID")
+    activate orderRepo
+    deactivate orderRepo
+    steats -> notificationService: notifyOrderCreated(order)
+    activate notificationService
+    deactivate notificationService
+    steats --> ui: "Order Confirmed"
+    ui --> user: Display success message
+  else Payment_Failed
+    note over steats
+      Here the order status would be set to "CANCELLED".
+    end note
+  end
+
+  destroy cart
+  deactivate steats
+else User is NOT registered
+  ui --> user: Please sign in or register to place the order
+  note over ui, user
+     No need to actually model this.
+  end note
+end
+
+deactivate ui
+deactivate user
+
+@enduml
