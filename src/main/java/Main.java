@@ -1,22 +1,23 @@
 import com.sun.net.httpserver.HttpServer;
-import java.io.IOException;
+import handlers.*;
+import repository.*;
+
 import java.net.InetSocketAddress;
-import handlers.RestaurantHandler;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
-        System.out.println("--- Starting SophiaTech Eats REST Server ---");
+    public static void main(String[] args) throws Exception {
+        var server = HttpServer.create(new InetSocketAddress(8080), 0);
 
-        // Create the HTTP server on port 8080
-        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        var restaurantRepo = new RestaurantRepository();
+//        var cartRepo = new CartRepository();
+//        var userRepo = new CampusUserRepository();
 
-        // Define contexts and assign handlers
-        server.createContext("/restaurants", new RestaurantHandler());
+        server.createContext("/restaurants", new RestaurantHandler(restaurantRepo));
+//        server.createContext("/cart", new CartHandler(cartRepo, restaurantRepo));
+//        server.createContext("/users", new CampusUserHandler(userRepo));
 
-        // Start the server
-        server.setExecutor(null); // Use the default executor
+        server.setExecutor(null);
         server.start();
-
-        System.out.println("Server is running on http://localhost:8080/");
+        System.out.println("HTTP server on http://localhost:8080");
     }
 }
