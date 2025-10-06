@@ -9,12 +9,12 @@ public class Main {
         var server = HttpServer.create(new InetSocketAddress(8080), 0);
 
         var restaurantRepo = new RestaurantRepository();
-//        var cartRepo = new CartRepository();
-//        var userRepo = new CampusUserRepository();
+        var cartRepo = new CartRepository();
+        var userRepo = new CampusUserRepository();
 
         server.createContext("/restaurants", new RestaurantHandler(restaurantRepo));
-//        server.createContext("/cart", new CartHandler(cartRepo, restaurantRepo));
-//        server.createContext("/users", new CampusUserHandler(userRepo));
+        server.createContext("/cart", new CartHandler(cartRepo, restaurantRepo));
+        server.createContext("/users", new CampusUserHandler(userRepo));
 
         server.setExecutor(null);
         server.start();
