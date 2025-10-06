@@ -28,6 +28,14 @@ public class Restaurant {
         return name;
     }
 
+    public String getCuisineType() {
+        return cuisineType;
+    }
+
+    public String getPriceRange() {
+        return priceRange;
+    }
+
     @Override
     public String toString() {
         return "Restaurant{" +
