@@ -1,12 +1,22 @@
 package domain;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class OrderItem {
+
     private Dish dish;
     private int quantity;
+    private List<ExtraOption> extraOptions;
 
     public OrderItem(Dish dish, int quantity) {
         this.dish = dish;
         this.quantity = quantity;
+        this.extraOptions = new ArrayList<>();
+    }
+
+    public void addExtraOptions(ExtraOption option) {
+        extraOptions.add(option);
     }
 
     // Getters
@@ -19,11 +29,19 @@ public class OrderItem {
     }
 
     public double getTotalPrice() {
-        return dish.getPrice() * quantity;
+        double base = dish.getPrice() * quantity;
+        double extras = extraOptions.stream().mapToDouble(ExtraOption::getPrice).sum() * quantity;
+        return base + extras;
     }
 
-    @Override
     public String toString() {
-        return quantity + " x " + dish.getName() + " (" + getTotalPrice() + " RON)";
+        return "OrderItem{" +
+                "dish=" + dish.getName() +
+                ", quantity=" + quantity +
+                ", total=" + getTotalPrice() +
+                '}';
+    }
+
+    public void addExtraOption(ExtraOption spicyOil) {
     }
 }
