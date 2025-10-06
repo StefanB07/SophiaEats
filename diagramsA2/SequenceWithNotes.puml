@@ -1,0 +1,136 @@
+@startuml
+' --- Settings ---
+autonumber
+skinparam actorStyle awesome
+skinparam sequenceMessageAlign center
+
+' --- Participants ---
+actor "CampusUser" as user
+boundary "User Interface" as ui
+control "STEats Facade" as steats
+entity "Cart" as cart
+entity "Restaurant" as restaurant
+control "Order Repository" as orderRepo
+actor "External Payment Service" as paymentService
+control "Notification Service" as notificationService
+
+' --- Global notes / constraints ---
+note across
+  Scope for this sequence diagram:
+  • Show ONLY the main success scenario.
+  • Do NOT model error flows or other use-cases here.
+  • External payment provider is used (no student credit).
+end note
+
+' --- Scenario ---
+activate user
+user -> ui: Start order process
+activate ui
+
+loop For each product added to the cart
+  user -> ui: Add product to cart(dish)
+  ui -> steats: addProductToCart(dish, potentialCart)
+  activate steats
+
+  opt Cart does not exist yet
+    create cart
+    steats -> cart: new()
+  end
+
+  steats -> cart: addItem(dish)
+  activate cart
+  cart --> steats: updatedCart
+  deactivate cart
+
+  steats -> restaurant: requestCurrentAvailability()
+  activate restaurant
+  restaurant --> steats: availableSlots
+  deactivate restaurant
+
+  steats --> ui: updatedCart, availableSlots
+  deactivate steats
+
+  ui --> user: Display updated cart and delivery time slots
+end
+
+' Notes about alternatives we DO NOT model inside the loop
+note over ui
+  Alternative NOT modeled here:
+  • Remove/modify cart items or change quantities.
+  • Retry availability if slots change while browsing.
+  These are acknowledged but out of this diagram's scope.
+end note
+
+' --- Registration check after loop (C3) ---
+ui -> steats: verifyUserIsRegistered(userId)
+steats -> ui: registered
+
+alt User is registered
+  user -> ui: Finalize order(cart, deliverySlot)
+  ui -> steats: finalizeOrder(cart, deliverySlot)
+  activate steats
+
+  ' Create order from cart
+  create Order
+  steats -> Order: <<create>>(fromCart, deliverySlot)
+  activate Order
+  Order --> steats: order
+  deactivate Order
+
+  ' Persist order BEFORE payment (idempotency anchor)
+  steats -> orderRepo: saveOrder(order)
+  activate orderRepo
+  orderRepo --> steats: orderWithId
+  deactivate orderRepo
+
+  ' External payment only
+  steats -> paymentService: processPayment(order.total, userInfo)
+  activate paymentService
+  paymentService --> steats: paymentSuccess
+  deactivate paymentService
+
+  alt Payment_Success
+    steats -> orderRepo: updateOrderStatus(order.id, "PAID")
+    activate orderRepo
+    deactivate orderRepo
+
+    steats -> notificationService: notifyOrderCreated(order)
+    activate notificationService
+    deactivate notificationService
+
+    steats --> ui: "Order Confirmed"
+    ui --> user: Display success message
+  else Payment_Failed
+    ' We do not branch further; just acknowledge the outcome
+    note over steats
+      Payment failed. In the real system we would set
+      order status to "CANCELLED" and surface an error.
+      Detailed error handling is OUT of this diagram's scope.
+    end note
+  end
+
+  destroy cart
+  deactivate steats
+
+else User is NOT registered
+  ui --> user: Please sign in or register to place the order
+  note over ui, user
+    Registration / sign-in flow belongs to another use-case.
+    We only reference it here, without modeling the details.
+  end note
+end
+
+' Additional context notes
+note left of paymentService
+  External payment provider only.
+  Student credit payment is NOT modeled here.
+end note
+
+note over orderRepo
+  Repository acts as source of truth for order state.
+  Save first, then pay, then update status.
+end note
+
+deactivate ui
+deactivate user
+@enduml
