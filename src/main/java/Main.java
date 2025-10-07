@@ -1,7 +1,14 @@
 import com.sun.net.httpserver.HttpServer;
+import domain.*;
 import handlers.*;
 import repository.*;
+<<<<<<< Updated upstream
+=======
+import service.OrderService;
+
+>>>>>>> Stashed changes
 import java.net.InetSocketAddress;
+import java.time.LocalDateTime;
 
 import domain.*;
 import java.time.LocalDate;
@@ -11,6 +18,7 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("=== SophiaTech Eats - Demo complet ===\n");
 
+<<<<<<< Updated upstream
         // 1️⃣ Creăm un utilizator Campus + credit și alergii
         CampusUser user = new CampusUser("Ana Cristea", "ana@example.com", "Romania");
         user.assignStudentCredit(new StudentCredit(100.0, LocalDate.now().plusDays(30)));
@@ -19,6 +27,25 @@ public class Main {
 
         // 2️⃣ Creăm un restaurant + meniu + delivery slots
         Restaurant laFabrica = new Restaurant("La Fabrica", "Italian", "$$");
+=======
+        var restaurantRepo = new RestaurantRepository();
+        var cartRepo = new CartRepository();
+        var userRepo = new CampusUserRepository();
+        var orderRepo = new OrderRepository();
+        var orderService = new OrderService();
+
+        server.createContext("/restaurants", new RestaurantHandler(restaurantRepo));
+        server.createContext("/cart", new CartHandler(cartRepo, restaurantRepo));
+        server.createContext("/users", new CampusUserHandler(userRepo));
+        server.createContext("/orders", new OrderHandler(cartRepo, orderRepo, orderService));
+
+//        var service = new OrderService();
+//        var cart = new Cart();
+//        cart.addItem(new OrderItem(new Dish("Soup", "Hot", 10.0, DishCategory.STARTER, "Soup"), 2));
+//
+//        Order o = service.placeOrder(cart, "Cămin A", LocalDateTime.now().plusHours(1));
+//        System.out.println("Order placed: " + o);
+>>>>>>> Stashed changes
 
         Dish pizza = new Dish("Pizza Diavola", "Spicy salami pizza", 42.0, DishCategory.MAIN_COURSE, "Pizza");
         pizza.addDietaryTag(DietaryTag.HALAL);
