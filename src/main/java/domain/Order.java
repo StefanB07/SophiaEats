@@ -6,95 +6,30 @@ import java.util.List;
 import java.util.UUID;
 
 public class Order {
-
     private final String id;
-    private CampusUser user;
-    private Restaurant restaurant;
-    private List<OrderItem> items;
-    private DeliverySlot deliverySlot;
-    private DeliveryLocation deliveryLocation;
-    private Payment payment;
+    private final LocalDateTime createdAt;
+    private final List<OrderItem> items;
+    private final String deliveryPlace;
+    private final LocalDateTime deliveryTime;
+    private final double total;
     private OrderStatus status;
-    private LocalDateTime createdAt;
 
-    public Order(CampusUser user, Restaurant restaurant) {
+    public Order(List<OrderItem> items, String deliveryPlace, LocalDateTime deliveryTime) {
         this.id = UUID.randomUUID().toString();
-        this.user = user;
-        this.restaurant = restaurant;
-        this.items = new ArrayList<>();
-        this.status = OrderStatus.DRAFT;
         this.createdAt = LocalDateTime.now();
+        this.items = new ArrayList<>(items);
+        this.deliveryPlace = deliveryPlace;
+        this.deliveryTime = deliveryTime;
+        this.total = items.stream().mapToDouble(OrderItem::getTotalPrice).sum();
+        this.status = OrderStatus.CREATED;
     }
 
-    public void addItem(OrderItem item) {
-        items.add(item);
-    }
-
-    public double getTotalPrice() {
-        return items.stream().mapToDouble(OrderItem::getTotalPrice).sum();
-    }
-
-    public void chooseDeliverySlot(DeliverySlot slot) {
-        if (slot.reserve()) {
-            this.deliverySlot = slot;
-        } else {
-            throw new IllegalStateException("Delivery slot is full");
-        }
-    }
-
-    public void setDeliveryLocation(DeliveryLocation location) {
-        this.deliveryLocation = location;
-    }
-
-    public void attachPayment(Payment payment) {
-        this.payment = payment;
-    }
-
-    public void validate() {
-        if (items.isEmpty()) throw new IllegalStateException("Cannot validate empty order");
-        if (deliverySlot == null || deliveryLocation == null) throw new IllegalStateException("Missing delivery details");
-        if (payment == null) throw new IllegalStateException("Payment not attached");
-
-        this.status = OrderStatus.VALIDATED;
-    }
-
-    public void markPaid() {
-        this.status = OrderStatus.PAID;
-    }
-
-    public void cancel() {
-        this.status = OrderStatus.CANCELLED;
-        if (deliverySlot != null) deliverySlot.release();
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public OrderStatus getStatus() {
-        return status;
-    }
-
-    public List<OrderItem> getItems() {
-        return items;
-    }
-
-    public CampusUser getUser() {
-        return user;
-    }
-
-    public Restaurant getRestaurant() {
-        return restaurant;
-    }
-
-    @Override
-    public String toString() {
-        return "Order{" +
-                "id='" + id + '\'' +
-                ", user=" + user.getName() +
-                ", restaurant=" + restaurant.getName() +
-                ", total=" + getTotalPrice() +
-                ", status=" + status +
-                '}';
-    }
+    public String getId() { return id; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public List<OrderItem> getItems() { return new ArrayList<>(items); }
+    public String getDeliveryPlace() { return deliveryPlace; }
+    public LocalDateTime getDeliveryTime() { return deliveryTime; }
+    public double getTotal() { return total; }
+    public OrderStatus getStatus() { return status; }
+    public void setStatus(OrderStatus status) { this.status = status; }
 }

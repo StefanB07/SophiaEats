@@ -1,5 +1,7 @@
 package domain;
 
 public enum OrderStatus {
-    DRAFT, VALIDATED, PAID, CANCELLED
+    CREATED, // comandă creată, neprocesată
+    PAID,    // plătită (de adăugat ulterior)
+    CANCELLED
 }

@@ -40,12 +40,6 @@ public class OrderItem {
                 ", quantity=" + quantity +
                 ", total=" + getTotalPrice() +
                 '}';
-<<<<<<< Updated upstream
-    }
-
-    public void addExtraOption(ExtraOption spicyOil) {
-=======
->>>>>>> Stashed changes
     }
 
     public void addExtraOption(ExtraOption spicyOil) {

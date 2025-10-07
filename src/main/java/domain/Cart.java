@@ -1,83 +1,43 @@
 package domain;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents the temporary shopping cart for any user (registered or not).
+ */
 public class Cart {
-
-    private CampusUser user;
-    private Restaurant restaurant;
+    private LocalDateTime createdAt;
     private List<OrderItem> items;
 
-    // === Constructor vechi (fără parametri) păstrat pentru handler ===
     public Cart() {
+        this.createdAt = LocalDateTime.now();
         this.items = new ArrayList<>();
     }
 
-    // === Constructor nou pentru integrare completă ===
-    public Cart(CampusUser user, Restaurant restaurant) {
-        this();
-        this.user = user;
-        this.restaurant = restaurant;
-    }
-
     public void addItem(OrderItem item) {
-        items.add(item);
+        // In a real app, you would check if the dish is already in the cart and just update the quantity.
+        this.items.add(item);
     }
 
     public List<OrderItem> getItems() {
         return items;
     }
 
-    public double getTotal() {
-        return items.stream().mapToDouble(OrderItem::getTotalPrice).sum();
-    }
-
-    public void clear() {
-        items.clear();
-    }
-
-    /**
-     * Creează o comandă pe baza conținutului coșului.
-     */
-    public Order checkout() {
-        if (items.isEmpty()) throw new IllegalStateException("Cart is empty");
-        Order order = new Order(user, restaurant);
+    public double calculateTotal() {
+        double total = 0.0;
         for (OrderItem item : items) {
-            order.addItem(item);
+            total += item.getTotalPrice();
         }
-        return order;
+        return total;
     }
-
-    public CampusUser getUser() {
-        return user;
-    }
-
-    public void setUser(CampusUser user) {
-        this.user = user;
-    }
-
-    public Restaurant getRestaurant() {
-        return restaurant;
-    }
-
-    public void setRestaurant(Restaurant restaurant) {
-        this.restaurant = restaurant;
-    }
-
 
     @Override
     public String toString() {
         return "Cart{" +
-                "user=" + user.getName() +
-                ", restaurant=" + restaurant.getName() +
-                ", items=" + items +
-                ", total=" + getTotal() +
+                "items=" + items +
+                ", total=" + calculateTotal() +
                 '}';
-    }
-
-    public String calculateTotal() {
-        double total = getTotal();
-        return String.format("Total cart value: %.2f €", total);
     }
 }

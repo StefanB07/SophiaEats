@@ -93,7 +93,6 @@ public class OrderHandler extends BaseHandler {
 
     private static LocalDateTime parseTime(String s) {
         try {
-            // acceptăm două formate: "yyyy-MM-dd HH:mm" și ISO "yyyy-MM-dd'T'HH:mm"
             return LocalDateTime.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
         } catch (DateTimeParseException ignore) {
             try { return LocalDateTime.parse(s); } catch (DateTimeParseException e) { return null; }
