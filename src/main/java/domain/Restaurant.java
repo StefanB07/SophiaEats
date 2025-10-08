@@ -10,11 +10,9 @@ public class Restaurant {
     private String cuisine;
     private String priceRange;
     private List<Dish> menu;
-
-    // câmp suplimentar
     private List<DeliverySlot> deliverySlots;
 
-    // === Constructor păstrat pentru compatibilitate handler ===
+    // Constructor with params
     public Restaurant(String name, String cuisine, String priceRange) {
         this.name = name;
         this.cuisine = cuisine;
@@ -23,7 +21,7 @@ public class Restaurant {
         this.deliverySlots = new ArrayList<>();
     }
 
-    // === Metode folosite în handler ===
+    // Getters
     public String getName() {
         return name;
     }
@@ -45,7 +43,7 @@ public class Restaurant {
         return menu;
     }
 
-    // === Funcționalități noi ===
+    // Functions
     public void addDeliverySlot(DeliverySlot slot) {
         deliverySlots.add(slot);
     }

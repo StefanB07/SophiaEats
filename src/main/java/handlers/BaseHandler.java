@@ -12,14 +12,18 @@ public abstract class BaseHandler implements HttpHandler {
         ex.getResponseHeaders().add("Content-Type", "application/json; charset=UTF-8");
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         ex.sendResponseHeaders(status, bytes.length);
-        try (OutputStream os = ex.getResponseBody()) { os.write(bytes); }
+        try (OutputStream os = ex.getResponseBody()) {
+            os.write(bytes);
+        }
     }
 
     protected void sendText(HttpExchange ex, int status, String text) throws IOException {
         ex.getResponseHeaders().add("Content-Type", "text/plain; charset=UTF-8");
         byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
         ex.sendResponseHeaders(status, bytes.length);
-        try (OutputStream os = ex.getResponseBody()) { os.write(bytes); }
+        try (OutputStream os = ex.getResponseBody()) {
+            os.write(bytes);
+        }
     }
 
     protected String body(HttpExchange ex) throws IOException {
@@ -29,5 +33,7 @@ public abstract class BaseHandler implements HttpHandler {
         }
     }
 
-    protected static String esc(String s) { return s.replace("\"", "\\\""); }
+    protected static String esc(String s) {
+        return s.replace("\"", "\\\"");
+    }
 }
