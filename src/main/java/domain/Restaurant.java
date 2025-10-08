@@ -7,51 +7,86 @@ import java.util.stream.Collectors;
 public class Restaurant {
 
     private String name;
-    private String cuisine;
-    private String priceRange;
+    private String cuisineType;
+    private String type; // restaurant, crous, foodtruck
+    private String priceRange; // cheap, medium, expensive
+    private boolean open;
+    private int maxCapacity;
+    private int currentOrders;
+
     private List<Dish> menu;
     private List<DeliverySlot> deliverySlots;
 
-    // Constructor with params
-    public Restaurant(String name, String cuisine, String priceRange) {
+    // ---------------------- Constructors ----------------------
+
+    public Restaurant(String name, String cuisineType, String priceRange) {
+        this(name, cuisineType, "restaurant", priceRange, true, 10);
+    }
+
+    public Restaurant(String name, String cuisineType, String type, String priceRange, boolean open, int maxCapacity) {
         this.name = name;
-        this.cuisine = cuisine;
+        this.cuisineType = cuisineType;
+        this.type = type;
         this.priceRange = priceRange;
+        this.open = open;
+        this.maxCapacity = maxCapacity;
+        this.currentOrders = 0;
         this.menu = new ArrayList<>();
         this.deliverySlots = new ArrayList<>();
     }
 
-    // Getters
-    public String getName() {
-        return name;
-    }
+    // ---------------------- Getters & Setters ----------------------
 
-    public String getCuisineType() {
-        return cuisine;
-    }
+    public String getName() { return name; }
 
-    public String getPriceRange() {
-        return priceRange;
-    }
+    public String getCuisineType() { return cuisineType; }
 
+    public String getPriceRange() { return priceRange; }
+
+    public String getType() { return type; }
+
+    public boolean isOpen() { return open; }
+
+    public void setOpen(boolean open) { this.open = open; }
+
+    public int getMaxCapacity() { return maxCapacity; }
+
+    public int getCurrentOrders() { return currentOrders; }
+
+    public void incrementOrders() { currentOrders++; }
+
+    public void resetOrders() { currentOrders = 0; }
+
+    public List<Dish> getMenu() { return menu; }
+
+    public List<DeliverySlot> getDeliverySlots() { return deliverySlots; }
+
+    // ---------------------- Domain Methods ----------------------
 
     public void addDishToMenu(Dish dish) {
         menu.add(dish);
     }
 
-    public List<Dish> getMenu() {
-        return menu;
-    }
-
-    // Functions
     public void addDeliverySlot(DeliverySlot slot) {
         deliverySlots.add(slot);
     }
 
-    public List<DeliverySlot> getDeliverySlots() {
-        return deliverySlots;
+
+     //Check if the restaurant still has available capacity (for open ones).
+    public boolean hasAvailableCapacity() {
+        return currentOrders < maxCapacity;
     }
 
+     //Checks if the restaurant offers at least one dish matching a dietary tag.
+    public boolean offersDietaryTag(String tag) {
+        return menu.stream()
+                .anyMatch(d -> d.getDietaryTags() != null &&
+                        d.getDietaryTags().stream()
+                                .anyMatch(t -> t.name().replace("_", "-").equalsIgnoreCase(tag)));
+    }
+
+
+     //Filters dishes in this restaurant by a specific dietary tag.
     public List<Dish> filterByDietaryTag(DietaryTag tag) {
         return menu.stream()
                 .filter(d -> d.getDietaryTags().contains(tag))
@@ -62,7 +97,10 @@ public class Restaurant {
     public String toString() {
         return "Restaurant{" +
                 "name='" + name + '\'' +
-                ", cuisine='" + cuisine + '\'' +
+                ", cuisineType='" + cuisineType + '\'' +
+                ", type='" + type + '\'' +
+                ", open=" + open +
+                ", capacity=" + currentOrders + "/" + maxCapacity +
                 ", menu size=" + menu.size() +
                 '}';
     }
