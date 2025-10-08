@@ -6,6 +6,10 @@ public enum DietaryTag {
     GLUTEN_FREE,
     LACTOSE_FREE,
     HALAL,
-    KOSHER
+    KOSHER;
+
+    public static boolean matches(DietaryTag tag, String input) {
+        return tag.name().replace("_", "-").equalsIgnoreCase(input);
+    }
 }
 

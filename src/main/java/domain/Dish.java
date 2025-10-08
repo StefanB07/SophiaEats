@@ -64,6 +64,14 @@ public class Dish {
         return extraOptions;
     }
 
+    // Verifică dacă preparatul are un anumit tag alimentar.
+    //  Exemplu: dish.hasDietaryTag("gluten-free")
+    public boolean hasDietaryTag(String tag) {
+        return dietaryTags != null &&
+                dietaryTags.stream()
+                        .anyMatch(t -> t.name().replace("_", "-").equalsIgnoreCase(tag));
+    }
+
     @Override
     public String toString() {
         return name + " (" + price + "€)";
