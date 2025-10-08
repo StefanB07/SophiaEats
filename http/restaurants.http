@@ -1,0 +1,26 @@
+#### List restaurants (run Main first)
+#GET http://localhost:8080/restaurants
+#Accept: application/json
+#
+#### Create a restaurant
+#POST http://localhost:8080/restaurants
+#Content-Type: text/plain; charset=UTF-8
+#
+#La Mia|Italian|$$$
+#
+#### Get a specific restaurant (space encoded as %20)
+#GET http://localhost:8080/restaurants/La%20Mia
+#Accept: application/json
+#
+#### Add a dish to a restaurant
+## Body format: name|desc|price|category|type
+## Categories: APPETIZER, MAIN_COURSE, DESSERT, BEVERAGE
+#POST http://localhost:8080/restaurants/La%20Mia/dishes
+#Content-Type: text/plain; charset=UTF-8
+#
+#Lasagna|Layers of pasta|42.5|MAIN_COURSE|Pasta
+#
+#### Verify dish was added
+#GET http://localhost:8080/restaurants/La%20Mia
+#Accept: application/json
+#
