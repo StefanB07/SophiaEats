@@ -2,10 +2,11 @@ package domain;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class Restaurant {
-
+    private final String id;
     private String name;
     private String cuisine;
     private String priceRange;
@@ -14,6 +15,7 @@ public class Restaurant {
 
     // Constructor with params
     public Restaurant(String name, String cuisine, String priceRange) {
+        this.id = UUID.randomUUID().toString();
         this.name = name;
         this.cuisine = cuisine;
         this.priceRange = priceRange;
@@ -22,6 +24,9 @@ public class Restaurant {
     }
 
     // Getters
+    public String getId() {
+        return id;
+    }
     public String getName() {
         return name;
     }

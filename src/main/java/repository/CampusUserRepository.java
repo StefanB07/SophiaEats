@@ -13,4 +13,10 @@ public class CampusUserRepository {
     public List<CampusUser> findAll() {
         return users;
     }
+    public void save(CampusUser user) {
+        users.add(user);
+    }
+    public void clear() {
+        users.clear();
+    }
 }

@@ -24,6 +24,24 @@ public class Order {
         this.status = OrderStatus.CREATED;
     }
 
+//    public Order(String userId,
+//                 String restaurantId,
+//                 List<OrderItem> items,
+//                 LocalDateTime createdAt,
+//                 DeliverySlot slot,
+//                 DeliveryLocation location,
+//                 OrderStatus status,
+//                 Payment payment) {
+//        this.userId = userId;
+//        this.restaurantId = restaurantId;
+//        this.items = items;
+//        this.createdAt = createdAt;
+//        this.slot = slot;
+//        this.location = location;
+//        this.status = status;
+//        this.payment = payment;
+//    }
+
     public String getId() { return id; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public List<OrderItem> getItems() { return new ArrayList<>(items); }

@@ -22,7 +22,7 @@ public class OrderService {
         if (deliveryTime == null || deliveryTime.isBefore(LocalDateTime.now()))
             throw new IllegalArgumentException("Delivery time must be in the future");
 
-        // copiem itemele din cart și construim comanda
+        // Copy all the items from the cart to the order
         List<OrderItem> items = List.copyOf(cart.getItems());
         return new Order(items, deliveryPlace, deliveryTime);
     }

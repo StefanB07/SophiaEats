@@ -3,15 +3,18 @@ package domain;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Represents the temporary shopping cart for any user (registered or not).
  */
 public class Cart {
+    private final String id;
     private LocalDateTime createdAt;
     private List<OrderItem> items;
 
     public Cart() {
+        this.id = UUID.randomUUID().toString();
         this.createdAt = LocalDateTime.now();
         this.items = new ArrayList<>();
     }
@@ -31,6 +34,14 @@ public class Cart {
             total += item.getTotalPrice();
         }
         return total;
+    }
+
+    public void clear() {
+        this.items.clear();
+    }
+
+    public String getId() {
+        return id;
     }
 
     @Override
