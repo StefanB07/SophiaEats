@@ -18,31 +18,39 @@ public final class DataSeeder {
                                     CartRepository carts,
                                     OrderRepository orders,
                                     DeliveryCatalogRepository delivery) {
-        // curățări (adaugă clear() în repo-urile tale dacă nu există încă)
+
+        // Reset all repositories
         try { users.clear(); } catch (Exception ignored) {}
         try { restaurants.clear(); } catch (Exception ignored) {}
         try { carts.clear(); } catch (Exception ignored) {}
         try { orders.clear(); } catch (Exception ignored) {}
         delivery.clear();
 
-        // user simplu
-        users.save(new CampusUser("Alice", "alice@campus", "Dorm A"));
+        // Simple user
+        CampusUser user1 = new CampusUser("Alice", "alice@campus", "Dorm A");
+        users.save(user1);
+        System.out.println(user1.toString());
 
-        // restaurante – folosim ce ai deja, dar asigurăm „Restaurant A”
+
+        // Simple restaurant
         Restaurant restA = new Restaurant("Restaurant A", "Italian", "$$");
-        // Creezi un dish
-        Dish dishA = new Dish("Pizza Margherita", "Pizza clasică cu sos de roșii și mozzarella", 8.5, DishCategory.MAIN_COURSE, "Vegetarian");
+
+        // Add a dish to restaurant A
+        Dish dishA = new Dish("Pizza Margherita",
+                "Classic pizza with mozzarella and tomatoes.",
+                8.5, DishCategory.MAIN_COURSE, "Vegetarian");
 
         restA.addDishToMenu(dishA);
-
         restaurants.save(restA);
+        System.out.println(restA.toString());
 
-        // locații campus (pre-înregistrate)
+
+        // Delivery catalog with pre-registered locations
         delivery.addLocation(new DeliveryLocation("Bât A", "Main entrance"));
         delivery.addLocation(new DeliveryLocation("Library", "Front desk"));
         delivery.addLocation(new DeliveryLocation("Cafeteria", "Pickup zone"));
 
-        // sloturi disponibile pentru Restaurant A
+        // Add delivery slots for restaurant A
         var base = LocalDateTime.now().withHour(12).withMinute(0).withSecond(0).withNano(0);
         delivery.setSlots(restA.getId(), List.of(
                 new DeliverySlot(base, 100),

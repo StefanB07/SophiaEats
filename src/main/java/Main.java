@@ -35,7 +35,61 @@ import java.time.LocalDateTime;
 //}
 
 
+//public class Main {
+//    public static void main(String[] args) {
+//        // 1) Wiring
+//        CampusUserRepository users = new CampusUserRepository();
+//        RestaurantRepository restaurants = new RestaurantRepository();
+//        CartRepository carts = new CartRepository();
+//        OrderRepository orders = new OrderRepository();
+//        DeliveryCatalogRepository delivery = new DeliveryCatalogRepository();
+//
+//        // 2) Seed
+//        DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
+//
+//        // 3) Services
+//        CartService cartService = new CartService(carts, restaurants);
+//        OrderService orderService = new OrderService(); // conform semnăturii tale
+//
+//        // 4) Search a restaurant
+//        Restaurant restaurant = restaurants.findByName("Restaurant A")
+//                .orElseGet(() -> restaurants.findAll().stream()
+//                        .findFirst()
+//                        .orElseThrow(() -> new IllegalStateException("No restaurants seeded!")));
+//
+//        // 5) Choose a dish
+//        if (restaurant.getMenu().isEmpty()) {
+//            throw new IllegalStateException("Restaurant has no dishes! Add some in DataSeeder.");
+//        }
+//        Dish dish = restaurant.getMenu().get(0);
+//
+//        // 6) Add to cart
+//        Cart cart = carts.getDemoCart();
+//        cartService.addItem(cart, restaurant, dish, 2);
+//        System.out.println("Cart after add: " + cart.getItems());
+//
+//        // 7) Delivery details
+//        LocalDateTime deliveryTime = LocalDateTime.now().plusMinutes(30);
+//        String deliveryPlace = "Bât A";
+//
+//        // 8) Place the order
+//        Order order = orderService.placeOrder(cart, deliveryPlace, deliveryTime);
+//
+//        // 9) Print order details
+//        System.out.println("    Order created: " + order.getId());
+//        System.out.println("    Delivery place: " + order.getDeliveryPlace());
+//        System.out.println("    Delivery time: " + order.getDeliveryTime());
+//        System.out.println("    Items: " + order.getItems());
+//        System.out.println("    Status: " + order.getStatus());
+//    }
+//}
+
 public class Main {
+    private static void title(String txt) { System.out.println("\n==== " + txt + " ===="); }
+    private static void ok(String msg)    { System.out.println("✅ " + msg); }
+    private static void fail(String msg)  { System.out.println("❌ " + msg); }
+    private static void warn(String msg)  { System.out.println("⚠️  " + msg); }
+
     public static void main(String[] args) {
         // 1) Wiring
         CampusUserRepository users = new CampusUserRepository();
@@ -47,40 +101,109 @@ public class Main {
         // 2) Seed
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
 
-        // 3) Servicii
+        // 3) Services
         CartService cartService = new CartService(carts, restaurants);
-        OrderService orderService = new OrderService(); // conform semnăturii tale
+//        OrderService orderService = new OrderService(); // semnătura ta: placeOrder(Cart, String, LocalDateTime)
+        OrderService orderService = new OrderService(delivery, restaurants);
 
-        // 4) Caut restaurantul
+
+        // 4) Search a restaurant
         Restaurant restaurant = restaurants.findByName("Restaurant A")
                 .orElseGet(() -> restaurants.findAll().stream()
                         .findFirst()
                         .orElseThrow(() -> new IllegalStateException("No restaurants seeded!")));
 
-        // 5) Aleg un dish
+        // 5) Choose a dish
         if (restaurant.getMenu().isEmpty()) {
-            throw new IllegalStateException("Restaurantul nu are dish-uri. Adaugă în DataSeeder!");
+            throw new IllegalStateException("Restaurant has no dishes! Add some in DataSeeder.");
         }
         Dish dish = restaurant.getMenu().get(0);
 
-        // 6) Adaug în coș
-        Cart cart = carts.getDemoCart();                  // repo-ul tău expune demoCart
-        cartService.addItem(cart, restaurant, dish, 2);   // 2 bucăți
+        // 6) Add to cart
+        Cart cart = carts.createCart();
+        cartService.addItem(cart, restaurant, dish, 2);
         System.out.println("Cart after add: " + cart.getItems());
 
-        // 7) Ora de livrare (preferabil din catalogul de sloturi dacă ai label-ul)
+        // 7) Delivery details
         LocalDateTime deliveryTime = LocalDateTime.now().plusMinutes(30);
         String deliveryPlace = "Bât A";
 
-        // 8) Plasez comanda (semnătură: Cart, String, LocalDateTime)
+        // 8) Place the order (HAPPY PATH)
+        title("Happy path: place order");
         Order order = orderService.placeOrder(cart, deliveryPlace, deliveryTime);
+        System.out.println("    Order created: " + order.getId());
+        System.out.println("    Delivery place: " + order.getDeliveryPlace());
+        System.out.println("    Delivery time: " + order.getDeliveryTime());
+        System.out.println("    Items: " + order.getItems());
+        System.out.println("    Status: " + order.getStatus());
+        ok("Happy path done");
 
-        // 9) Rezultat
-        System.out.println("✅ Order created: " + order.getId());
-        System.out.println("Delivery place: " + order.getDeliveryPlace());
-        System.out.println("Delivery time: " + order.getDeliveryTime());
-        System.out.println("Items: " + order.getItems());
-        System.out.println("Status: " + order.getStatus());
+        // EDGE CASES
+        // Helper: reset cart
+        cart.clear();
+
+        // Edge B) Invalid delivery location
+        title("Edge B: Invalid delivery location");
+        try {
+            // Adding again items to cart
+            cartService.addItem(cart, restaurant, dish, 1);
+            orderService.placeOrder(cart, "Unknown Building", LocalDateTime.now().plusMinutes(30));
+            warn("OrderService did NOT reject invalid location (implementation-dependent).");
+        } catch (IllegalArgumentException e) {
+            ok("Rejected invalid location: " + e.getMessage());
+        } catch (Exception e) {
+            warn("Different exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        } finally {
+            cart.clear();
+        }
+
+        // Edge C) Delivery time in the past
+        title("Edge C: Delivery time in the past");
+        try {
+            cartService.addItem(cart, restaurant, dish, 1);
+            orderService.placeOrder(cart, "Bât A", LocalDateTime.now().minusHours(1));
+            fail("Expected rejection for past delivery time.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ok("Rejected past time: " + e.getMessage());
+        } finally {
+            cart.clear();
+        }
+
+        // Edge D) Cart empty
+        title("Edge D: Empty cart");
+        try {
+            orderService.placeOrder(cart, "Bât A", LocalDateTime.now().plusMinutes(30));
+            fail("Expected rejection for empty cart.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ok("Rejected empty cart: " + e.getMessage());
+        } finally {
+            cart.clear();
+        }
+
+        // Edge E) Mixed restaurants in the same cart
+        title("Edge E: Mixed restaurants in one cart");
+        try {
+            // 1) Add a dish from restA
+            cartService.addItem(cart, restaurant, dish, 1);
+
+            // 2) Create another restaurant with a dish
+            Restaurant restB = new Restaurant("Second Place", "Asian", "$$");
+            Dish dishB = new Dish("Soba", "Buckwheat noodles", 9.0, DishCategory.MAIN_COURSE, "Vegan");
+            restB.addDishToMenu(dishB);
+            restaurants.save(restB);
+
+            // 3) Add a dish from restB
+            cartService.addItem(cart, restB, dishB, 1);
+
+            // 4) Place the order - should be rejected
+            Order mixedOrder = orderService.placeOrder(cart, "Bât A", LocalDateTime.now().plusMinutes(30));
+            fail("Expected rejection for mixed restaurants, but got order: " + mixedOrder.getId());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ok("Rejected mixed restaurants: " + e.getMessage());
+        } finally {
+            cart.clear();
+        }
+
+        System.out.println("\nAll scenarios executed.\n");
     }
 }
-

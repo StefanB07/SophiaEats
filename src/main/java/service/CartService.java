@@ -11,7 +11,8 @@ public class CartService {
     private final CartRepository carts;
     private final RestaurantRepository restaurants;
     public CartService(CartRepository carts, RestaurantRepository restaurants) {
-        this.carts = carts; this.restaurants = restaurants;
+        this.carts = carts;
+        this.restaurants = restaurants;
     }
 
     public void addItem(Cart cart, Restaurant restaurant, Dish dish, int qty) {
