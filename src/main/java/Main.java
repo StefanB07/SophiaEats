@@ -1,209 +1,265 @@
-import com.sun.net.httpserver.HttpServer;
-
 import domain.*;
-import handlers.*;
 import repository.*;
 import service.CartService;
-import service.OrderDraftService;
 import service.OrderService;
 
-import java.net.InetSocketAddress;
 import java.time.LocalDateTime;
-
-//public class Main {
-//
-//    public static void main(String[] args) throws Exception {
-//
-//        var server = HttpServer.create(new InetSocketAddress(8080), 0);
-//        var restaurantRepo = new RestaurantRepository();
-//
-//        var cartRepo = new CartRepository();
-//        var userRepo = new CampusUserRepository();
-//
-//        server.createContext("/restaurants", new RestaurantHandler(restaurantRepo));
-//        server.createContext("/cart", new CartHandler(cartRepo, restaurantRepo));
-//        server.createContext("/users", new CampusUserHandler(userRepo));
-//        var orderRepo = new OrderRepository();
-//        var orderService = new OrderService();
-//
-//        server.createContext("/orders", new OrderHandler(cartRepo, orderRepo, orderService));
-//        server.setExecutor(null);
-//        server.start();
-//
-//        System.out.println("HTTP server on http://localhost:8080");
-//    }
-//}
-
-
-//public class Main {
-//    public static void main(String[] args) {
-//        // 1) Wiring
-//        CampusUserRepository users = new CampusUserRepository();
-//        RestaurantRepository restaurants = new RestaurantRepository();
-//        CartRepository carts = new CartRepository();
-//        OrderRepository orders = new OrderRepository();
-//        DeliveryCatalogRepository delivery = new DeliveryCatalogRepository();
-//
-//        // 2) Seed
-//        DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
-//
-//        // 3) Services
-//        CartService cartService = new CartService(carts, restaurants);
-//        OrderService orderService = new OrderService(); // conform semnăturii tale
-//
-//        // 4) Search a restaurant
-//        Restaurant restaurant = restaurants.findByName("Restaurant A")
-//                .orElseGet(() -> restaurants.findAll().stream()
-//                        .findFirst()
-//                        .orElseThrow(() -> new IllegalStateException("No restaurants seeded!")));
-//
-//        // 5) Choose a dish
-//        if (restaurant.getMenu().isEmpty()) {
-//            throw new IllegalStateException("Restaurant has no dishes! Add some in DataSeeder.");
-//        }
-//        Dish dish = restaurant.getMenu().get(0);
-//
-//        // 6) Add to cart
-//        Cart cart = carts.getDemoCart();
-//        cartService.addItem(cart, restaurant, dish, 2);
-//        System.out.println("Cart after add: " + cart.getItems());
-//
-//        // 7) Delivery details
-//        LocalDateTime deliveryTime = LocalDateTime.now().plusMinutes(30);
-//        String deliveryPlace = "Bât A";
-//
-//        // 8) Place the order
-//        Order order = orderService.placeOrder(cart, deliveryPlace, deliveryTime);
-//
-//        // 9) Print order details
-//        System.out.println("    Order created: " + order.getId());
-//        System.out.println("    Delivery place: " + order.getDeliveryPlace());
-//        System.out.println("    Delivery time: " + order.getDeliveryTime());
-//        System.out.println("    Items: " + order.getItems());
-//        System.out.println("    Status: " + order.getStatus());
-//    }
-//}
+import java.util.*;
 
 public class Main {
-    private static void title(String txt) { System.out.println("\n==== " + txt + " ===="); }
-    private static void ok(String msg)    { System.out.println("✅ " + msg); }
-    private static void fail(String msg)  { System.out.println("❌ " + msg); }
-    private static void warn(String msg)  { System.out.println("⚠️  " + msg); }
+    private static final Scanner in = new Scanner(System.in);
 
     public static void main(String[] args) {
-        // 1) Wiring
+        // Wiring repositories
         CampusUserRepository users = new CampusUserRepository();
         RestaurantRepository restaurants = new RestaurantRepository();
         CartRepository carts = new CartRepository();
         OrderRepository orders = new OrderRepository();
         DeliveryCatalogRepository delivery = new DeliveryCatalogRepository();
 
-        // 2) Seed
+        // Seed demo data
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
 
-        // 3) Services
+        // Services
         CartService cartService = new CartService(carts, restaurants);
-//        OrderService orderService = new OrderService(); // semnătura ta: placeOrder(Cart, String, LocalDateTime)
         OrderService orderService = new OrderService(delivery, restaurants);
 
-
-        // 4) Search a restaurant
-        Restaurant restaurant = restaurants.findByName("Restaurant A")
-                .orElseGet(() -> restaurants.findAll().stream()
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("No restaurants seeded!")));
-
-        // 5) Choose a dish
-        if (restaurant.getMenu().isEmpty()) {
-            throw new IllegalStateException("Restaurant has no dishes! Add some in DataSeeder.");
-        }
-        Dish dish = restaurant.getMenu().get(0);
-
-        // 6) Add to cart
+        // Working state
         Cart cart = carts.createCart();
-        cartService.addItem(cart, restaurant, dish, 2);
-        System.out.println("Cart after add: " + cart.getItems());
 
-        // 7) Delivery details
-        LocalDateTime deliveryTime = LocalDateTime.now().plusMinutes(30);
-        String deliveryPlace = "Bât A";
+        System.out.println("Welcome to SophiaTech Eats (CLI demo)\n");
 
-        // 8) Place the order (HAPPY PATH)
-        title("Happy path: place order");
-        Order order = orderService.placeOrder(cart, deliveryPlace, deliveryTime);
-        System.out.println("    Order created: " + order.getId());
-        System.out.println("    Delivery place: " + order.getDeliveryPlace());
-        System.out.println("    Delivery time: " + order.getDeliveryTime());
-        System.out.println("    Items: " + order.getItems());
-        System.out.println("    Status: " + order.getStatus());
-        ok("Happy path done");
+        List<Restaurant> lastResults = new ArrayList<>(restaurants.findAll());
+        Restaurant selectedRestaurant = null;
 
-        // EDGE CASES
-        // Helper: reset cart
-        cart.clear();
+        mainLoop:
+        while (true) {
+            System.out.println("\n--- Main Menu ---");
+            System.out.println("1) Filter restaurants");
+            System.out.println("2) List all restaurants");
+            System.out.println("3) Select a restaurant from last results");
+            System.out.println("4) View restaurant menu and add to cart");
+            System.out.println("5) View cart");
+            System.out.println("6) Place order");
+            System.out.println("0) Exit");
+            System.out.print("> ");
 
-        // Edge B) Invalid delivery location
-        title("Edge B: Invalid delivery location");
-        try {
-            // Adding again items to cart
-            cartService.addItem(cart, restaurant, dish, 1);
-            orderService.placeOrder(cart, "Unknown Building", LocalDateTime.now().plusMinutes(30));
-            warn("OrderService did NOT reject invalid location (implementation-dependent).");
-        } catch (IllegalArgumentException e) {
-            ok("Rejected invalid location: " + e.getMessage());
-        } catch (Exception e) {
-            warn("Different exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-        } finally {
-            cart.clear();
+            String choice = in.nextLine().trim();
+            try {
+                switch (choice) {
+                    case "1":
+                        lastResults = doFilter(restaurants);
+                        selectedRestaurant = null; // reset selection
+                        break;
+                    case "2":
+                        lastResults = new ArrayList<>(restaurants.findAll());
+                        printRestaurants(lastResults);
+                        selectedRestaurant = null;
+                        break;
+                    case "3":
+                        if (lastResults.isEmpty()) {
+                            System.out.println("No restaurants in last results. Use option 1 or 2 first.");
+                            break;
+                        }
+                        selectedRestaurant = chooseRestaurant(lastResults);
+                        break;
+                    case "4":
+                        if (selectedRestaurant == null) {
+                            System.out.println("No restaurant selected. Use option 3 to pick one.");
+                            break;
+                        }
+                        addItemsToCart(cartService, cart, selectedRestaurant);
+                        break;
+                    case "5":
+                        printCart(cart);
+                        break;
+                    case "6":
+                        placeOrderFlow(cart, orderService, delivery, restaurants, orders);
+                        // After placing, reset cart
+                        cart = carts.createCart();
+                        selectedRestaurant = null;
+                        break;
+                    case "0":
+                        break mainLoop;
+                    default:
+                        System.out.println("Unknown option");
+                }
+            } catch (Exception e) {
+                System.out.println("! Error: " + e.getMessage());
+            }
         }
 
-        // Edge C) Delivery time in the past
-        title("Edge C: Delivery time in the past");
-        try {
-            cartService.addItem(cart, restaurant, dish, 1);
-            orderService.placeOrder(cart, "Bât A", LocalDateTime.now().minusHours(1));
-            fail("Expected rejection for past delivery time.");
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            ok("Rejected past time: " + e.getMessage());
-        } finally {
-            cart.clear();
+        System.out.println("Goodbye!");
+    }
+
+    // --- UI helpers ---
+
+    private static List<Restaurant> doFilter(RestaurantRepository restaurants) {
+        FilterCriteria c = new FilterCriteria();
+
+        System.out.print("Cuisine (blank=any): ");
+        String cuisine = in.nextLine().trim();
+        if (!cuisine.isBlank()) c.setCuisineType(cuisine);
+
+        System.out.print("Price range (e.g., $, $$, $$$; blank=any): ");
+        String price = in.nextLine().trim();
+        if (!price.isBlank()) c.setPriceRange(price);
+
+        System.out.print("Dietary tag (e.g., vegan, vegetarian; blank=any): ");
+        String tag = in.nextLine().trim();
+        if (!tag.isBlank()) c.setDietaryTag(tag);
+
+        System.out.print("Only available now? (y/N): ");
+        String only = in.nextLine().trim();
+        if (only.equalsIgnoreCase("y") || only.equalsIgnoreCase("yes")) c.setOnlyAvailable(true);
+
+        List<Restaurant> results = RestaurantFilters.filter(restaurants.findAll(), c);
+        if (results.isEmpty()) {
+            System.out.println("No restaurants match your filter.");
+        } else {
+            printRestaurants(results);
+        }
+        return results;
+    }
+
+    private static void printRestaurants(List<Restaurant> list) {
+        System.out.println("\nRestaurants:");
+        int i = 1;
+        for (Restaurant r : list) {
+            System.out.printf("%d) %s — %s — %s — %d dishes%n",
+                    i++, r.getName(), r.getCuisineType(), r.getPriceRange(), r.getMenu().size());
+        }
+    }
+
+    private static Restaurant chooseRestaurant(List<Restaurant> list) {
+        printRestaurants(list);
+        System.out.print("Pick number: ");
+        int idx = readInt(1, list.size());
+        Restaurant r = list.get(idx - 1);
+        System.out.println("Selected: " + r.getName());
+        return r;
+    }
+
+    private static void addItemsToCart(CartService cartService, Cart cart, Restaurant r) {
+        if (r.getMenu().isEmpty()) {
+            System.out.println("This restaurant has no dishes.");
+            return;
+        }
+        System.out.println("\nMenu for " + r.getName() + ":");
+        int i = 1;
+        for (Dish d : r.getMenu()) {
+            System.out.printf("%d) %s - %.2f (%s)%n", i++, d.getName(), d.getPrice(), d.getCategory());
+        }
+        System.out.print("Dish number (0=done): ");
+        int idx = readInt(0, r.getMenu().size());
+        if (idx == 0) return;
+        Dish selected = r.getMenu().get(idx - 1);
+        System.out.print("Quantity: ");
+        int qty = readInt(1, 100);
+        cartService.addItem(cart, r, selected, qty);
+        System.out.println("Added " + qty + " x " + selected.getName() + " to cart.");
+    }
+
+    private static void printCart(Cart cart) {
+        if (cart.getItems().isEmpty()) {
+            System.out.println("Cart is empty.");
+            return;
+        }
+        System.out.println("\nCart:");
+        for (OrderItem it : cart.getItems()) {
+            System.out.printf("- %dx %s — total %.2f%n", it.getQuantity(), it.getDish().getName(), it.getTotalPrice());
+        }
+        System.out.printf("Total: %.2f%n", cart.calculateTotal());
+    }
+
+    private static void placeOrderFlow(Cart cart,
+                                       OrderService orderService,
+                                       DeliveryCatalogRepository delivery,
+                                       RestaurantRepository restaurants,
+                                       OrderRepository orders) {
+        if (cart.getItems().isEmpty()) {
+            System.out.println("Cart is empty.");
+            return;
         }
 
-        // Edge D) Cart empty
-        title("Edge D: Empty cart");
-        try {
-            orderService.placeOrder(cart, "Bât A", LocalDateTime.now().plusMinutes(30));
-            fail("Expected rejection for empty cart.");
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            ok("Rejected empty cart: " + e.getMessage());
-        } finally {
-            cart.clear();
+        // Derive restaurant from cart items (OrderService enforces single-restaurant rule too)
+        Restaurant fromCart = deriveRestaurantFromCart(cart, restaurants);
+        if (fromCart == null) {
+            System.out.println("Could not determine restaurant from cart or multiple restaurants detected.");
+            return;
         }
 
-        // Edge E) Mixed restaurants in the same cart
-        title("Edge E: Mixed restaurants in one cart");
-        try {
-            // 1) Add a dish from restA
-            cartService.addItem(cart, restaurant, dish, 1);
+        // Choose delivery location
+        List<DeliveryLocation> locs = new ArrayList<>(delivery.allLocations());
+        if (locs.isEmpty()) {
+            System.out.println("No delivery locations configured.");
+            return;
+        }
+        System.out.println("\nDelivery locations:");
+        for (int i = 0; i < locs.size(); i++) {
+            System.out.printf("%d) %s%n", i + 1, locs.get(i).getName());
+        }
+        System.out.print("Pick location: ");
+        int locIdx = readInt(1, locs.size());
+        String place = locs.get(locIdx - 1).getName();
 
-            // 2) Create another restaurant with a dish
-            Restaurant restB = new Restaurant("Second Place", "Asian", "$$");
-            Dish dishB = new Dish("Soba", "Buckwheat noodles", 9.0, DishCategory.MAIN_COURSE, "Vegan");
-            restB.addDishToMenu(dishB);
-            restaurants.save(restB);
-
-            // 3) Add a dish from restB
-            cartService.addItem(cart, restB, dishB, 1);
-
-            // 4) Place the order - should be rejected
-            Order mixedOrder = orderService.placeOrder(cart, "Bât A", LocalDateTime.now().plusMinutes(30));
-            fail("Expected rejection for mixed restaurants, but got order: " + mixedOrder.getId());
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            ok("Rejected mixed restaurants: " + e.getMessage());
-        } finally {
-            cart.clear();
+        // Choose a time slot (optional, pick first available if none)
+        List<DeliverySlot> slots = delivery.slotsFor(fromCart.getId());
+        LocalDateTime when;
+        if (slots.isEmpty()) {
+            when = LocalDateTime.now().plusMinutes(30);
+            System.out.println("No predefined slots; using: " + when);
+        } else {
+            System.out.println("Available slots:");
+            for (int i = 0; i < slots.size(); i++) {
+                System.out.printf("%d) %s%n", i + 1, slots.get(i).getLabel());
+            }
+            System.out.print("Pick slot: ");
+            int slotIdx = readInt(1, slots.size());
+            when = slots.get(slotIdx - 1).getStart();
         }
 
-        System.out.println("\nAll scenarios executed.\n");
+        // Place and persist order
+        Order order = orderService.placeOrder(cart, place, when);
+        orders.save(order);
+        System.out.println("\nOrder created: " + order.getId());
+        System.out.println("Delivery to: " + order.getDeliveryPlace() + " at " + order.getDeliveryTime());
+        printCartSummary(order);
+        System.out.println("Status: " + order.getStatus());
+    }
+
+    private static void printCartSummary(Order order) {
+        System.out.println("Items:");
+        for (OrderItem it : order.getItems()) {
+            System.out.printf("- %dx %s — total %.2f%n", it.getQuantity(), it.getDish().getName(), it.getTotalPrice());
+        }
+        System.out.printf("Total: %.2f%n", order.getTotal());
+    }
+
+    private static int readInt(int min, int max) {
+        while (true) {
+            String s = in.nextLine().trim();
+            try {
+                int v = Integer.parseInt(s);
+                if (v < min || v > max) throw new NumberFormatException();
+                return v;
+            } catch (NumberFormatException e) {
+                System.out.print("Enter a number between " + min + " and " + max + ": ");
+            }
+        }
+    }
+
+    private static Restaurant deriveRestaurantFromCart(Cart cart, RestaurantRepository restaurants) {
+        if (cart.getItems().isEmpty()) return null;
+        // Find restaurant containing the first dish
+        Dish firstDish = cart.getItems().get(0).getDish();
+        Optional<Restaurant> r = restaurants.findAll().stream()
+                .filter(rest -> rest.getMenu().contains(firstDish))
+                .findFirst();
+        if (r.isEmpty()) return null;
+        Restaurant found = r.get();
+        // Validate all items belong to same restaurant
+        boolean single = cart.getItems().stream().allMatch(it -> found.getMenu().contains(it.getDish()));
+        return single ? found : null;
     }
 }

@@ -1,13 +1,12 @@
 package steps;
 
-import io.cucumber.java.AfterAll;
-import io.cucumber.java.BeforeAll;
+import io.cucumber.java.After;
+import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import support.TestServer;
 
-import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -15,17 +14,17 @@ import java.net.http.HttpResponse;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RestaurantSteps {
-    private static HttpClient client;
+    private HttpClient client;
     private HttpResponse<String> response;
 
-    @BeforeAll
-    public static void startServer() throws IOException {
+    @Before
+    public void startServer() throws Exception {
         TestServer.start();
         client = HttpClient.newHttpClient();
     }
 
-    @AfterAll
-    public static void stopServer() {
+    @After
+    public void stopServer() {
         TestServer.stop();
     }
 
