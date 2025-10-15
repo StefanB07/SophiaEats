@@ -54,7 +54,7 @@ public class OrderHandler extends BaseHandler {
         LocalDateTime when = parseTime(parts[1].trim());
         if (when == null) { sendText(ex, 400, "Invalid datetime. Use 'yyyy-MM-dd HH:mm' or ISO 'yyyy-MM-ddTHH:mm'"); return; }
 
-        var cart = cartRepo.getDemoCart();
+        var cart = cartRepo.createCart();
 
         Order order;
         try {

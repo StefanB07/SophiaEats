@@ -2,9 +2,10 @@ package domain;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class CampusUser {
-
+    private final String id;
     private String name;
     private String email;
     private String country;
@@ -12,6 +13,7 @@ public class CampusUser {
     private List<Allergy> allergies;
 
     public CampusUser(String name, String email, String country) {
+        this.id = UUID.randomUUID().toString();
         this.name = name;
         this.email = email;
         this.country = country;
@@ -19,6 +21,9 @@ public class CampusUser {
         this.allergies = new ArrayList<>();
     }
 
+    public String getId() {
+        return id;
+    }
     public String getName() {
         return name;
     }

@@ -32,4 +32,8 @@ public class RestaurantRepository {
         byName.put(r.getName(), r);
         return r;
     }
+
+    public void clear() {
+        byName.clear();
+    }
 }

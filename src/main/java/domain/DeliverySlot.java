@@ -31,6 +31,15 @@ public class DeliverySlot {
         return start;
     }
 
+    public String getLabel() {
+        // exemplu: "12:00" devine "12:00-12:30"
+        var end = start.plusMinutes(30);
+        return String.format("%02d:%02d-%02d:%02d",
+                start.getHour(), start.getMinute(),
+                end.getHour(), end.getMinute());
+    }
+
+
     @Override
     public String toString() {
         return "DeliverySlot{" +
@@ -39,4 +48,5 @@ public class DeliverySlot {
                 ", reserved=" + reserved +
                 '}';
     }
+
 }

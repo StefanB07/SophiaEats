@@ -27,7 +27,7 @@ public class CartHandler extends BaseHandler {
     }
 
     private void getCart(HttpExchange ex) throws IOException {
-        var cart = carts.getDemoCart();
+        var cart = carts.createCart();
         sendJson(ex, 200, "{\"items\":"+cart.getItems().size()+",\"total\":"+cart.calculateTotal()+"}");
     }
 
@@ -41,7 +41,7 @@ public class CartHandler extends BaseHandler {
         if (r.isEmpty()) { sendText(ex, 404, "Restaurant not found"); return; }
         Optional<Dish> dish = r.get().getMenu().stream().filter(d->d.getName().equals(p[0].trim())).findFirst();
         if (dish.isEmpty()) { sendText(ex, 404, "Dish not found"); return; }
-        carts.getDemoCart().addItem(new OrderItem(dish.get(), qty));
+        carts.createCart().addItem(new OrderItem(dish.get(), qty));
         sendJson(ex, 201, "{\"added\":\""+esc(dish.get().getName())+"\",\"qty\":"+qty+"}");
     }
 }

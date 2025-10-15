@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Dish {
-
+    private String id; // adăugat pentru identificare unică
     private String name;
     private String description;
     private double price;
@@ -17,6 +17,7 @@ public class Dish {
 
     // === Constructor păstrat pentru compatibilitate handler ===
     public Dish(String name, String description, double price, DishCategory category, String type) {
+        this.id = java.util.UUID.randomUUID().toString(); // generare ID unic
         this.name = name;
         this.description = description;
         this.price = price;
@@ -27,6 +28,10 @@ public class Dish {
     }
 
     // === Getteri folosiți în handler ===
+    public String getId() {
+        return id;
+    }
+
     public String getName() {
         return name;
     }
@@ -76,4 +81,5 @@ public class Dish {
     public String toString() {
         return name + " (" + price + "€)";
     }
+
 }
