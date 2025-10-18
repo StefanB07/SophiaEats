@@ -8,6 +8,7 @@ import io.cucumber.java.en.When;
 import repository.*;
 import service.CartService;
 import service.OrderService;
+import bootstrap.DataSeeder;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -48,9 +49,6 @@ public class OrderBackendSteps {
         lastOrder = null;
         lastError = null;
     }
-
-    @Given("a fresh backend context")
-    public void a_fresh_backend_context() { /* done in setup */ }
 
     @Given("I am a Campus User")
     public void i_am_a_campus_user() { /* user exists from seeder, no-op */ }

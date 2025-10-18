@@ -47,11 +47,6 @@ public class BrowseSteps {
         listedDishes = new ArrayList<>();
     }
 
-    @Given("a fresh backend context")
-    public void a_fresh_backend_context() {
-        // already done in @Before
-    }
-
     @Given("I am not logged in")
     public void i_am_not_logged_in() { loggedIn = false; }
 

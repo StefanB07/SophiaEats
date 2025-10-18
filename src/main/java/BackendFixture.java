@@ -1,5 +1,6 @@
 import repository.*;
 import service.OrderDraftService;
+import bootstrap.DataSeeder; // added import
 
 public class BackendFixture {
     public final RestaurantRepository restaurants = new RestaurantRepository();
