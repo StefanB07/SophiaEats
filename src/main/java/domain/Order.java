@@ -19,6 +19,7 @@ public class Order {
     private LocalDateTime paidAt;
     private LocalDateTime deliveredAt;
 
+
     public Order(List<OrderItem> items, String deliveryPlace, LocalDateTime deliveryTime) {
         this.id = UUID.randomUUID().toString();
         this.createdAt = LocalDateTime.now();
@@ -47,4 +48,5 @@ public class Order {
 
     public LocalDateTime getDeliveredAt() { return deliveredAt; }
     public void setDeliveredAt(LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }
+
 }

@@ -19,7 +19,7 @@ public class OrderRepository {
         return Optional.ofNullable(byId.get(id));
     }
 
-    public Collection<Order> findAAll() {
+    public Collection<Order> findAll() {
         return byId.values();
     }
 

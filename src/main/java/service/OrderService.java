@@ -82,8 +82,13 @@ public class OrderService {
 
         // Copiem item-urile în comandă
         List<OrderItem> items = List.copyOf(cart.getItems());
-        return new Order(items, deliveryPlace, deliveryTime);
+        Order order = new Order(items, deliveryPlace, deliveryTime);
+        cart.clear(); // golește coșul după plasarea comenzii
+        return order;
+
     }
+
+
 
     // --- Payment & lifecycle helpers ---
 
@@ -96,17 +101,48 @@ public class OrderService {
     /**
      * Create and process a Payment for the given order using the given method.
      * For EXTERNAL, processing is simulated and always accepted.
+     * For CREDIT, verifies the user's balance before debiting.
      * On success: attaches payment, sets PAID status and paidAt timestamp.
      */
-    public Payment pay(Order order, PaymentMethod method) {
+    public Payment pay(Order order, PaymentMethod method, CampusUser user) {
         Objects.requireNonNull(order, "order");
         Objects.requireNonNull(method, "method");
         if (order.getStatus() != OrderStatus.CREATED) {
             throw new IllegalStateException("Order not in CREATED state");
         }
+
         Payment payment = new Payment(method, order.getTotal());
-        // Simulate external processor: Payment.process ignores user for EXTERNAL and sets success=true
-        payment.process(null);
+
+        if (method == PaymentMethod.STUDENT_CREDIT) {
+            if (user == null || user.getStudentCredit() == null) {
+                throw new IllegalStateException("NO_STUDENT_CREDIT_ACCOUNT");
+            }
+
+            Double budget = user.getStudentCredit().getBudget();
+            Double total = order.getTotal();
+
+            if (budget.compareTo(total) < 0) {
+                throw new IllegalStateException("INSUFFICIENT_CREDIT");
+            }
+
+            // Debit the user's credit
+            double newBudget = budget - total;
+
+            // Mark payment as successful and attach to order
+            payment.process(user);
+            if (payment.isSuccess()) {
+                order.setPayment(payment);
+                order.setStatus(OrderStatus.PAID);
+                order.setPaidAt(LocalDateTime.now());
+            }
+
+            user.getStudentCredit().setBudget(newBudget);
+
+            return payment;
+        }
+
+        // Default: EXTERNAL payment path
+        payment.process(user);
         if (payment.isSuccess()) {
             order.setPayment(payment);
             order.setStatus(OrderStatus.PAID);
@@ -114,6 +150,7 @@ public class OrderService {
         }
         return payment;
     }
+
 
     /** Mark order as PAID if it is in CREATED state, and set paidAt. */
     public void markAsPaid(Order order) {

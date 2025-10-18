@@ -230,7 +230,7 @@ public class Main {
 
         // Payment simulation using backend logic (attaches Payment and sets paidAt)
         try {
-            var payment = orderService.pay(order, PaymentMethod.EXTERNAL);
+            var payment = orderService.pay(order, PaymentMethod.EXTERNAL, null);
             orders.save(order);
             System.out.println("Payment processed via " + payment.getMethod() + ": " + (payment.isSuccess() ? "ACCEPTED" : "DECLINED"));
             System.out.println("Status -> " + order.getStatus() + (order.getPaidAt() != null ? (" at " + order.getPaidAt()) : ""));

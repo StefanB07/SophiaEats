@@ -13,7 +13,7 @@ public class Payment {
 
     public void process(CampusUser user) {
         if (method == PaymentMethod.STUDENT_CREDIT) {
-            success = user.getStudentCredit().useCredit(amount);
+            success = user.getStudentCredit().getBudget() >= amount;
         } else {
             // External payment simulated
             success = true;

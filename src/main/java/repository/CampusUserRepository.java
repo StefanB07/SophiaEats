@@ -3,6 +3,7 @@ package repository;
 import domain.CampusUser;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class CampusUserRepository {
     private final List<CampusUser> users = new ArrayList<>();
@@ -19,4 +20,8 @@ public class CampusUserRepository {
     public void clear() {
         users.clear();
     }
+    public Optional<CampusUser> findById(String id) {
+        return users.stream().filter(u -> u.getId().equals(id)).findFirst();
+    }
+
 }

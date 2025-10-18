@@ -16,7 +16,9 @@ public class CartService {
     }
 
     public void addItem(Cart cart, Restaurant restaurant, Dish dish, int qty) {
+        if (qty <= 0) throw new IllegalArgumentException("Quantity must be positive");
         cart.addItem(new OrderItem(dish, qty));
         carts.save(cart);
     }
+
 }

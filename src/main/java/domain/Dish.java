@@ -1,5 +1,6 @@
 package domain;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -82,4 +83,7 @@ public class Dish {
         return name + " (" + price + "€)";
     }
 
+    public void setPrice(Double newPrice) {
+        this.price = newPrice;
+    }
 }

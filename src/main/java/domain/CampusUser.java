@@ -45,6 +45,10 @@ public class CampusUser {
         return studentCredit;
     }
 
+    public void setStudentCredit(StudentCredit studentCredit) {
+        this.studentCredit = studentCredit;
+    }
+
     // === Allergies ===
     public void addAllergy(Allergy allergy) {
         allergies.add(allergy);

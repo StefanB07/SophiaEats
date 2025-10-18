@@ -39,6 +39,9 @@ public final class DataSeeder {
                 8.5, DishCategory.MAIN_COURSE, "Vegetarian");
         dishA.addDietaryTag(DietaryTag.VEGETARIAN);
         restA.addDishToMenu(dishA);
+        Dish pasta = new Dish("Pasta", "Fresh pasta with bolognese sos", 20.0, DishCategory.MAIN_COURSE, "Contains meat");
+        pasta.addDietaryTag(DietaryTag.LACTOSE_FREE);
+        restA.addDishToMenu(pasta);
         restaurants.save(restA);
         System.out.println(restA.toString());
 
@@ -74,4 +77,3 @@ public final class DataSeeder {
         return s;
     }
 }
-
