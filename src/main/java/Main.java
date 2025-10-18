@@ -1,3 +1,4 @@
+import bootstrap.DataSeeder;
 import domain.*;
 import repository.*;
 import service.CartService;
@@ -226,6 +227,29 @@ public class Main {
         System.out.println("Delivery to: " + order.getDeliveryPlace() + " at " + order.getDeliveryTime());
         printCartSummary(order);
         System.out.println("Status: " + order.getStatus());
+
+        // Payment simulation using backend logic (attaches Payment and sets paidAt)
+        try {
+            var payment = orderService.pay(order, PaymentMethod.EXTERNAL);
+            orders.save(order);
+            System.out.println("Payment processed via " + payment.getMethod() + ": " + (payment.isSuccess() ? "ACCEPTED" : "DECLINED"));
+            System.out.println("Status -> " + order.getStatus() + (order.getPaidAt() != null ? (" at " + order.getPaidAt()) : ""));
+        } catch (Exception e) {
+            System.out.println("Payment failed: " + e.getMessage());
+        }
+
+        // Optional immediate delivery
+        System.out.print("Mark as delivered now? (y/N): ");
+        String ans = in.nextLine().trim();
+        if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
+            try {
+                orderService.markAsDelivered(order);
+                orders.save(order);
+                System.out.println("Order delivered. Status -> " + order.getStatus() + (order.getDeliveredAt() != null ? (" at " + order.getDeliveredAt()) : ""));
+            } catch (Exception e) {
+                System.out.println("Cannot mark delivered: " + e.getMessage());
+            }
+        }
     }
 
     private static void printCartSummary(Order order) {

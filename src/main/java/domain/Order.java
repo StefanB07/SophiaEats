@@ -14,6 +14,11 @@ public class Order {
     private final double total;
     private OrderStatus status;
 
+    // NEW: payment and lifecycle timestamps
+    private Payment payment;
+    private LocalDateTime paidAt;
+    private LocalDateTime deliveredAt;
+
     public Order(List<OrderItem> items, String deliveryPlace, LocalDateTime deliveryTime) {
         this.id = UUID.randomUUID().toString();
         this.createdAt = LocalDateTime.now();
@@ -24,24 +29,6 @@ public class Order {
         this.status = OrderStatus.CREATED;
     }
 
-//    public Order(String userId,
-//                 String restaurantId,
-//                 List<OrderItem> items,
-//                 LocalDateTime createdAt,
-//                 DeliverySlot slot,
-//                 DeliveryLocation location,
-//                 OrderStatus status,
-//                 Payment payment) {
-//        this.userId = userId;
-//        this.restaurantId = restaurantId;
-//        this.items = items;
-//        this.createdAt = createdAt;
-//        this.slot = slot;
-//        this.location = location;
-//        this.status = status;
-//        this.payment = payment;
-//    }
-
     public String getId() { return id; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public List<OrderItem> getItems() { return new ArrayList<>(items); }
@@ -50,4 +37,14 @@ public class Order {
     public double getTotal() { return total; }
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }
+
+    // NEW getters/setters
+    public Payment getPayment() { return payment; }
+    public void setPayment(Payment payment) { this.payment = payment; }
+
+    public LocalDateTime getPaidAt() { return paidAt; }
+    public void setPaidAt(LocalDateTime paidAt) { this.paidAt = paidAt; }
+
+    public LocalDateTime getDeliveredAt() { return deliveredAt; }
+    public void setDeliveredAt(LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }
 }

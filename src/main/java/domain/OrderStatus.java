@@ -2,7 +2,8 @@ package domain;
 
 public enum OrderStatus {
     DRAFT,
-    CREATED, // created command but not processed
-    PAID,    // paid
+    CREATED,   // order created but not yet paid
+    PAID,      // payment confirmed
+    DELIVERED, // order delivered to the user
     CANCELLED
 }

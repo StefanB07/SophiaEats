@@ -29,11 +29,7 @@
 //}
 package service;
 
-import domain.Cart;
-import domain.Dish;
-import domain.Order;
-import domain.OrderItem;
-import domain.Restaurant;
+import domain.*;
 import repository.DeliveryCatalogRepository;
 import repository.RestaurantRepository;
 
@@ -87,6 +83,56 @@ public class OrderService {
         // Copiem item-urile în comandă
         List<OrderItem> items = List.copyOf(cart.getItems());
         return new Order(items, deliveryPlace, deliveryTime);
+    }
+
+    // --- Payment & lifecycle helpers ---
+
+    /** Legacy simulation hook. Prefer pay(order, method) for full flow. */
+    public boolean tempExternalPayment(Order order) {
+        Objects.requireNonNull(order, "order");
+        return true; // always approved for now
+    }
+
+    /**
+     * Create and process a Payment for the given order using the given method.
+     * For EXTERNAL, processing is simulated and always accepted.
+     * On success: attaches payment, sets PAID status and paidAt timestamp.
+     */
+    public Payment pay(Order order, PaymentMethod method) {
+        Objects.requireNonNull(order, "order");
+        Objects.requireNonNull(method, "method");
+        if (order.getStatus() != OrderStatus.CREATED) {
+            throw new IllegalStateException("Order not in CREATED state");
+        }
+        Payment payment = new Payment(method, order.getTotal());
+        // Simulate external processor: Payment.process ignores user for EXTERNAL and sets success=true
+        payment.process(null);
+        if (payment.isSuccess()) {
+            order.setPayment(payment);
+            order.setStatus(OrderStatus.PAID);
+            order.setPaidAt(LocalDateTime.now());
+        }
+        return payment;
+    }
+
+    /** Mark order as PAID if it is in CREATED state, and set paidAt. */
+    public void markAsPaid(Order order) {
+        Objects.requireNonNull(order, "order");
+        if (order.getStatus() != OrderStatus.CREATED) {
+            throw new IllegalStateException("Order not in CREATED state");
+        }
+        order.setStatus(OrderStatus.PAID);
+        order.setPaidAt(LocalDateTime.now());
+    }
+
+    /** Mark order as DELIVERED if it is in PAID state, and set deliveredAt. */
+    public void markAsDelivered(Order order) {
+        Objects.requireNonNull(order, "order");
+        if (order.getStatus() != OrderStatus.PAID) {
+            throw new IllegalStateException("Order not in PAID state");
+        }
+        order.setStatus(OrderStatus.DELIVERED);
+        order.setDeliveredAt(LocalDateTime.now());
     }
 
     // --- Helpers ---

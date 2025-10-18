@@ -20,7 +20,10 @@ public class Payment {
         }
     }
 
-    public  boolean isSuccess() {
+    public PaymentMethod getMethod() { return method; }
+    public double getAmount() { return amount; }
+
+    public boolean isSuccess() {
         return success;
     }
 
