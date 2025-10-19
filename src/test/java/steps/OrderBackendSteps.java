@@ -33,6 +33,9 @@ public class OrderBackendSteps {
     private Order lastOrder;
     private Exception lastError;
 
+    // Slot testing state
+    private DeliverySlot capturedFirstSlot;
+
     @Before
     public void setup() {
         users = new CampusUserRepository();
@@ -49,6 +52,7 @@ public class OrderBackendSteps {
         selectedRestaurant = null;
         lastOrder = null;
         lastError = null;
+        capturedFirstSlot = null;
     }
 
     @Given("I am a Campus User")
@@ -67,6 +71,9 @@ public class OrderBackendSteps {
     @Given("I am a Campus User {string} with credit {double}")
     public void i_am_a_campus_user_with_credit(String name, double credit) {
         CampusUser u = new CampusUser(name, name + "@campus", "Dorm A");
+        if (u.getStudentCredit() == null) {
+            u.setStudentCredit(new StudentCredit());
+        }
         u.getStudentCredit().setBudget(credit);
         users.save(u);
         currentUser = u;
@@ -161,9 +168,9 @@ public class OrderBackendSteps {
         try {
             Payment lastPayment = orderService.pay(lastOrder, PaymentMethod.STUDENT_CREDIT, currentUser);
             orders.save(lastOrder);
-            lastError = null; // dacă ajunge aici, nu a aruncat excepție
+            lastError = null; // if we reach here, no exception was thrown
         } catch (Exception e) {
-            lastError = e;    // captăm eroarea pentru Then "rejected with an error ..."
+            lastError = e;    // capture the error for the Then step
         }
     }
 
@@ -275,5 +282,41 @@ public class OrderBackendSteps {
                 .filter(d -> d.getName().equals(dishName))
                 .findFirst()
                 .ifPresent(d -> d.setPrice(newPrice));
+    }
+
+    // ============== Minimal slot fit steps ==============
+
+    @Given("I capture the first delivery slot")
+    public void i_capture_the_first_delivery_slot() {
+        assertNotNull(selectedRestaurant, "No restaurant selected");
+        var slots = delivery.slotsFor(selectedRestaurant.getId());
+        assertFalse(slots.isEmpty(), "No delivery slots found for restaurant");
+        capturedFirstSlot = slots.get(0);
+    }
+
+    @Given("I cap the first delivery slot capacity to {int}")
+    public void i_cap_the_first_delivery_slot_capacity_to(int newCapacity) {
+        assertNotNull(selectedRestaurant, "No restaurant selected");
+        var slots = new ArrayList<>(delivery.slotsFor(selectedRestaurant.getId()));
+        assertFalse(slots.isEmpty(), "No delivery slots to cap");
+        DeliverySlot first = slots.get(0);
+        DeliverySlot adjusted = new DeliverySlot(first.getStart(), newCapacity);
+        slots.set(0, adjusted);
+        delivery.setSlots(selectedRestaurant.getId(), slots);
+        capturedFirstSlot = adjusted;
+    }
+
+    @Then("the selected slot can accept the current cart")
+    public void the_selected_slot_can_accept_the_current_cart() {
+        assertNotNull(capturedFirstSlot, "No slot captured");
+        int qty = cart == null || cart.getItems() == null ? 0 : cart.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
+        assertTrue(capturedFirstSlot.canFit(qty), "Expected slot to accept quantity " + qty);
+    }
+
+    @Then("the selected slot cannot accept the current cart")
+    public void the_selected_slot_cannot_accept_the_current_cart() {
+        assertNotNull(capturedFirstSlot, "No slot captured");
+        int qty = cart == null || cart.getItems() == null ? 0 : cart.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
+        assertFalse(capturedFirstSlot.canFit(qty), "Expected slot to reject quantity " + qty);
     }
 }

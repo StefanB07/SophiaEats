@@ -13,6 +13,7 @@ public class DeliverySlot {
         this.reserved = 0;
     }
 
+    // Reserve one unit if available
     public boolean reserve(){
         if(reserved < capacity) {
             reserved++;
@@ -21,24 +22,45 @@ public class DeliverySlot {
         return false;
     }
 
+    // Reserve a given quantity if available
+    public boolean reserve(int quantity){
+        if (quantity <= 0) return true;
+        if (canFit(quantity)) {
+            reserved += quantity;
+            return true;
+        }
+        return false;
+    }
+
+    // Release one unit if any reserved
     public void release(){
         if (reserved > 0) {
             reserved--;
         }
     }
 
+    // Release a given quantity, clamped at zero
+    public void release(int quantity){
+        if (quantity <= 0) return;
+        reserved = Math.max(0, reserved - quantity);
+    }
+
     public LocalDateTime getStart() {
         return start;
     }
 
+    public int getCapacity() { return capacity; }
+    public int getReserved() { return reserved; }
+    public int getRemainingCapacity() { return Math.max(0, capacity - reserved); }
+    public boolean canFit(int quantity) { return quantity <= getRemainingCapacity(); }
+
     public String getLabel() {
-        // exemplu: "12:00" devine "12:00-12:30"
+        // Example: "12:00" becomes "12:00-12:30"
         var end = start.plusMinutes(30);
         return String.format("%02d:%02d-%02d:%02d",
                 start.getHour(), start.getMinute(),
                 end.getHour(), end.getMinute());
     }
-
 
     @Override
     public String toString() {
@@ -48,5 +70,4 @@ public class DeliverySlot {
                 ", reserved=" + reserved +
                 '}';
     }
-
 }

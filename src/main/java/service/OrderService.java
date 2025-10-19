@@ -1,32 +1,3 @@
-//package service;
-//
-//import domain.Cart;
-//import domain.Order;
-//import domain.OrderItem;
-//
-//import java.time.LocalDateTime;
-//import java.util.List;
-//
-///**
-// * Service class responsible for handling the business logic related to orders.
-// * The OrderService acts as an intermediary between the application’s domain (Cart, Order)
-// * and the infrastructure layer (HTTP handlers, repositories).
-// */
-//public class OrderService {
-//
-//    public Order placeOrder(Cart cart, String deliveryPlace, LocalDateTime deliveryTime) {
-//        if (cart == null || cart.getItems().isEmpty())
-//            throw new IllegalArgumentException("Cart is empty");
-//        if (deliveryPlace == null || deliveryPlace.isBlank())
-//            throw new IllegalArgumentException("Delivery place required");
-//        if (deliveryTime == null || deliveryTime.isBefore(LocalDateTime.now()))
-//            throw new IllegalArgumentException("Delivery time must be in the future");
-//
-//        // Copy all the items from the cart to the order
-//        List<OrderItem> items = List.copyOf(cart.getItems());
-//        return new Order(items, deliveryPlace, deliveryTime);
-//    }
-//}
 package service;
 
 import domain.*;
@@ -47,16 +18,16 @@ import java.util.stream.Collectors;
  */
 public class OrderService {
 
-    private final DeliveryCatalogRepository delivery;     // pentru validare locații
-    private final RestaurantRepository restaurants;       // pentru a determina sursa fiecărui Dish
+    private final DeliveryCatalogRepository delivery;     // validate delivery locations and slots
+    private final RestaurantRepository restaurants;       // determine the source restaurant for each dish
 
-    // Constructor recomandat (cu dependențe)
+    // Preferred constructor (with dependencies)
     public OrderService(DeliveryCatalogRepository delivery, RestaurantRepository restaurants) {
         this.delivery = Objects.requireNonNull(delivery);
         this.restaurants = Objects.requireNonNull(restaurants);
     }
 
-    // (Opțional) constructor vechi pentru compatibilitate; NU va face validările noi
+    // Legacy constructor for compatibility; will not perform the newer validations
     public OrderService() {
         this.delivery = null;
         this.restaurants = null;
@@ -70,20 +41,45 @@ public class OrderService {
         if (deliveryTime == null || deliveryTime.isBefore(LocalDateTime.now()))
             throw new IllegalArgumentException("Delivery time must be in the future");
 
-        // ✅ Validare: locația de livrare există în catalog (dacă avem repo injectat)
+        // Validate: delivery location must exist in catalog (if repo is injected)
         if (delivery != null && !delivery.isValidLocation(deliveryPlace)) {
             throw new IllegalArgumentException("Invalid delivery location: " + deliveryPlace);
         }
 
-        // ✅ Validare: toate item-urile provin din același restaurant (dacă avem repo injectat)
+        // Validate: all items must come from a single restaurant (if repo is injected)
+        Restaurant sourceRestaurant = null;
         if (restaurants != null) {
             ensureSingleRestaurant(cart.getItems());
+            // Determine the source restaurant using the first dish
+            sourceRestaurant = findRestaurantByDishOrThrow(cart.getItems().get(0).getDish());
         }
 
-        // Copiem item-urile în comandă
+        // Validate: the selected slot can accept the ordered quantity (minimal check)
+        if (delivery != null && sourceRestaurant != null) {
+            int totalQty = cart.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
+            var slots = delivery.slotsFor(sourceRestaurant.getId());
+            var selectedSlotOpt = slots.stream()
+                    .filter(s -> deliveryTime.equals(s.getStart()))
+                    .findFirst();
+            if (selectedSlotOpt.isEmpty()) {
+                throw new IllegalArgumentException("No delivery slot available at requested time");
+            }
+            var slot = selectedSlotOpt.get();
+            if (!slot.canFit(totalQty)) {
+                throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
+            }
+            // Reserve capacity for this order so later availability reflects it
+            boolean reservedOk = slot.reserve(totalQty);
+            if (!reservedOk) {
+                // Edge case: capacity changed between check and reserve
+                throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
+            }
+        }
+
+        // Copy the items from the cart to the order
         List<OrderItem> items = List.copyOf(cart.getItems());
         Order order = new Order(items, deliveryPlace, deliveryTime);
-        cart.clear(); // golește coșul după plasarea comenzii
+        cart.clear(); // empty the cart after placing the order
         return order;
 
     }
@@ -175,7 +171,7 @@ public class OrderService {
     // --- Helpers ---
 
     private void ensureSingleRestaurant(List<OrderItem> items) {
-        // găsim restaurantul pentru fiecare Dish uitându-ne în meniurile restaurantelor
+        // Find the restaurant for each dish by scanning restaurant menus
         Set<String> restNames = items.stream()
                 .map(OrderItem::getDish)
                 .map(this::findRestaurantByDishOrThrow)
