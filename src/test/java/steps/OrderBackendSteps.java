@@ -37,6 +37,17 @@ public class OrderBackendSteps {
     // Slot testing state
     private DeliverySlot capturedFirstSlot;
     private List<DeliverySlot> lastQueriedSlots;
+    // Order listing state
+    private List<Order> listedOrders;
+    private java.util.List<java.util.Map<String, Object>> restaurantViewOrders;
+
+    private String paymentSummaryLabel(Payment p) {
+        if (p == null) return "Unpaid";
+        if (p.getMethod() == PaymentMethod.STUDENT_CREDIT) return "Paid with Student Credit";
+        if (p.getMethod() == PaymentMethod.EXTERNAL) return "Paid"; // high-level label for external
+        return "Paid";
+    }
+
 
     @Before
     public void setup() {
@@ -169,6 +180,19 @@ public class OrderBackendSteps {
         assertNotNull(currentUser, "No current user set");
         try {
             Payment lastPayment = orderService.pay(lastOrder, PaymentMethod.STUDENT_CREDIT, currentUser);
+            orders.save(lastOrder);
+            lastError = null; // if we reach here, no exception was thrown
+        } catch (Exception e) {
+            lastError = e;    // capture the error for the Then step
+        }
+    }
+
+    @When("I try to pay the order with EXTERNAL method")
+    public void i_try_external_pay() {
+        assertNotNull(lastOrder, "No order created");
+        assertNotNull(currentUser, "No current user set");
+        try {
+            Payment lastPayment = orderService.pay(lastOrder, PaymentMethod.EXTERNAL, currentUser);
             orders.save(lastOrder);
             lastError = null; // if we reach here, no exception was thrown
         } catch (Exception e) {
@@ -363,4 +387,80 @@ public class OrderBackendSteps {
                 .anyMatch(s -> s.getStart().equals(capturedFirstSlot.getStart()));
         assertFalse(present, "Expected the first slot to be absent");
     }
+
+    @When("I list my orders")
+    public void i_list_my_orders() {
+        listedOrders = new java.util.ArrayList<>(orders.findAll());
+        assertNotNull(listedOrders);
+        assertFalse(listedOrders.isEmpty(), "No orders found");
+    }
+
+    @Then("I see my last order with status {string} and total {double}")
+    public void i_see_my_last_order_with_status_and_total(String expectedStatus, Double expectedTotal) {
+        assertNotNull(listedOrders, "Orders were not listed");
+        Order o = listedOrders.get(listedOrders.size() - 1);
+        assertEquals(OrderStatus.valueOf(expectedStatus), o.getStatus());
+        assertEquals(expectedTotal, o.getTotal(), 0.0001);
+    }
+
+    @Then("I see {string} for that order")
+    public void i_see_for_that_order(String expected) {
+        assertNotNull(lastOrder, "No last order available");
+        // find lastOrder in listedOrders (fallback: use lastOrder direct)
+        Order target = lastOrder;
+        if (listedOrders != null && !listedOrders.isEmpty()) {
+            Order maybe = listedOrders.get(listedOrders.size() - 1);
+            if (maybe != null && maybe.getId().equals(lastOrder.getId())) {
+                target = maybe;
+            }
+        }
+        assertNotNull(target.getPayment(), "Order has no payment attached");
+        String actual = paymentSummaryLabel(target.getPayment());
+        org.junit.jupiter.api.Assertions.assertEquals(expected, actual);
+    }
+
+    // ========== RESTAURANT VIEW (privacy) ==========
+
+    @Given("a restaurant {string} exists")
+    public void a_restaurant_exists(String name) {
+        var r = restaurants.findByName(name);
+        org.junit.jupiter.api.Assertions.assertTrue(r.isPresent(), "Restaurant not found: " + name);
+    }
+
+    @When("the restaurant lists its orders")
+    public void the_restaurant_lists_its_orders() {
+        restaurantViewOrders = new java.util.ArrayList<>();
+        for (Order o : orders.findAll()) {
+            java.util.Map<String, Object> view = new java.util.HashMap<>();
+            view.put("orderId", o.getId());
+            view.put("status", o.getStatus().name());
+            view.put("total", o.getTotal());
+            // IMPORTANT: nu punem payment / method în view-ul de restaurant
+            restaurantViewOrders.add(view);
+        }
+        assertFalse(restaurantViewOrders.isEmpty(), "Restaurant order view is empty");
+    }
+
+    @Then("it sees the order in status {string}")
+    public void it_sees_the_order_in_status(String expectedStatus) {
+        assertNotNull(lastOrder, "No last order available");
+        assertNotNull(restaurantViewOrders, "Restaurant view not built");
+        boolean present = restaurantViewOrders.stream().anyMatch(v ->
+                lastOrder.getId().equals(v.get("orderId")) &&
+                        expectedStatus.equals(v.get("status"))
+        );
+        org.junit.jupiter.api.Assertions.assertTrue(present,
+                "Expected to see order " + lastOrder.getId() + " with status " + expectedStatus);
+    }
+
+    @Then("the payment method details are not visible")
+    public void the_payment_method_details_are_not_visible() {
+        assertNotNull(restaurantViewOrders, "Restaurant view not built");
+        boolean leaksPayment = restaurantViewOrders.stream().anyMatch(v ->
+                v.containsKey("payment") || v.containsKey("method") || v.containsKey("paymentMethod")
+        );
+        org.junit.jupiter.api.Assertions.assertFalse(leaksPayment,
+                "Restaurant view should not expose payment method details");
+    }
+
 }

@@ -42,6 +42,19 @@ public final class DataSeeder {
         Dish pasta = new Dish("Pasta", "Fresh pasta with bolognese sos", 20.0, DishCategory.MAIN_COURSE, "Contains meat");
         pasta.addDietaryTag(DietaryTag.LACTOSE_FREE);
         restA.addDishToMenu(pasta);
+
+        Dish lasagna = new Dish("Lasagna", "Layers of pasta with ragu and bechamel",
+                12.0, DishCategory.MAIN_COURSE, "Contains gluten");
+        restA.addDishToMenu(lasagna);
+
+        Dish bruschetta = new Dish("Bruschetta", "Grilled bread with tomatoes & basil",
+                6.0, DishCategory.STARTER, "Vegetarian");
+        restA.addDishToMenu(bruschetta);
+
+        Dish tiramisu = new Dish("Tiramisu", "Mascarpone & coffee dessert",
+                6.5, DishCategory.DESSERT, "Contains lactose");
+        restA.addDishToMenu(tiramisu);
+
         restaurants.save(restA);
         System.out.println(restA.toString());
 
@@ -51,6 +64,20 @@ public final class DataSeeder {
                 9.0, DishCategory.MAIN_COURSE, "Vegan");
         dishB.addDietaryTag(DietaryTag.VEGAN);
         restB.addDishToMenu(dishB);
+
+        Dish soba = new Dish("Soba",
+                "Buckwheat noodles",
+                9.0, DishCategory.MAIN_COURSE, "Vegan");
+        soba.addDietaryTag(DietaryTag.VEGAN);
+        restB.addDishToMenu(soba);
+
+        Dish ramen = new Dish("Ramen", "Pork broth ramen",
+                13.5, DishCategory.MAIN_COURSE, "Contains meat");
+        restB.addDishToMenu(ramen);
+
+        Dish edamame = new Dish("Edamame", "Steamed soybeans with sea salt",
+                5.0, DishCategory.STARTER, "Vegan");
+        restB.addDishToMenu(edamame);
         restaurants.save(restB);
         System.out.println(restB.toString());
 
