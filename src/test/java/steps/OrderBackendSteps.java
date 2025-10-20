@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,6 +36,7 @@ public class OrderBackendSteps {
 
     // Slot testing state
     private DeliverySlot capturedFirstSlot;
+    private List<DeliverySlot> lastQueriedSlots;
 
     @Before
     public void setup() {
@@ -306,6 +308,30 @@ public class OrderBackendSteps {
         capturedFirstSlot = adjusted;
     }
 
+    @When("I query available slots")
+    public void i_query_available_slots() {
+        assertNotNull(selectedRestaurant, "No restaurant selected");
+        assertNotNull(cart, "No cart created");
+        int qty = cart.getItems() == null ? 0 : cart.getItems().stream()
+                .mapToInt(OrderItem::getQuantity)
+                .sum();
+
+        var slots = delivery.slotsFor(selectedRestaurant.getId());
+        lastQueriedSlots = slots.stream()
+                .filter(s -> s.canFit(qty))
+                .collect(Collectors.toList());
+        assertNotNull(lastQueriedSlots, "Slot query failed");
+    }
+
+    @When("I add {int} more dish from the restaurant to the cart")
+    public void i_add_more_dish_from_the_restaurant_to_the_cart(Integer qty) {
+        assertNotNull(selectedRestaurant, "No restaurant selected");
+        assertFalse(selectedRestaurant.getMenu().isEmpty(), "Selected restaurant has no dishes");
+        Dish dish = selectedRestaurant.getMenu().get(0);
+        cartService.addItem(cart, selectedRestaurant, dish, qty);
+    }
+
+
     @Then("the selected slot can accept the current cart")
     public void the_selected_slot_can_accept_the_current_cart() {
         assertNotNull(capturedFirstSlot, "No slot captured");
@@ -318,5 +344,23 @@ public class OrderBackendSteps {
         assertNotNull(capturedFirstSlot, "No slot captured");
         int qty = cart == null || cart.getItems() == null ? 0 : cart.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
         assertFalse(capturedFirstSlot.canFit(qty), "Expected slot to reject quantity " + qty);
+    }
+
+    @Then("the slot list should contain the first slot")
+    public void the_slot_list_should_contain_the_first_slot() {
+        assertNotNull(capturedFirstSlot, "No first slot captured");
+        assertNotNull(lastQueriedSlots, "No slots were queried");
+        boolean present = lastQueriedSlots.stream()
+                .anyMatch(s -> s.getStart().equals(capturedFirstSlot.getStart()));
+        assertTrue(present, "Expected the first slot to be present");
+    }
+
+    @Then("the slot list should NOT contain the first slot")
+    public void the_slot_list_should_not_contain_the_first_slot() {
+        assertNotNull(capturedFirstSlot, "No first slot captured");
+        assertNotNull(lastQueriedSlots, "No slots were queried");
+        boolean present = lastQueriedSlots.stream()
+                .anyMatch(s -> s.getStart().equals(capturedFirstSlot.getStart()));
+        assertFalse(present, "Expected the first slot to be absent");
     }
 }

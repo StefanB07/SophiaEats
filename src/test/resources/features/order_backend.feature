@@ -102,3 +102,28 @@ Feature: Order flow (backend-only)
     And I add 1 dish from the restaurant to the cart
     When I place an order to location "Bât A" for the next available slot
     Then the order is rejected with an error "DELIVERY_SLOT_CAPACITY_EXCEEDED"
+
+  Scenario: Slot list is filtered dynamically when cart exceeds capacity
+    Given I am a Campus User
+    And I have an empty cart
+    And I choose restaurant "Restaurant A"
+    And I cap the first delivery slot capacity to 5
+    And I add 1 dish from the restaurant to the cart
+    When I query available slots
+    Then the slot list should contain the first slot
+    When I add 5 more dish from the restaurant to the cart
+    And I query available slots
+    Then the slot list should NOT contain the first slot
+
+  Scenario: Slot list remains when cart is within capacity
+    Given I am a Campus User
+    And I have an empty cart
+    And I choose restaurant "Restaurant A"
+    And I cap the first delivery slot capacity to 5
+    And I add 2 dish from the restaurant to the cart
+    When I query available slots
+    Then the slot list should contain the first slot
+    When I add 2 more dish from the restaurant to the cart
+    And I query available slots
+    Then the slot list should contain the first slot
+

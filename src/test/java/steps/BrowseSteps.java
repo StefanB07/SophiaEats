@@ -1,29 +1,31 @@
+// java
 package steps;
 
 import bootstrap.DataSeeder;
-import domain.*;
+import domain.Dish;
+import domain.Restaurant;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import repository.*;
-import service.CartService;
+import repository.CampusUserRepository;
+import repository.CartRepository;
+import repository.DeliveryCatalogRepository;
+import repository.OrderRepository;
+import repository.RestaurantRepository;
 import service.OrderService;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BrowseSteps {
-    // Backend context per scenario
-    private CampusUserRepository users;
+    // Minimal backend context for browsing + the “cannot order” check
     private RestaurantRepository restaurants;
     private CartRepository carts;
-    private OrderRepository orders;
     private DeliveryCatalogRepository delivery;
-
-    private CartService cartService;
     private OrderService orderService;
 
     private boolean loggedIn;
@@ -32,14 +34,15 @@ public class BrowseSteps {
 
     @Before
     public void setup() {
-        users = new CampusUserRepository();
+        // Repos needed to seed demo data
+        var users = new CampusUserRepository();
         restaurants = new RestaurantRepository();
         carts = new CartRepository();
-        orders = new OrderRepository();
+        var orders = new OrderRepository();
         delivery = new DeliveryCatalogRepository();
+
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
 
-        cartService = new CartService(carts, restaurants);
         orderService = new OrderService(delivery, restaurants);
 
         loggedIn = false;
@@ -48,55 +51,55 @@ public class BrowseSteps {
     }
 
     @Given("I am not logged in")
-    public void i_am_not_logged_in() { loggedIn = false; }
+    public void i_am_not_logged_in() {
+        loggedIn = false;
+    }
 
     @Given("I am logged in")
-    public void i_am_logged_in() { loggedIn = true; }
+    public void i_am_logged_in() {
+        loggedIn = true;
+    }
 
     @When("I access SophiaTech Eats")
     public void i_access_sophiatech_eats() {
         listedRestaurants = new ArrayList<>(restaurants.findAll());
-        listedDishes = new ArrayList<>();
-        for (Restaurant r : listedRestaurants) {
-            listedDishes.addAll(r.getMenu());
-        }
-    }
-
-    @Then("I can list restaurants and dishes")
-    public void i_can_list_restaurants_and_dishes() {
-        assertNotNull(listedRestaurants);
-        assertTrue(listedRestaurants.size() > 0, "No restaurants available");
-        assertNotNull(listedDishes);
-        assertTrue(listedDishes.size() > 0, "No dishes available");
-    }
-
-    @Then("I cannot place an order without selecting items")
-    public void i_cannot_place_an_order_without_selecting_items() {
-        Cart cart = carts.createCart();
-        Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> orderService.placeOrder(cart, "Bât A", java.time.LocalDateTime.now().plusMinutes(30)));
-        assertTrue(ex.getMessage().toLowerCase().contains("cart"));
+        assertFalse(listedRestaurants.isEmpty(), "No restaurants available");
     }
 
     @When("I browse restaurant menus")
     public void i_browse_restaurant_menus() {
-        listedRestaurants = new ArrayList<>(restaurants.findAll());
+        if (listedRestaurants == null || listedRestaurants.isEmpty()) {
+            listedRestaurants = new ArrayList<>(restaurants.findAll());
+        }
         listedDishes = new ArrayList<>();
         for (Restaurant r : listedRestaurants) {
             listedDishes.addAll(r.getMenu());
         }
+        assertFalse(listedDishes.isEmpty(), "No dishes available");
     }
 
-    @Then("I see dishes with names and prices")
-    public void i_see_dishes_with_names_and_prices() {
+    @Then("I see all dish information including tags and prices.")
+    public void i_see_all_dish_information_including_tags_and_prices() {
         assertFalse(listedDishes.isEmpty(), "No dishes loaded");
-        assertTrue(listedDishes.stream().allMatch(d -> d.getName() != null && !d.getName().isBlank()), "Dish without name");
-        assertTrue(listedDishes.stream().allMatch(d -> d.getPrice() > 0), "Dish without positive price");
-    }
-
-    @Then("at least one dish has dietary tags")
-    public void at_least_one_dish_has_dietary_tags() {
+        assertTrue(listedDishes.stream().allMatch(d ->
+                d.getName() != null && !d.getName().isBlank()
+                        && d.getDescription() != null && !d.getDescription().isBlank()
+                        && d.getPrice() > 0), "Dish missing name/description or non-positive price");
         boolean anyWithTags = listedDishes.stream().anyMatch(d -> d.getDietaryTags() != null && !d.getDietaryTags().isEmpty());
         assertTrue(anyWithTags, "Expected at least one dish to have dietary tags");
+    }
+
+    @Then("I can see dishes from restaurants but cannot order.")
+    public void i_can_see_dishes_but_cannot_order() {
+        assertNotNull(listedRestaurants);
+        assertFalse(listedRestaurants.isEmpty(), "No restaurants available");
+        listedDishes = new ArrayList<>();
+        for (Restaurant r : listedRestaurants) listedDishes.addAll(r.getMenu());
+        assertFalse(listedDishes.isEmpty(), "No dishes available");
+
+        var cart = carts.createCart();
+        Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> orderService.placeOrder(cart, "Bât A", LocalDateTime.now().plusMinutes(30)));
+        assertTrue(ex.getMessage().toLowerCase().contains("cart"));
     }
 }
