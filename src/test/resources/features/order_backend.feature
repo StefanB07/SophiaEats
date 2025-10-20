@@ -103,7 +103,7 @@ Feature: Order flow (backend-only)
     When I place an order to location "Bât A" for the next available slot
     Then the order is rejected with an error "DELIVERY_SLOT_CAPACITY_EXCEEDED"
 
-  Scenario: Slot list is filtered dynamically when cart exceeds capacity
+  Scenario: Slot list recalculation after adding item
     Given I am a Campus User
     And I have an empty cart
     And I choose restaurant "Restaurant A"
@@ -127,3 +127,17 @@ Feature: Order flow (backend-only)
     And I query available slots
     Then the slot list should contain the first slot
 
+  Scenario: Valid order validation
+    Given I am a Campus User
+    And I have items in cart
+    And I choose restaurant "Restaurant A"
+    When I select the first available slot and create order
+    Then system marks order as CREATED and allows payment.
+
+  Scenario: Invalid order validation
+    Given I am a Campus User
+    And I have items in cart
+    And I choose restaurant "Restaurant A"
+    And slot chosen is no longer available
+    When I try to create an order
+    Then system rejects creation and asks to choose another slot

@@ -30,6 +30,7 @@ public class OrderBackendSteps {
     private OrderService orderService;
 
     private Cart cart;
+    private Order order;
     private Restaurant selectedRestaurant;
     private Order lastOrder;
     private Exception lastError;
@@ -63,6 +64,22 @@ public class OrderBackendSteps {
     @Given("I have an empty cart")
     public void i_have_an_empty_cart() { cart = carts.createCart(); }
 
+    @Given("I have items in cart")
+    public void i_have_items_in_cart() {
+        // Ensure a cart exists and a restaurant is chosen (default to "Restaurant A")
+        if (cart == null) {
+            cart = carts.createCart();
+        }
+        if (selectedRestaurant == null) {
+            selectedRestaurant = restaurants.findByName("Restaurant A")
+                    .orElseGet(() -> restaurants.findAll().stream().findFirst().orElseThrow());
+        }
+        // Pick a dish from the selected restaurant and add 1 to the cart
+        assertFalse(selectedRestaurant.getMenu().isEmpty(), "Selected restaurant has no dishes");
+        Dish dish = selectedRestaurant.getMenu().get(0);
+        cartService.addItem(cart, selectedRestaurant, dish, 1);
+    }
+
     @Given("I choose restaurant {string}")
     public void i_choose_restaurant(String name) {
         Optional<Restaurant> r = restaurants.findByName(name);
@@ -87,6 +104,21 @@ public class OrderBackendSteps {
         assertFalse(selectedRestaurant.getMenu().isEmpty(), "Selected restaurant has no dishes");
         Dish dish = selectedRestaurant.getMenu().get(0);
         cartService.addItem(cart, selectedRestaurant, dish, qty);
+    }
+
+    @Given("slot chosen is no longer available")
+    public void slot_chosen_is_no_longer_available() {
+        assertNotNull(selectedRestaurant, "No restaurant selected");
+        var slots = delivery.slotsFor(selectedRestaurant.getId());
+        assertFalse(slots.isEmpty(), "No delivery slots available for restaurant");
+        var slot = slots.get(0);
+        // Exhaust remaining capacity to make the slot unavailable
+        int remaining = slot.getRemainingCapacity();
+        assertTrue(remaining >= 0, "Invalid remaining capacity");
+        if (remaining > 0) {
+            boolean ok = slot.reserve(remaining);
+            assertTrue(ok, "Failed to reserve remaining capacity");
+        }
     }
 
     @When("I place an order to location {string} for the next available slot")
@@ -123,6 +155,22 @@ public class OrderBackendSteps {
             lastOrder = null;
             lastError = e;
         }
+    }
+
+    @When("I select the first available slot and create order")
+    public void i_select_the_first_available_slot_and_create_order() {
+        assertNotNull(selectedRestaurant, "No restaurant selected");
+        var slots = delivery.slotsFor(selectedRestaurant.getId());
+        assertFalse(slots.isEmpty(), "No delivery slots available for restaurant");
+        var when = slots.get(0).getStart();
+        // Use a valid seeded location
+        String place = "Bât A";
+        order = orderService.placeOrder(cart, place, when);
+    }
+
+    @When("I try to create an order")
+    public void i_try_to_create_an_order() {
+        // Intentionally left as no-op; the assertion is performed in the next step.
     }
 
     @Then("the order is rejected with an error")
@@ -245,6 +293,32 @@ public class OrderBackendSteps {
         assertTrue(cart.getItems().isEmpty());
     }
 
+    @Then("system marks order as CREATED and allows payment.")
+    public void system_marks_order_as_created_and_allows_payment() {
+        assertNotNull(order, "Order was not created");
+        assertEquals(OrderStatus.CREATED, order.getStatus(), "Order not in CREATED state");
+        // Verify payment is allowed (simulate EXTERNAL payment)
+        Payment p = orderService.pay(order, PaymentMethod.EXTERNAL, null);
+        assertTrue(p.isSuccess(), "Payment should be accepted");
+        assertEquals(OrderStatus.PAID, order.getStatus(), "Order should be PAID after successful payment");
+    }
+
+    @Then("system rejects creation and asks to choose another slot")
+    public void system_rejects_creation_and_asks_to_choose_another_slot() {
+        assertNotNull(selectedRestaurant, "No restaurant selected");
+        var slots = delivery.slotsFor(selectedRestaurant.getId());
+        assertFalse(slots.isEmpty(), "No delivery slots available for restaurant");
+        var when = slots.get(0).getStart();
+        String place = "Bât A";
+
+        Exception ex = assertThrows(Exception.class, () -> {
+            orderService.placeOrder(cart, place, when);
+        });
+        String msg = ex.getMessage() == null ? "" : ex.getMessage();
+        // Accept either capacity exceeded (slot exists but cannot fit) or no slot available
+        assertTrue("DELIVERY_SLOT_CAPACITY_EXCEEDED".equals(msg) || msg.contains("No delivery slot available"),
+                "Unexpected error: " + msg);
+    }
 
     @Given("I am a Campus User {string} with STUDENT_CREDIT {double}")
     public void i_am_a_campus_user_with_student_credit(String name, Double credit) {
