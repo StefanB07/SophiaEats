@@ -9,7 +9,7 @@ public final class RestaurantFilters {
 
     public static List<Restaurant> filter(Collection<Restaurant> restaurants, FilterCriteria criteria) {
         return restaurants.stream()
-                .filter(r -> !criteria.isOnlyAvailable() || (r.isOpen() && r.hasAvailableCapacity()))
+                .filter(r -> !criteria.isOnlyAvailable() || (r.isOpen() ))
                 .filter(r -> criteria.getCuisineType().isEmpty() ||
                         r.getCuisineType().equalsIgnoreCase(criteria.getCuisineType().get()))
                 .filter(r -> criteria.getDietaryTag().isEmpty() ||

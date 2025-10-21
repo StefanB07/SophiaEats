@@ -41,7 +41,4 @@ public class OrderItem {
                 ", total=" + getTotalPrice() +
                 '}';
     }
-
-    public void addExtraOption(ExtraOption spicyOil) {
-    }
 }

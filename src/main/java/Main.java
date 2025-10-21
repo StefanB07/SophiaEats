@@ -21,6 +21,9 @@ public class Main {
         // Seed demo data
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
 
+        // Pick a default user for the session
+        CampusUser currentUser = users.findAll().isEmpty() ? null : users.findAll().get(0);
+
         // Services
         CartService cartService = new CartService(carts, restaurants);
         OrderService orderService = new OrderService(delivery, restaurants);
@@ -44,6 +47,11 @@ public class Main {
         Cart cart = carts.createCart();
 
         System.out.println("Welcome to SophiaTech Eats (CLI demo)\n");
+        if (currentUser != null) {
+            System.out.println("Logged in as: " + currentUser.getName() + " (" + currentUser.getEmail() + ")");
+        } else {
+            System.out.println("No campus user found. Some payment methods may be unavailable.");
+        }
 
         List<Restaurant> lastResults = new ArrayList<>(restaurants.findAll());
         Restaurant selectedRestaurant = null;
@@ -90,7 +98,7 @@ public class Main {
                         printCart(cart);
                         break;
                     case "6":
-                        placeOrderFlow(cart, orderService, delivery, restaurants, orders);
+                        placeOrderFlow(cart, orderService, delivery, restaurants, orders, currentUser);
                         // After placing, reset cart
                         cart = carts.createCart();
                         selectedRestaurant = null;
@@ -192,7 +200,8 @@ public class Main {
                                        OrderService orderService,
                                        DeliveryCatalogRepository delivery,
                                        RestaurantRepository restaurants,
-                                       OrderRepository orders) {
+                                       OrderRepository orders,
+                                       CampusUser currentUser) {
         if (cart.getItems().isEmpty()) {
             System.out.println("Cart is empty.");
             return;
@@ -219,20 +228,23 @@ public class Main {
         int locIdx = readInt(1, locs.size());
         String place = locs.get(locIdx - 1).getName();
 
-        // Choose a time slot (optional, pick first available if none)
+        // Choose a time slot (show remaining capacity)
         List<DeliverySlot> slots = delivery.slotsFor(fromCart.getId());
         LocalDateTime when;
         if (slots.isEmpty()) {
             when = LocalDateTime.now().plusMinutes(30);
             System.out.println("No predefined slots; using: " + when);
         } else {
-            System.out.println("Available slots:");
+            int totalQty = cart.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
+            System.out.println("Available slots (remaining capacity shown):");
             for (int i = 0; i < slots.size(); i++) {
-                System.out.printf("%d) %s%n", i + 1, slots.get(i).getLabel());
+                DeliverySlot s = slots.get(i);
+                System.out.printf("%d) %s  [remaining=%d]%n", i + 1, s.getLabel(), s.getRemainingCapacity());
             }
             System.out.print("Pick slot: ");
             int slotIdx = readInt(1, slots.size());
             when = slots.get(slotIdx - 1).getStart();
+            // Note: if the chosen slot cannot fit totalQty, OrderService will reject it gracefully
         }
 
         // Place and persist order
@@ -243,27 +255,58 @@ public class Main {
         printCartSummary(order);
         System.out.println("Status: " + order.getStatus());
 
-        // Payment simulation using backend logic (attaches Payment and sets paidAt)
-        try {
-            var payment = orderService.pay(order, PaymentMethod.EXTERNAL, null);
-            orders.save(order);
-            System.out.println("Payment processed via " + payment.getMethod() + ": " + (payment.isSuccess() ? "ACCEPTED" : "DECLINED"));
-            System.out.println("Status -> " + order.getStatus() + (order.getPaidAt() != null ? (" at " + order.getPaidAt()) : ""));
-        } catch (Exception e) {
-            System.out.println("Payment failed: " + e.getMessage());
+        // Payment: loop until success or user opts out
+        boolean paid = false;
+        while (!paid) {
+            PaymentMethod method = choosePaymentMethod();
+            try {
+                if (method == PaymentMethod.STUDENT_CREDIT) {
+                    if (currentUser == null) {
+                        System.out.println("No logged user available for STUDENT_CREDIT. Falling back to EXTERNAL.");
+                        method = PaymentMethod.EXTERNAL;
+                    } else if (currentUser.getStudentCredit() == null) {
+                        System.out.print("Enter initial student credit budget (e.g., 100): ");
+                        double budget = readDoubleMin(0);
+                        currentUser.assignStudentCredit(new StudentCredit(budget));
+                    }
+                }
+                var payment = orderService.pay(order, method, currentUser);
+                orders.save(order);
+                System.out.println("Payment processed via " + payment.getMethod() + ": " + (payment.isSuccess() ? "ACCEPTED" : "DECLINED"));
+                System.out.println("Status -> " + order.getStatus() + (order.getPaidAt() != null ? (" at " + order.getPaidAt()) : ""));
+                paid = payment.isSuccess();
+            } catch (Exception e) {
+                System.out.println("Payment failed: " + e.getMessage());
+                System.out.print("Try another payment method? (y/N): ");
+                String retry = in.nextLine().trim();
+                if (!(retry.equalsIgnoreCase("y") || retry.equalsIgnoreCase("yes"))) {
+                    System.out.println("Leaving order in CREATED status. You can retry payment later.");
+                    break;
+                }
+            }
         }
 
-        // Optional immediate delivery
-        System.out.print("Mark as delivered now? (y/N): ");
-        String ans = in.nextLine().trim();
-        if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
-            try {
-                orderService.markAsDelivered(order);
-                orders.save(order);
-                System.out.println("Order delivered. Status -> " + order.getStatus() + (order.getDeliveredAt() != null ? (" at " + order.getDeliveredAt()) : ""));
-            } catch (Exception e) {
-                System.out.println("Cannot mark delivered: " + e.getMessage());
+        // Show remaining capacity of chosen slot after reservation (reservation happens at order creation)
+        delivery.findSlot(fromCart.getId(), slots.isEmpty() ? "" : slots.stream()
+                .filter(s -> s.getStart().equals(when))
+                .findFirst().map(DeliverySlot::getLabel).orElse(""))
+                .ifPresent(s -> System.out.println("Slot '" + s.getLabel() + "' remaining capacity: " + s.getRemainingCapacity()));
+
+        // Offer delivery update only if paid
+        if (order.getStatus() == OrderStatus.PAID) {
+            System.out.print("Mark as delivered now? (y/N): ");
+            String ans = in.nextLine().trim();
+            if (ans.equalsIgnoreCase("y") || ans.equalsIgnoreCase("yes")) {
+                try {
+                    orderService.markAsDelivered(order);
+                    orders.save(order);
+                    System.out.println("Order delivered. Status -> " + order.getStatus() + (order.getDeliveredAt() != null ? (" at " + order.getDeliveredAt()) : ""));
+                } catch (Exception e) {
+                    System.out.println("Cannot mark delivered: " + e.getMessage());
+                }
             }
+        } else {
+            System.out.println("Order not paid. Skipping delivery step.");
         }
     }
 
@@ -286,6 +329,26 @@ public class Main {
                 System.out.print("Enter a number between " + min + " and " + max + ": ");
             }
         }
+    }
+
+    private static double readDoubleMin(double min) {
+        while (true) {
+            String s = in.nextLine().trim();
+            try {
+                double v = Double.parseDouble(s);
+                if (v < min) throw new NumberFormatException();
+                return v;
+            } catch (NumberFormatException e) {
+                System.out.print("Enter a number >= " + min + ": ");
+            }
+        }
+    }
+
+    private static PaymentMethod choosePaymentMethod() {
+        System.out.println("Payment method: 1) EXTERNAL  2) STUDENT_CREDIT");
+        System.out.print("Pick: ");
+        int pick = readInt(1, 2);
+        return pick == 2 ? PaymentMethod.STUDENT_CREDIT : PaymentMethod.EXTERNAL;
     }
 
     private static Restaurant deriveRestaurantFromCart(Cart cart, RestaurantRepository restaurants) {

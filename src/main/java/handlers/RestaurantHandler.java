@@ -155,7 +155,7 @@ public class RestaurantHandler extends BaseHandler {
         if (params.containsKey("available")) criteria.setOnlyAvailable(Boolean.parseBoolean(params.get("available")));
 
         List<Restaurant> filtered = repo.findAll().stream()
-                .filter(r -> !criteria.isOnlyAvailable() || (r.isOpen() && r.hasAvailableCapacity()))
+                .filter(r -> !criteria.isOnlyAvailable() || (r.isOpen()))
                 .filter(r -> criteria.getCuisineType().isEmpty() ||
                         r.getCuisineType().equalsIgnoreCase(criteria.getCuisineType().get()))
                 .filter(r -> criteria.getDietaryTag().isEmpty() ||
