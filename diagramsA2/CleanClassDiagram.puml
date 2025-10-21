@@ -1,0 +1,120 @@
+@startuml
+Title SophiaTech Eats — Domain (Clean)
+
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam dpi 140
+
+
+' ==== Enums (as in code) ====
+
+enum DishCategory {
+  STARTER
+  MAIN_COURSE
+  DESSERT
+  DRINK
+}
+
+enum OrderStatus {
+  CREATED
+  PAID
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  EXTERNAL
+  STUDENT_CREDIT
+}
+
+' ==== Core domain ====
+class CampusUser {
+  +name;
+  +email;
+}
+class StudentCredit {
+  +budget;
+}
+class Allergy {
+  +label;
+}
+
+
+class Cart {
+  +createdAt;
+}
+class Order {
+  +createdAt;
+  +status: OrderStatus;
+}
+class OrderItem {
+  +quantity;
+}
+class Payment {
+  +amount;
+  +method: PaymentMethod;
+}
+
+
+class Restaurant {
+  +name;
+  +cuisineType;
+  +priceRange;
+}
+class DeliverySlot {
+  +startTime;
+  +capacity;
+}
+class DeliveryLocation {
+  +name;
+}
+
+
+class Dish {
+  +name;
+  +price;
+  +category: DishCategory;
+}
+class ExtraOption {
+  +name;
+  +price;
+}
+class DietaryTag {
+  +label;
+}
+
+
+' ==== Associations (clean) ====
+CampusUser "1" o-- "0..1" StudentCredit : owns
+CampusUser "0..*" -- "0..*" Allergy : has
+
+
+' Show the **current cart** as a derived association (even if stored in session/repo)
+CampusUser "1" -- "0..1" Cart : currentCart {derived}
+
+
+Cart "1" -- "0..*" OrderItem : contains
+Cart ..> Order : converts to
+
+
+CampusUser "1" -- "0..*" Order : orderHistory
+Order "1" -- "1..*" OrderItem : contains
+OrderItem "1" -- "1" Dish : itemOf
+OrderItem "0..*" -- "0..*" ExtraOption : options
+Order "1" -- "0..1" Payment : paidBy
+
+
+Restaurant "1" o-- "1..*" Dish : offers
+Restaurant "1" o-- "1..*" DeliverySlot : defines
+
+
+Order "1" -- "1" DeliverySlot : scheduledIn
+Order "1" -- "1" DeliveryLocation : deliversTo
+
+
+Dish "0..*" -- "0..*" DietaryTag : tags
+Dish "0..*" o-- "0..*" ExtraOption : extraOptions
+
+
+@enduml
