@@ -12,6 +12,8 @@ public class Cart {
     private final String id;
     private LocalDateTime createdAt;
     private List<OrderItem> items;
+    // Optional owner association (null for anonymous)
+    private String ownerUserId;
 
     public Cart() {
         this.id = UUID.randomUUID().toString();
@@ -43,6 +45,10 @@ public class Cart {
     public String getId() {
         return id;
     }
+
+    // --- Owner association (optional) ---
+    public String getOwnerUserId() { return ownerUserId; }
+    public void setOwnerUserId(String ownerUserId) { this.ownerUserId = ownerUserId; }
 
     @Override
     public String toString() {

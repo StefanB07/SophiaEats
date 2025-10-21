@@ -65,9 +65,9 @@ public final class DataSeeder {
         dishB.addDietaryTag(DietaryTag.VEGAN);
         restB.addDishToMenu(dishB);
 
-        Dish soba = new Dish("Soba",
+        Dish soba = new Dish("Udon",
                 "Buckwheat noodles",
-                9.0, DishCategory.MAIN_COURSE, "Vegan");
+                12.0, DishCategory.MAIN_COURSE, "Vegan");
         soba.addDietaryTag(DietaryTag.VEGAN);
         restB.addDishToMenu(soba);
 
