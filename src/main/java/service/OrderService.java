@@ -5,10 +5,7 @@ import repository.DeliveryCatalogRepository;
 import repository.RestaurantRepository;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -21,16 +18,44 @@ public class OrderService {
     private final DeliveryCatalogRepository delivery;     // validate delivery locations and slots
     private final RestaurantRepository restaurants;       // determine the source restaurant for each dish
 
+    // Strategy registry for payments
+    private final Map<PaymentMethod, PaymentProcessor> paymentProcessors = new EnumMap<>(PaymentMethod.class);
+
     // Preferred constructor (with dependencies)
     public OrderService(DeliveryCatalogRepository delivery, RestaurantRepository restaurants) {
         this.delivery = Objects.requireNonNull(delivery);
         this.restaurants = Objects.requireNonNull(restaurants);
+        initDefaultPaymentProcessors();
     }
 
     // Legacy constructor for compatibility; will not perform the newer validations
     public OrderService() {
         this.delivery = null;
         this.restaurants = null;
+        initDefaultPaymentProcessors();
+    }
+
+    private void initDefaultPaymentProcessors() {
+        // External payment: simulate success
+        paymentProcessors.put(PaymentMethod.EXTERNAL, new ExternalPaymentProcessor());
+
+        // Student credit payment: validate and debit credit
+        paymentProcessors.put(PaymentMethod.STUDENT_CREDIT, (order, user) -> {
+            if (user == null || user.getStudentCredit() == null) {
+                throw new IllegalArgumentException("INSUFFICIENT_CREDIT");
+            }
+            double amount = order.getTotal();
+            if (user.getStudentCredit().getBudget() < amount) {
+                throw new IllegalArgumentException("INSUFFICIENT_CREDIT");
+            }
+            user.getStudentCredit().setBudget(user.getStudentCredit().getBudget() - amount);
+            Payment p = new Payment(PaymentMethod.STUDENT_CREDIT, amount);
+            p.setSuccess(true);
+            order.setPayment(p);
+            order.setStatus(OrderStatus.PAID);
+            order.setPaidAt(java.time.LocalDateTime.now());
+            return p;
+        });
     }
 
     public Order placeOrder(Cart cart, String deliveryPlace, LocalDateTime deliveryTime) {
@@ -96,30 +121,15 @@ public class OrderService {
 
     /**
      * Create and process a Payment for the given order using the given method.
-     * For EXTERNAL, processing is simulated and always accepted.
-     * For CREDIT, verifies the user's balance before debiting.
+     * Delegates to a PaymentProcessor strategy registered for the method.
      * On success: attaches payment, sets PAID status and paidAt timestamp.
      */
     public Payment pay(Order order, PaymentMethod method, CampusUser user) {
-        double amount = order.getTotal();
-        Payment payment = new Payment(method, amount);
-
-        if (method == PaymentMethod.STUDENT_CREDIT) {
-            if (user.getStudentCredit() == null || user.getStudentCredit().getBudget() < amount) {
-                throw new IllegalArgumentException("INSUFFICIENT_CREDIT");
-            }
-            user.getStudentCredit().setBudget(user.getStudentCredit().getBudget() - amount);
-            payment.setSuccess(true);
-        } else { // EXTERNAL
-            payment.setSuccess(true);
+        PaymentProcessor processor = paymentProcessors.get(method);
+        if (processor == null) {
+            throw new UnsupportedOperationException("No payment processor for method: " + method);
         }
-
-        order.setPayment(payment);
-        if (payment.isSuccess()) {
-            order.setStatus(OrderStatus.PAID);
-            order.setPaidAt(java.time.LocalDateTime.now());
-        }
-        return payment;
+        return processor.process(order, user);
     }
 
     /** Mark order as DELIVERED if it is in PAID state, and set deliveredAt. */
@@ -155,5 +165,24 @@ public class OrderService {
             throw new IllegalStateException("Dish not found in any restaurant menu: " + dish.getName());
         }
         return found.get();
+    }
+
+    // === Strategy pattern (minimal, inlined) ===
+    @FunctionalInterface
+    public interface PaymentProcessor {
+        Payment process(Order order, CampusUser user);
+    }
+
+    public static class ExternalPaymentProcessor implements PaymentProcessor {
+        @Override
+        public Payment process(Order order, CampusUser user) {
+            double amount = order.getTotal();
+            Payment payment = new Payment(PaymentMethod.EXTERNAL, amount);
+            payment.setSuccess(true);
+            order.setPayment(payment);
+            order.setStatus(OrderStatus.PAID);
+            order.setPaidAt(java.time.LocalDateTime.now());
+            return payment;
+        }
     }
 }

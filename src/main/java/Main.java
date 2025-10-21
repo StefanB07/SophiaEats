@@ -25,6 +25,21 @@ public class Main {
         CartService cartService = new CartService(carts, restaurants);
         OrderService orderService = new OrderService(delivery, restaurants);
 
+        // Use the Cart observer to recompute available slots after each add
+        cartService.addListener((updatedCart, restaurant) -> {
+            if (restaurant == null) return;
+            int qty = updatedCart.getItems() == null ? 0 : updatedCart.getItems().stream()
+                    .mapToInt(OrderItem::getQuantity)
+                    .sum();
+            var slots = delivery.slotsFor(restaurant.getId());
+            var available = new ArrayList<DeliverySlot>();
+            for (DeliverySlot s : slots) {
+                if (s.canFit(qty)) available.add(s);
+            }
+            System.out.println("[Observer] Available slots for " + restaurant.getName() + " and qty " + qty + ": "
+                    + (available.isEmpty() ? "none" : available.size()));
+        });
+
         // Working state
         Cart cart = carts.createCart();
 
