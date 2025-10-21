@@ -56,13 +56,14 @@ public class Restaurant {
 
     public void setOpen(boolean open) { this.open = open; }
 
-    public boolean hasAvailableCapacity() {
-        // If closed, capacity is irrelevant (treated as unavailable)
-        if (!open) return false;
-        if (deliverySlots == null || deliverySlots.isEmpty()) return true;
-        LocalDateTime now = LocalDateTime.now();
-        return deliverySlots.stream().anyMatch(s -> s.getStart().isAfter(now));
-    }
+    // @deprecated because isOpen() covers this IDENTICALLY
+//    public boolean hasAvailableCapacity() {
+//        // If closed, capacity is irrelevant (treated as unavailable)
+//        if (!open) return false;
+//        if (deliverySlots == null || deliverySlots.isEmpty()) return true;
+//        LocalDateTime now = LocalDateTime.now();
+//        return deliverySlots.stream().anyMatch(s -> s.getStart().isAfter(now));
+//    }
 
     public boolean offersDietaryTag(String tagLabel) {
         if (tagLabel == null || tagLabel.isBlank()) return false;

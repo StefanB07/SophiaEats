@@ -113,11 +113,11 @@ public class OrderService {
 
     // --- Payment & lifecycle helpers ---
 
-    /** Legacy simulation hook. Prefer pay(order, method) for full flow. */
-    public boolean tempExternalPayment(Order order) {
-        Objects.requireNonNull(order, "order");
-        return true; // always approved for now
-    }
+//    /** Legacy simulation hook. Prefer pay(order, method) for full flow. */
+//    public boolean tempExternalPayment(Order order) {
+//        Objects.requireNonNull(order, "order");
+//        return true; // always approved for now
+//    }
 
     /**
      * Create and process a Payment for the given order using the given method.
