@@ -101,61 +101,25 @@ public class OrderService {
      * On success: attaches payment, sets PAID status and paidAt timestamp.
      */
     public Payment pay(Order order, PaymentMethod method, CampusUser user) {
-        Objects.requireNonNull(order, "order");
-        Objects.requireNonNull(method, "method");
-        if (order.getStatus() != OrderStatus.CREATED) {
-            throw new IllegalStateException("Order not in CREATED state");
-        }
-
-        Payment payment = new Payment(method, order.getTotal());
+        double amount = order.getTotal();
+        Payment payment = new Payment(method, amount);
 
         if (method == PaymentMethod.STUDENT_CREDIT) {
-            if (user == null || user.getStudentCredit() == null) {
-                throw new IllegalStateException("NO_STUDENT_CREDIT_ACCOUNT");
+            if (user.getStudentCredit() == null || user.getStudentCredit().getBudget() < amount) {
+                throw new IllegalArgumentException("INSUFFICIENT_CREDIT");
             }
-
-            Double budget = user.getStudentCredit().getBudget();
-            Double total = order.getTotal();
-
-            if (budget.compareTo(total) < 0) {
-                throw new IllegalStateException("INSUFFICIENT_CREDIT");
-            }
-
-            // Debit the user's credit
-            double newBudget = budget - total;
-
-            // Mark payment as successful and attach to order
-            payment.process(user);
-            if (payment.isSuccess()) {
-                order.setPayment(payment);
-                order.setStatus(OrderStatus.PAID);
-                order.setPaidAt(LocalDateTime.now());
-            }
-
-            user.getStudentCredit().setBudget(newBudget);
-
-            return payment;
+            user.getStudentCredit().setBudget(user.getStudentCredit().getBudget() - amount);
+            payment.setSuccess(true);
+        } else { // EXTERNAL
+            payment.setSuccess(true);
         }
 
-        // Default: EXTERNAL payment path
-        payment.process(user);
+        order.setPayment(payment);
         if (payment.isSuccess()) {
-            order.setPayment(payment);
             order.setStatus(OrderStatus.PAID);
-            order.setPaidAt(LocalDateTime.now());
+            order.setPaidAt(java.time.LocalDateTime.now());
         }
         return payment;
-    }
-
-
-    /** Mark order as PAID if it is in CREATED state, and set paidAt. */
-    public void markAsPaid(Order order) {
-        Objects.requireNonNull(order, "order");
-        if (order.getStatus() != OrderStatus.CREATED) {
-            throw new IllegalStateException("Order not in CREATED state");
-        }
-        order.setStatus(OrderStatus.PAID);
-        order.setPaidAt(LocalDateTime.now());
     }
 
     /** Mark order as DELIVERED if it is in PAID state, and set deliveredAt. */

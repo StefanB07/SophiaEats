@@ -12,6 +12,9 @@ public class CampusUser {
     private StudentCredit studentCredit;
     private List<Allergy> allergies;
 
+    // NEW: simple order history to record user's orders/payments
+    private List<Order> orders;
+
     public CampusUser(String name, String email, String country) {
         this.id = UUID.randomUUID().toString();
         this.name = name;
@@ -19,6 +22,7 @@ public class CampusUser {
         this.country = country;
         this.studentCredit = null; // se poate atașa ulterior
         this.allergies = new ArrayList<>();
+        this.orders = new ArrayList<>();
     }
 
     public String getId() {
@@ -61,6 +65,17 @@ public class CampusUser {
     public boolean hasAllergy(String label) {
         return allergies.stream()
                 .anyMatch(a -> a.getLabel().equalsIgnoreCase(label));
+    }
+
+    // === Orders ===
+    public void addOrder(Order order) {
+        if (order != null) {
+            orders.add(order);
+        }
+    }
+
+    public List<Order> getOrders() {
+        return new ArrayList<>(orders);
     }
 
     @Override

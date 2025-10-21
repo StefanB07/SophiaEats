@@ -1,4 +1,4 @@
-Feature: Order payment and STUDENT_CREDIT handling
+Feature: Order payment with STUDENT_CREDIT
 
   Background:
     Given a fresh backend context
