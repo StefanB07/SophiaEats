@@ -8,7 +8,6 @@ skinparam dpi 140
 
 
 ' ==== Enums (as in code) ====
-
 enum DishCategory {
   STARTER
   MAIN_COURSE
@@ -28,60 +27,66 @@ enum PaymentMethod {
   STUDENT_CREDIT
 }
 
+enum DietaryTag {
+    VEGAN
+    VEGETARIAN
+    GLUTEN_FREE
+    LACTOSE_FREE
+}
+
+
 ' ==== Core domain ====
 class CampusUser {
-  +name;
-  +email;
+  name;
+  email;
 }
 class StudentCredit {
-  +budget;
+  budget;
 }
 class Allergy {
-  +label;
+  label;
 }
 
 
 class Cart {
-  +createdAt;
+  createdAt;
 }
 class Order {
-  +createdAt;
-  +status: OrderStatus;
+  createdAt;
+  status: OrderStatus;
 }
 class OrderItem {
-  +quantity;
+  quantity;
 }
 class Payment {
-  +amount;
-  +method: PaymentMethod;
+  amount;
+  method: PaymentMethod;
 }
 
 
 class Restaurant {
-  +name;
-  +cuisineType;
-  +priceRange;
+  name;
+  cuisineType;
+  priceRange;
 }
 class DeliverySlot {
-  +startTime;
-  +capacity;
+  startTime;
+  capacity;
 }
 class DeliveryLocation {
-  +name;
+  name;
 }
 
 
 class Dish {
-  +name;
-  +price;
-  +category: DishCategory;
+  name;
+  price;
+  category: DishCategory;
+  tag: DietaryTag;
 }
 class ExtraOption {
-  +name;
-  +price;
-}
-class DietaryTag {
-  +label;
+  name;
+  price;
 }
 
 
@@ -112,9 +117,6 @@ Restaurant "1" o-- "1..*" DeliverySlot : defines
 Order "1" -- "1" DeliverySlot : scheduledIn
 Order "1" -- "1" DeliveryLocation : deliversTo
 
-
-Dish "0..*" -- "0..*" DietaryTag : tags
 Dish "0..*" o-- "0..*" ExtraOption : extraOptions
-
 
 @enduml
