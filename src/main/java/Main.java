@@ -44,7 +44,9 @@ public class Main {
         });
 
         // Working state
-        Cart cart = carts.createCart();
+        Cart cart = (currentUser != null)
+                ? cartService.getOrCreateCart(currentUser)
+                : carts.createCart();
 
         System.out.println("Welcome to SophiaTech Eats (CLI demo)\n");
         if (currentUser != null) {
@@ -99,8 +101,10 @@ public class Main {
                         break;
                     case "6":
                         placeOrderFlow(cart, orderService, delivery, restaurants, orders, currentUser);
-                        // After placing, reset cart
-                        cart = carts.createCart();
+                        // After placing: cart is cleared by placeOrder. For logged-in users we keep the same cart object.
+                        if (currentUser == null) {
+                            cart = carts.createCart();
+                        }
                         selectedRestaurant = null;
                         break;
                     case "0":

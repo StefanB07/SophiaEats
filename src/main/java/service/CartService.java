@@ -4,6 +4,7 @@ import domain.Cart;
 import domain.Dish;
 import domain.OrderItem;
 import domain.Restaurant;
+import domain.CampusUser;
 import repository.CartRepository;
 import repository.RestaurantRepository;
 
@@ -20,6 +21,12 @@ public class CartService {
     public CartService(CartRepository carts, RestaurantRepository restaurants) {
         this.carts = carts;
         this.restaurants = restaurants;
+    }
+
+    // New: per-user cart helper
+    public Cart getOrCreateCart(CampusUser user) {
+        if (user == null) return carts.createCart();
+        return carts.getOrCreateForUserId(user.getId());
     }
 
     public void addItem(Cart cart, Restaurant restaurant, Dish dish, int qty) {
