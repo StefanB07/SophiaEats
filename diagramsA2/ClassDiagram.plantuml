@@ -8,7 +8,6 @@ enum DishCategory {
     DESSERT
     DRINK
 }
-' DRAFT status is removed, as the Cart now serves this purpose.
 enum OrderStatus {
     VALIDATED
     PAID
@@ -19,13 +18,11 @@ enum PaymentMethod {
     STUDENT_CREDIT
 }
 
-' ===== New class for anonymous session =====
 class Cart {
 +createdAt: DateTime
 +isRegistered: Boolean
 }
 
-' ===== Core domain classes (glossary-aligned) =====
 class CampusUser {
 +name: String
 +email: String
