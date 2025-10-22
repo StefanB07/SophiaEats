@@ -10,7 +10,6 @@ public class CampusUser {
     private String email;
     private String country;
     private StudentCredit studentCredit;
-    private List<Allergy> allergies;
 
     // NEW: simple order history to record user's orders/payments
     private List<Order> orders;
@@ -21,7 +20,6 @@ public class CampusUser {
         this.email = email;
         this.country = country;
         this.studentCredit = null; // se poate atașa ulterior
-        this.allergies = new ArrayList<>();
         this.orders = new ArrayList<>();
     }
 
@@ -53,20 +51,6 @@ public class CampusUser {
         this.studentCredit = studentCredit;
     }
 
-    // === Allergies ===
-    public void addAllergy(Allergy allergy) {
-        allergies.add(allergy);
-    }
-
-    public List<Allergy> getAllergies() {
-        return allergies;
-    }
-
-    public boolean hasAllergy(String label) {
-        return allergies.stream()
-                .anyMatch(a -> a.getLabel().equalsIgnoreCase(label));
-    }
-
     // === Orders ===
     public void addOrder(Order order) {
         if (order != null) {
@@ -84,7 +68,6 @@ public class CampusUser {
                 "name='" + name + '\'' +
                 ", email='" + email + '\'' +
                 ", studentCredit=" + studentCredit +
-                ", allergies=" + allergies +
                 '}';
     }
 

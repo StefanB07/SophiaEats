@@ -23,7 +23,7 @@ public class CartService {
         this.restaurants = restaurants;
     }
 
-    // New: per-user cart helper
+    // per-user cart helper
     public Cart getOrCreateCart(CampusUser user) {
         if (user == null) return carts.createCart();
         return carts.getOrCreateForUserId(user.getId());
@@ -36,7 +36,7 @@ public class CartService {
         notifyItemAdded(cart, restaurant);
     }
 
-    // ---- Observer API (minimal) ----
+    // ---- Observer minimal api ----
     public interface CartListener {
         void onItemAdded(Cart cart, Restaurant restaurant);
         default void onCleared(Cart cart) { }
