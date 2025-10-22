@@ -1,86 +1,68 @@
 @startuml
-title SophiaTech Eats — Domain Class Diagram (code-accurate)
+title SophiaTech Eats — Domain Class Diagram (Clean)
 
 skinparam classAttributeIconSize 0
 skinparam dpi 140
 skinparam shadowing false
 
-' ===== Enums (as in code) =====
+' ==== Enums ====
 enum DishCategory {
-  STARTER
-  MAIN_COURSE
-  DESSERT
-  DRINK
+STARTER
+MAIN_COURSE
+DESSERT
+DRINK
 }
-
 enum OrderStatus {
-  CREATED
-  PAID
-  DELIVERED
-  CANCELLED
+CREATED
+PAID
+DELIVERED
+CANCELLED
 }
-
 enum PaymentMethod {
-  EXTERNAL
-  STUDENT_CREDIT
+EXTERNAL
+STUDENT_CREDIT
 }
-
 enum DietaryTag {
-  VEGAN
-  VEGETARIAN
-  GLUTEN_FREE
-  LACTOSE_FREE
-  NUT_FREE
+VEGAN
+VEGETARIAN
+GLUTEN_FREE
+LACTOSE_FREE
 }
 
-' ===== Classes (from current code) =====
+' ==== Core domain only essential attributes ====
 class CampusUser {
   - id: String
   - name: String
   - email: String
   - country: String
   - studentCredit: StudentCredit
-  - allergies: List<Allergy>
-  - orders: List<Order>
 }
-
 class StudentCredit {
-  - budget: double
-  - blocked: boolean
-}
-
-class Allergy {
-  - label: String
+ - budget: double
+ - blocked: boolean
 }
 
 class Cart {
-  - id: String
-  - createdAt: LocalDateTime
-  - items: List<OrderItem>
+- id: String
+- createdAt: LocalDateTime
 }
 
 class Order {
   - id: String
   - createdAt: LocalDateTime
-  - items: List<OrderItem>
-  - deliveryPlace: String
-  - deliveryTime: LocalDateTime
   - total: double
   - status: OrderStatus
-  - payment: Payment
   - paidAt: LocalDateTime
   - deliveredAt: LocalDateTime
 }
 
 class OrderItem {
-  - dish: Dish
-  - quantity: int
-  - extraOptions: List<ExtraOption>
+- quantity: int
 }
 
 class Payment {
-  - method: PaymentMethod
   - amount: double
+  - method: PaymentMethod
   - success: boolean
   - provider: String
   - redirectUrl: String
@@ -91,15 +73,18 @@ class Restaurant {
   - name: String
   - cuisine: String
   - priceRange: String
-  - menu: List<Dish>
-  - deliverySlots: List<DeliverySlot>
   - open: boolean
 }
 
 class DeliverySlot {
+  - label: String
   - start: LocalDateTime
   - capacity: int
   - reserved: int
+}
+
+class DeliveryLocation {
+- name: String
 }
 
 class Dish {
@@ -108,36 +93,30 @@ class Dish {
   - description: String
   - price: double
   - category: DishCategory
-  - type: String
-  - dietaryTags: List<DietaryTag>
-  - extraOptions: List<ExtraOption>
+  - tag: DietaryTag
 }
-
 class ExtraOption {
-  - name: String
-  - price: double
+- name: String
+- price: double
 }
 
-' ===== Associations (what the actual code implies) =====
 CampusUser "1" o-- "0..1" StudentCredit : owns
-CampusUser "1" -- "0..*" Allergy : has
+CampusUser "1" -- "0..1" Cart : currentCart {derived}
 CampusUser "1" -- "0..*" Order : orderHistory
 
 Cart "1" -- "0..*" OrderItem : contains
+Cart ..> Order : converts to
 
-Order "1" -- "0..*" OrderItem : contains
+Order "1" -- "1..*" OrderItem : contains
 Order "1" o-- "0..1" Payment : paidBy
+Order "1" -- "1" DeliverySlot : scheduledIn
+Order "1" -- "1" DeliveryLocation : deliversTo
 
 OrderItem "1" -- "1" Dish : itemOf
 OrderItem "0..*" -- "0..*" ExtraOption : chosenOptions
 
-Restaurant "1" o-- "0..*" Dish : offers
-Restaurant "1" o-- "0..*" DeliverySlot : defines slots
+Restaurant "1" o-- "1..*" DeliverySlot : defines slots
+Restaurant "1" o-- "1..*" Dish : offers
 
-Dish "0..*" -- "0..*" DietaryTag : has
-Dish "0..*" o-- "0..*" ExtraOption : offers
-
-' Note: In current code, Order stores deliveryPlace (String) and deliveryTime (LocalDateTime),
-' not a reference to DeliverySlot.
-
+Dish "0..*" o-- "0..*" ExtraOption : availableOptions
 @enduml

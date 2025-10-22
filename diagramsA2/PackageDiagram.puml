@@ -1,0 +1,84 @@
+@startuml
+title Package Diagram — Project Structure
+skinparam packageStyle rectangle
+
+' Bootstrap / seeding
+package "bootstrap" {
+  class DataSeeder
+}
+
+package "domain" {
+  class Allergy
+  class CampusUser
+  class Cart
+  class DeliveryLocation
+  class DeliverySlot
+  class DietaryTag
+  class Dish
+  class DishCategory
+  class ExtraOption
+  class FilterCriteria
+  class Order
+  class OrderItem
+  class OrderStatus
+  class Payment
+  class PaymentMethod
+  class Restaurant
+  class RestaurantFilters
+  class StudentCredit
+}
+
+package "repository" {
+  class CampusUserRepository
+  class CartRepository
+  class DeliveryCatalogRepository
+  class OrderRepository
+  class RestaurantRepository
+}
+
+package "service" {
+  class CartService
+  class OrderDraftService
+  class OrderService
+}
+
+package "handlers" {
+  class BaseHandler
+  class CampusUserHandler
+  class CartHandler
+  class OrderHandler
+  class RestaurantHandler
+}
+
+
+package "app" {
+  class Main
+  class BackendFixture
+}
+
+' Package-level dependencies (direction indicates usage)
+DataSeeder ..> repository : seeds / initializes
+Main ..> handlers : wires handlers
+Main ..> bootstrap : starts seeding
+
+handlers --> service : calls / orchestrates
+handlers --> domain : reads/writes domain objects
+
+service --> repository : persists / loads
+service --> domain : manipulates domain
+
+repository --> domain : stores domain objects
+
+' Cross-package helpers / notes
+note left of service
+  - business logic lives here
+  - depends on repositories + domain
+end note
+
+note right of repository
+  - simple, in-memory test repos
+  - used by tests and seeder
+end note
+
+@enduml
+
