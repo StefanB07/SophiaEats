@@ -8,7 +8,6 @@ package "bootstrap" {
 }
 
 package "domain" {
-  class Allergy
   class CampusUser
   class Cart
   class DeliveryLocation
@@ -69,7 +68,6 @@ service --> domain : manipulates domain
 
 repository --> domain : stores domain objects
 
-' Cross-package helpers / notes
 note left of service
   - business logic lives here
   - depends on repositories + domain
@@ -81,4 +79,3 @@ note right of repository
 end note
 
 @enduml
-

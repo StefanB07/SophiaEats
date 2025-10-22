@@ -1,122 +1,147 @@
 @startuml
-Title SophiaTech Eats — Domain (Clean)
-
+title SophiaTech Eats — Domain Class Diagram (Clean)
 
 skinparam classAttributeIconSize 0
-skinparam shadowing false
 skinparam dpi 140
+skinparam shadowing false
 
-
-' ==== Enums (as in code) ====
+' ==== Enums ====
 enum DishCategory {
-  STARTER
-  MAIN_COURSE
-  DESSERT
-  DRINK
+STARTER
+MAIN_COURSE
+DESSERT
+DRINK
 }
-
 enum OrderStatus {
-  CREATED
-  PAID
-  DELIVERED
-  CANCELLED
+CREATED
+PAID
+DELIVERED
+CANCELLED
 }
-
 enum PaymentMethod {
-  EXTERNAL
-  STUDENT_CREDIT
+EXTERNAL
+STUDENT_CREDIT
 }
-
 enum DietaryTag {
-    VEGAN
-    VEGETARIAN
-    GLUTEN_FREE
-    LACTOSE_FREE
+VEGAN
+VEGETARIAN
+GLUTEN_FREE
+LACTOSE_FREE
 }
 
-
-' ==== Core domain ====
+' ==== Core domain only essential attributes ====
 class CampusUser {
-  name;
-  email;
+  - id: String
+  - name: String
+  - email: String
+  - country: String
+  - studentCredit: StudentCredit
 }
 class StudentCredit {
-  budget;
+ - budget: double
+ - blocked: boolean
 }
-class Allergy {
-  label;
-}
-
 
 class Cart {
-  createdAt;
-}
-class Order {
-  createdAt;
-  status: OrderStatus;
-}
-class OrderItem {
-  quantity;
-}
-class Payment {
-  amount;
-  method: PaymentMethod;
+- id: String
+- createdAt: LocalDateTime
 }
 
+class Order {
+  - id: String
+  - createdAt: LocalDateTime
+  - total: double
+  - status: OrderStatus
+  - paidAt: LocalDateTime
+  - deliveredAt: LocalDateTime
+}
+
+class OrderItem {
+- quantity: int
+}
+
+class Payment {
+  - amount: double
+  - method: PaymentMethod
+  - success: boolean
+  - provider: String
+  - redirectUrl: String
+}
 
 class Restaurant {
-  name;
-  cuisineType;
-  priceRange;
-}
-class DeliverySlot {
-  startTime;
-  capacity;
-}
-class DeliveryLocation {
-  name;
+  - id: String
+  - name: String
+  - cuisine: String
+  - priceRange: String
+  - open: boolean
 }
 
+class DeliverySlot {
+  - label: String
+  - start: LocalDateTime
+  - capacity: int
+  - reserved: int
+}
+
+class DeliveryLocation {
+- name: String
+}
 
 class Dish {
-  name;
-  price;
-  category: DishCategory;
-  tag: DietaryTag;
+  - id: String
+  - name: String
+  - description: String
+  - price: double
+  - category: DishCategory
+  - tag: DietaryTag
 }
 class ExtraOption {
-  name;
-  price;
+- name: String
+- price: double
 }
-
 
 ' ==== Associations (clean) ====
 CampusUser "1" o-- "0..1" StudentCredit : owns
-CampusUser "0..*" -- "0..*" Allergy : has
-
-
-' Show the **current cart** as a derived association (even if stored in session/repo)
+CampusUser "1" -- "0..*" Order : orderHistory
 CampusUser "1" -- "0..1" Cart : currentCart {derived}
 
-
-Cart "1" -- "0..*" OrderItem : contains
+' Use composition for owned child elements (strong lifecycle relationship)
+Cart *-- "0..*" OrderItem : contains
 Cart ..> Order : converts to
+note on link
+  Operation: OrderService.placeOrder(cart, deliveryPlace, deliveryTime)
+  This is an operational conversion (no persistent reference
+  between Cart and Order in the domain model).
+end note
 
+Order *-- "1..*" OrderItem : contains
+Order *-- "0..1" Payment : paidBy
 
-CampusUser "1" -- "0..*" Order : orderHistory
-Order "1" -- "1..*" OrderItem : contains
+' Scheduling is resolved by services / repository; Order stores deliveryPlace/time as values
+note right of Order
+  Scheduling (assignment to DeliverySlot / DeliveryLocation)
+  is resolved by DeliveryCatalogRepository / OrderService.
+  Order stores deliveryPlace and deliveryTime as primitive values
+  (no direct persistent reference to DeliverySlot or DeliveryLocation).
+end note
+
+' (removed direct associations Order -> DeliverySlot / DeliveryLocation to reflect code)
+
 OrderItem "1" -- "1" Dish : itemOf
-OrderItem "0..*" -- "0..*" ExtraOption : options
-Order "1" -- "0..1" Payment : paidBy
+OrderItem "0..*" -- "0..*" ExtraOption : chosenOptions
 
-
+Restaurant "1" o-- "1..*" DeliverySlot : defines slots
 Restaurant "1" o-- "1..*" Dish : offers
-Restaurant "1" o-- "1..*" DeliverySlot : defines
 
+Dish "0..*" o-- "0..*" ExtraOption : availableOptions
 
-Order "1" -- "1" DeliverySlot : scheduledIn
-Order "1" -- "1" DeliveryLocation : deliversTo
-
-Dish "0..*" o-- "0..*" ExtraOption : extraOptions
+note bottom
+  Legend:
+  *--  composition (strong ownership, child lifecycle bound to parent)
+  o--  aggregation (weak ownership)
+  --   association
+  ..>  dependency / operation
+  {derived} indicates a derived/virtual association
+end note
 
 @enduml
