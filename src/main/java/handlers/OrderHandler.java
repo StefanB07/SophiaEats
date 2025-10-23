@@ -1,6 +1,7 @@
 package handlers;
 
 import com.sun.net.httpserver.HttpExchange;
+import domain.DeliveryLocation;
 import domain.Order;
 import repository.CartRepository;
 import repository.OrderRepository;
@@ -58,7 +59,7 @@ public class OrderHandler extends BaseHandler {
 
         Order order;
         try {
-            order = orderService.placeOrder(cart, place, when);
+            order = orderService.placeOrder(cart, new DeliveryLocation(place, "null"), when);
         } catch (IllegalArgumentException iae) {
             sendText(ex, 400, iae.getMessage());
             return;
@@ -84,7 +85,7 @@ public class OrderHandler extends BaseHandler {
                 + "\"id\":\""+esc(o.getId())+"\","
                 + "\"status\":\""+o.getStatus()+"\","
                 + "\"createdAt\":\""+o.getCreatedAt()+"\","
-                + "\"deliveryPlace\":\""+esc(o.getDeliveryPlace())+"\","
+                + "\"deliveryPlace\":\""+esc(o.getDeliveryPlace().getName())+"\","
                 + "\"deliveryTime\":\""+o.getDeliveryTime()+"\","
                 + "\"total\":"+o.getTotal()+","
                 + "\"items\":["+items+"]"

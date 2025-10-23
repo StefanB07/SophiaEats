@@ -49,7 +49,10 @@ class OrderServiceTest {
         var slot = delivery.slotsFor(rest.getId()).get(0);
         int before = slot.getRemainingCapacity();
 
-        Order order = orderService.placeOrder(cart, "Library", slot.getStart());
+        DeliveryLocation location = delivery.findLocation("Library")
+                .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: Library"));
+
+        Order order = orderService.placeOrder(cart, location, slot.getStart());
 
         assertNotNull(order.getId());
         assertEquals(OrderStatus.CREATED, order.getStatus());
@@ -68,8 +71,12 @@ class OrderServiceTest {
         Cart cart = new Cart();
         cart.addItem(new OrderItem(pizza, 10)); // exceeds capacity 5
         var slot = delivery.slotsFor(rest.getId()).get(0);
+
+        DeliveryLocation location = delivery.findLocation("Library")
+                .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: Library"));
+
         assertThrows(IllegalStateException.class, () ->
-                orderService.placeOrder(cart, "Library", slot.getStart()));
+                orderService.placeOrder(cart, location, slot.getStart()));
     }
 
     @Test
@@ -77,7 +84,11 @@ class OrderServiceTest {
         Cart cart = new Cart();
         cart.addItem(new OrderItem(pizza, 2));
         var slot = delivery.slotsFor(rest.getId()).get(0);
-        Order order = orderService.placeOrder(cart, "Library", slot.getStart());
+
+        DeliveryLocation location = delivery.findLocation("Library")
+                .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: Library"));
+
+        Order order = orderService.placeOrder(cart, location, slot.getStart());
 
         Payment payment = orderService.pay(order, PaymentMethod.EXTERNAL, null);
         assertTrue(payment.isSuccess());
@@ -92,7 +103,11 @@ class OrderServiceTest {
         Cart cart = new Cart();
         cart.addItem(new OrderItem(pizza, 3));
         var firstSlot = delivery.slotsFor(rest.getId()).get(0);
-        Order order = orderService.placeOrder(cart, "Library", firstSlot.getStart());
+
+        DeliveryLocation location = delivery.findLocation("Library")
+                .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: Library"));
+
+        Order order = orderService.placeOrder(cart, location, firstSlot.getStart());
 
         CampusUser user = new CampusUser("Bob", "bob@campus", "Dorm");
         user.assignStudentCredit(new StudentCredit(50.0));
@@ -109,7 +124,8 @@ class OrderServiceTest {
         // Second order costs 30 again, but user has only 20 left -> should fail for INSUFFICIENT_CREDIT
         Cart cart2 = new Cart();
         cart2.addItem(new OrderItem(pizza, 3));
-        Order order2 = orderService.placeOrder(cart2, "Library", secondSlotStart);
+
+        Order order2 = orderService.placeOrder(cart2, location, secondSlotStart);
         var ex = assertThrows(IllegalArgumentException.class, () ->
                 orderService.pay(order2, PaymentMethod.STUDENT_CREDIT, user));
         assertEquals("INSUFFICIENT_CREDIT", ex.getMessage());

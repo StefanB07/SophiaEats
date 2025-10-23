@@ -231,6 +231,7 @@ public class Main {
         System.out.print("Pick location: ");
         int locIdx = readInt(1, locs.size());
         String place = locs.get(locIdx - 1).getName();
+        String description = locs.get(locIdx - 1).getDescription();
 
         // Choose a time slot (show remaining capacity)
         List<DeliverySlot> slots = delivery.slotsFor(fromCart.getId());
@@ -252,7 +253,7 @@ public class Main {
         }
 
         // Place and persist order
-        Order order = orderService.placeOrder(cart, place, when);
+        Order order = orderService.placeOrder(cart, new DeliveryLocation(place, description), when);
         orders.save(order);
         System.out.println("\nOrder created: " + order.getId());
         System.out.println("Delivery to: " + order.getDeliveryPlace() + " at " + order.getDeliveryTime());

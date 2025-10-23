@@ -137,7 +137,11 @@ public class OrderBackendSteps {
         try {
             List<DeliverySlot> slots = new ArrayList<>(delivery.slotsFor(selectedRestaurant.getId()));
             LocalDateTime when = slots.isEmpty() ? LocalDateTime.now().plusMinutes(30) : slots.get(0).getStart();
-            lastOrder = orderService.placeOrder(cart, place, when);
+
+            DeliveryLocation location = delivery.findLocation(place)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: " + place));
+
+            lastOrder = orderService.placeOrder(cart, location, when);
             orders.save(lastOrder);
             lastError = null;
         } catch (Exception e) {
@@ -154,13 +158,15 @@ public class OrderBackendSteps {
     @Then("the order has delivery location {string}")
     public void the_order_has_delivery_location(String place) {
         assertNotNull(lastOrder);
-        assertEquals(place, lastOrder.getDeliveryPlace());
+        assertEquals(place, lastOrder.getDeliveryPlace().getName());
     }
 
     @When("I try to place an order to location {string}")
     public void i_try_to_place_an_order_to_location(String place) {
         try {
-            lastOrder = orderService.placeOrder(cart, place, LocalDateTime.now().plusMinutes(30));
+            DeliveryLocation location = delivery.findLocation(place)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: " + place));
+            lastOrder = orderService.placeOrder(cart, location, LocalDateTime.now().plusMinutes(30));
             lastError = null;
         } catch (Exception e) {
             lastOrder = null;
@@ -176,7 +182,9 @@ public class OrderBackendSteps {
         var when = slots.get(0).getStart();
         // Use a valid seeded location
         String place = "Bât A";
-        order = orderService.placeOrder(cart, place, when);
+        DeliveryLocation location = delivery.findLocation(place)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: " + place));
+        order = orderService.placeOrder(cart, location, when);
     }
 
     @When("I try to create an order")
@@ -192,7 +200,9 @@ public class OrderBackendSteps {
     @When("I try to place an order to location {string} at a past time")
     public void i_try_to_place_an_order_to_location_at_a_past_time(String place) {
         try {
-            lastOrder = orderService.placeOrder(cart, place, LocalDateTime.now().minusMinutes(30));
+            DeliveryLocation location = delivery.findLocation(place)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: " + place));
+            lastOrder = orderService.placeOrder(cart, location, LocalDateTime.now().minusMinutes(30));
             lastError = null;
         } catch (Exception e) {
             lastOrder = null;
@@ -335,8 +345,11 @@ public class OrderBackendSteps {
         var when = slots.get(0).getStart();
         String place = "Bât A";
 
+        DeliveryLocation location = delivery.findLocation(place)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: " + place));
+
         Exception ex = assertThrows(Exception.class, () -> {
-            orderService.placeOrder(cart, place, when);
+            orderService.placeOrder(cart, location, when);
         });
         String msg = ex.getMessage() == null ? "" : ex.getMessage();
         // Accept either capacity exceeded (slot exists but cannot fit) or no slot available

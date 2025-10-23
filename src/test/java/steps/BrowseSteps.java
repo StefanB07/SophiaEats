@@ -2,6 +2,7 @@
 package steps;
 
 import bootstrap.DataSeeder;
+import domain.DeliveryLocation;
 import domain.Dish;
 import domain.Restaurant;
 import io.cucumber.java.Before;
@@ -98,8 +99,15 @@ public class BrowseSteps {
         assertFalse(listedDishes.isEmpty(), "No dishes available");
 
         var cart = carts.createCart();
+        
+//        Exception ex = assertThrows(IllegalArgumentException.class,
+//                () -> orderService.placeOrder(cart, "Bât A", LocalDateTime.now().plusMinutes(30)));
+//        assertTrue(ex.getMessage().toLowerCase().contains("cart"));
+        DeliveryLocation location = delivery.findLocation("Bât A")
+                .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: Bât A"));
+
         Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> orderService.placeOrder(cart, "Bât A", LocalDateTime.now().plusMinutes(30)));
+                () -> orderService.placeOrder(cart, location, LocalDateTime.now().plusMinutes(30)));
         assertTrue(ex.getMessage().toLowerCase().contains("cart"));
     }
 }

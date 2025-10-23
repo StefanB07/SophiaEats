@@ -20,7 +20,7 @@ class CampusUserTest {
 
         Order o = new Order(
                 List.of(new OrderItem(new Dish("Soup","",5.0, DishCategory.STARTER, ""), 1)),
-                "Library",
+                new DeliveryLocation("Library", "Near main entrance"),
                 LocalDateTime.now().plusHours(1)
         );
         u.addOrder(o);

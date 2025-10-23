@@ -2,8 +2,6 @@
 title SophiaTech Eats — Domain Class Diagram (Clean)
 
 skinparam classAttributeIconSize 0
-skinparam dpi 140
-skinparam shadowing false
 
 ' ==== Enums ====
 enum DishCategory {
@@ -85,6 +83,7 @@ class DeliverySlot {
 
 class DeliveryLocation {
 - name: String
+- description: String
 }
 
 class Dish {
@@ -100,14 +99,13 @@ class ExtraOption {
 - price: double
 }
 
-' ==== Associations (clean) ====
 CampusUser "1" o-- "0..1" StudentCredit : owns
 CampusUser "1" -- "0..*" Order : orderHistory
 CampusUser "1" -- "0..1" Cart : currentCart {derived}
 
-' Use composition for owned child elements (strong lifecycle relationship)
 Cart *-- "0..*" OrderItem : contains
 Cart ..> Order : converts to
+
 note on link
   Operation: OrderService.placeOrder(cart, deliveryPlace, deliveryTime)
   This is an operational conversion (no persistent reference
@@ -117,15 +115,7 @@ end note
 Order *-- "1..*" OrderItem : contains
 Order *-- "0..1" Payment : paidBy
 
-' Scheduling is resolved by services / repository; Order stores deliveryPlace/time as values
-note right of Order
-  Scheduling (assignment to DeliverySlot / DeliveryLocation)
-  is resolved by DeliveryCatalogRepository / OrderService.
-  Order stores deliveryPlace and deliveryTime as primitive values
-  (no direct persistent reference to DeliverySlot or DeliveryLocation).
-end note
-
-' (removed direct associations Order -> DeliverySlot / DeliveryLocation to reflect code)
+DeliveryLocation "0..*" -- "1" Order : referencedBy
 
 OrderItem "1" -- "1" Dish : itemOf
 OrderItem "0..*" -- "0..*" ExtraOption : chosenOptions
@@ -134,6 +124,13 @@ Restaurant "1" o-- "1..*" DeliverySlot : defines slots
 Restaurant "1" o-- "1..*" Dish : offers
 
 Dish "0..*" o-- "0..*" ExtraOption : availableOptions
+
+note right of Order
+  Scheduling (assignment to DeliverySlot / DeliveryLocation)
+  is resolved by DeliveryCatalogRepository / OrderService.
+  Order stores deliveryPlace as a \`DeliveryLocation\` reference and deliveryTime as a value.
+  DeliverySlot assignment is resolved by services; slots are not owned by Order.
+end note
 
 note bottom
   Legend:

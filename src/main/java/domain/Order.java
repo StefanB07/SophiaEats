@@ -9,7 +9,7 @@ public class Order {
     private final String id;
     private final LocalDateTime createdAt;
     private final List<OrderItem> items;
-    private final String deliveryPlace;
+    private final DeliveryLocation deliveryPlace;
     private final LocalDateTime deliveryTime;
     private final double total;
     private OrderStatus status;
@@ -20,7 +20,7 @@ public class Order {
     private LocalDateTime deliveredAt;
 
 
-    public Order(List<OrderItem> items, String deliveryPlace, LocalDateTime deliveryTime) {
+    public Order(List<OrderItem> items, DeliveryLocation deliveryPlace, LocalDateTime deliveryTime) {
         this.id = UUID.randomUUID().toString();
         this.createdAt = LocalDateTime.now();
         this.items = new ArrayList<>(items);
@@ -33,7 +33,7 @@ public class Order {
     public String getId() { return id; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public List<OrderItem> getItems() { return new ArrayList<>(items); }
-    public String getDeliveryPlace() { return deliveryPlace; }
+    public DeliveryLocation getDeliveryPlace() { return deliveryPlace; }
     public LocalDateTime getDeliveryTime() { return deliveryTime; }
     public double getTotal() { return total; }
     public OrderStatus getStatus() { return status; }

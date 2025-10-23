@@ -58,16 +58,16 @@ public class OrderService {
         });
     }
 
-    public Order placeOrder(Cart cart, String deliveryPlace, LocalDateTime deliveryTime) {
+    public Order placeOrder(Cart cart, DeliveryLocation deliveryPlace, LocalDateTime deliveryTime) {
         if (cart == null || cart.getItems().isEmpty())
             throw new IllegalArgumentException("Cart is empty");
-        if (deliveryPlace == null || deliveryPlace.isBlank())
+        if (deliveryPlace == null || deliveryPlace.getName().isBlank())
             throw new IllegalArgumentException("Delivery place required");
         if (deliveryTime == null || deliveryTime.isBefore(LocalDateTime.now()))
             throw new IllegalArgumentException("Delivery time must be in the future");
 
         // Validate: delivery location must exist in catalog (if repo is injected)
-        if (delivery != null && !delivery.isValidLocation(deliveryPlace)) {
+        if (delivery != null && !delivery.isValidLocation(deliveryPlace.getName())) {
             throw new IllegalArgumentException("Invalid delivery location: " + deliveryPlace);
         }
 
@@ -109,15 +109,6 @@ public class OrderService {
 
     }
 
-
-
-    // --- Payment & lifecycle helpers ---
-
-//    /** Legacy simulation hook. Prefer pay(order, method) for full flow. */
-//    public boolean tempExternalPayment(Order order) {
-//        Objects.requireNonNull(order, "order");
-//        return true; // always approved for now
-//    }
 
     /**
      * Create and process a Payment for the given order using the given method.
