@@ -1,9 +1,4 @@
-# SopiaTech Eats-Team-25-26 #template
-_Template for classroom SI4-COO_
-
->. CETTE PAGE DOIT ÊTRE MISE À JOUR POUR CORRESPONDRE À VOTRE PROJET.  
->. C'est seulement un modèle !!
->. Vous l'organisez comme bon vous semble, mais comme un vrai projet.
+# SopiaTech Eats-Team-U-25-26
 
 
 ## TEAM
@@ -13,38 +8,43 @@ SA : ILIESCU Miruna
 QA : CRISTEA Ana
 Ops : NEATA Mihnea
 
-## doc
-Contient vos rapports et les documents qui présentent votre projet.
+## Usage & Installation
+As of the moment of the O1/D1, there's 3 ways to interact with the project. 
+There is a order loop in main - just run the main. It will make the order process from start to end apparent.
+The cucumber (integration) tests can be run from src/test/java/RunCucumberTest.java (how we did it - straight from IntelliJ) or with maven separately (from command line for example).
+There are JUnit tests as well in src/test/java/unit. They can be run by right clicking the 'unit' package and selecting 'Run tests in unit' (how we did it) - or maven as well.
+Installation - just fork this repository and clone it locally. 
+
+You need Java level 21 (so Java1.21) , openJDK 24 and maven installed on your machine. Java 1.17 might work as well (and a lower jdk), but that's what we built on.
+
+## Installation & running short version:
+1. Clone the repository. 2
+2. Run the demo flow (order loop):
+    - From IDE: run the main class in `src/main/java/main` (the class that starts the order loop).
+3. Run tests from IDE:
+    - Unit tests in `src/test/java/unit`
+    - Cucumber runner: `src/test/java/RunCucumberTest.java`
+
+## .github - Kanban
+   Here's the link: https://github.com/orgs/PNS-Conception/projects/95
+    You will find here the kanban board for the project. In short - each of us tried to pick a user story - work on the tests and implementation, then we merged branches together.
 
 
-## .github
-   1. Contient sous workflows/maven.yml, une version d'un fichier d'actions qui est déclenché dès que vous poussez du code. 
-Sur cette version initiale, seul un test Junit5 est déclenché pour vérifier que tout fonctionne.
-       - Github Actions (See in .github/workflows) to simply make a maven+test compilation
-  2. Contient sous ISSUE_TEMPLATE, les modèles pour les issues user_story et bug. Vous pouvez le compléter à votre guise.
-
-## src
+## Structure
  - pom.xml :  
        - Cucumber 7 et JUnit 5  
-       - JDK 17   
+       - JDK 21
        - Etc.  
-   Ce pom.xml sera mis à jour avec la démonstration qui vous sera donnée ultérieurement.
-
-Lorsque vous passerez en développement, les codes donnés peuvent être éliminés.   
-De nouveaux exemples vous seront donnés.   
-Nous les laissons cependant pour vous permettre de vérifier que vous n'avez pas de problème d'intégration continue.
-
-
-<!-- ## Ce que fait votre projet
-
-
-### Principales User stories
-Vous mettez en évidence les principales user stories de votre projet.
-Chaque user story doit être décrite par 
-   - son identifiant en tant que issue github (#), 
-   - sa forme classique (As a… I want to… In order to…) (pour faciliter la lecture)
-   - Le nom du fichier feature Cucumber et le nom des scénarios qui servent de tests d’acceptation pour la story.
-   Les contenus détaillés sont dans l'issue elle-même. -->
-   
+    - src/main/java has the main code for the project
+    - > bootstrap/: contains a data seeder for initial data
+    - > model/: domain contains the main classes/entities of the project
+    - > service/: contains the business logic of the project ( they act as a sort of interface to interact and manage the cart and order)
+    - > repository/: contains the data access layer ( in memory for now) and it also links some of the classes in between so that they are decoupled.
+    - > main/: contains the main class that runs the order loop - used for testing as of now but will eventually contain the server code.
+    - src/test/java has the test code for the project
+    - > unit/: contains the unit tests for the project ( JUnit 5)
+    - > features/: contains the gherkin syntax tests ( Cucumber 7)
+    - > steps/: contains the step definitions for the cucumber tests
+    - > RunCucumberTest.java : the class that runs the cucumber tests
 
    
