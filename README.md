@@ -1,6 +1,5 @@
 # SopiaTech Eats-Team-U-25-26
 
-
 ## TEAM
 
 PO : BUCUR Stefan
