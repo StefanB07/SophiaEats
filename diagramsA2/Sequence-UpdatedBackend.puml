@@ -1,0 +1,160 @@
+@startuml
+' Updated sequence diagram reflecting current backend (services + repositories).
+' Focus: CartService observer for slot availability, OrderService with payment strategies,
+' repositories usage, and status transitions. UI/Handler is generic (not Main-specific).
+
+autonumber
+skinparam actorStyle awesome
+skinparam sequenceMessageAlign center
+
+actor "CampusUser" as user
+boundary "HTTP Handler / UI" as ui
+control "CartService" as cartSvc
+entity "Cart" as cart
+control "OrderService" as orderSvc
+entity "RestaurantRepository" as restRepo
+control "DeliveryCatalogRepository" as deliveryRepo
+entity "OrderRepository" as orderRepo
+entity "DeliverySlot" as slot
+control "PaymentStrategy (External | StudentCredit)" as paymentProc
+entity "StudentCredit" as credit
+
+' Observer represented as a boundary/control that subscribes to CartService events
+boundary "SlotAvailabilityObserver" as slotObserver
+
+' --- Notes on scope ---
+note across
+  • CartService notifies an observer after items are added; the observer queries DeliveryCatalogRepository
+    to compute which slots can still fit the current cart quantity (via canFit).
+  • OrderService validates delivery location, enforces single-restaurant, checks slot capacity and reserves it,
+    then returns a CREATED order. Payment uses a strategy (External/StudentCredit) and updates status to PAID.
+  • Repository saves happen outside OrderService (by the handler), matching current code wiring.
+end note
+
+== Add items and recompute available slots ==
+activate user
+user -> ui: Add item (restaurant, dish, qty)
+activate ui
+ui -> cartSvc: addItem(cart, restaurant, dish, qty)
+activate cartSvc
+cartSvc -> cart: addItem(OrderItem)
+activate cart
+cart --> cartSvc: cart updated
+deactivate cart
+
+' Observer callback (minimal) used to refresh availability
+cartSvc -> slotObserver: onItemAdded(cart, restaurant)
+activate slotObserver
+slotObserver -> deliveryRepo: slotsFor(restaurant.id)
+activate deliveryRepo
+deliveryRepo --> slotObserver: slots[]
+deactivate deliveryRepo
+
+loop for each slot in slots
+  slotObserver -> slot: canFit(totalQtyInCart)
+  slot --> slotObserver: true/false
+end
+slotObserver --> ui: availableSlots filtered by canFit
+
+deactivate slotObserver
+deactivate cartSvc
+ui --> user: Show updated cart + available delivery slots
+
+== Place order ==
+user -> ui: Place order(cart, deliveryPlace, deliveryTime)
+ui -> orderSvc: placeOrder(cart, deliveryPlace, deliveryTime)
+activate orderSvc
+
+' Validate location if catalog is injected
+orderSvc -> deliveryRepo: isValidLocation(deliveryPlace.name)
+activate deliveryRepo
+deliveryRepo --> orderSvc: true/false
+deactivate deliveryRepo
+
+' Ensure single-restaurant by scanning menus if repository is injected
+orderSvc -> restRepo: findAll()
+activate restRepo
+restRepo --> orderSvc: List<Restaurant>
+deactivate restRepo
+
+' Validate and reserve capacity in the chosen slot
+orderSvc -> deliveryRepo: slotsFor(restaurant.id)
+activate deliveryRepo
+deliveryRepo --> orderSvc: slots[]
+deactivate deliveryRepo
+orderSvc -> slot: canFit(totalQty)
+slot --> orderSvc: true/false
+alt capacity OK
+  orderSvc -> slot: reserve(totalQty)
+  slot --> orderSvc: reserved=true
+  orderSvc --> ui: Order (status=CREATED)
+else capacity exceeded
+  orderSvc --> ui: error "DELIVERY_SLOT_CAPACITY_EXCEEDED"
+end
+
+deactivate orderSvc
+
+' Persist order outside the service (as in current wiring)
+ui -> orderRepo: save(order)
+activate orderRepo
+orderRepo --> ui: order persisted
+deactivate orderRepo
+
+== Payment (strategy) ==
+user -> ui: Choose payment method (External | StudentCredit)
+ui -> orderSvc: pay(order, method, user)
+activate orderSvc
+
+' Strategy dispatch happens inside OrderService
+orderSvc -> paymentProc: process(order, user)
+activate paymentProc
+alt External payment
+  paymentProc --> orderSvc: Payment(success=true)
+  note right of orderSvc
+    On success: sets order.payment,
+    status=PAID, paidAt timestamp.
+  end note
+else StudentCredit
+  alt credit sufficient
+    ' In code: budget is checked and then reduced via setter
+    orderSvc -> credit: setBudget(budget - amount)
+    credit --> orderSvc: ok
+    paymentProc --> orderSvc: Payment(success=true)
+  else insufficient credit
+    paymentProc --> orderSvc: throws INSUFFICIENT_CREDIT
+  end
+end
+
+alt Payment success
+  orderSvc --> ui: Payment
+  deactivate paymentProc
+  deactivate orderSvc
+  ui -> orderRepo: save(order)
+  activate orderRepo
+  orderRepo --> ui: order updated (PAID)
+  deactivate orderRepo
+else Payment failure
+  deactivate paymentProc
+  orderSvc --> ui: error (e.g., INSUFFICIENT_CREDIT)
+  deactivate orderSvc
+end
+
+== Mark as delivered ==
+opt only if order.status == PAID
+  user -> ui: Mark delivered
+  ui -> orderSvc: markAsDelivered(order)
+  activate orderSvc
+  orderSvc --> ui: status=DELIVERED, deliveredAt set
+  deactivate orderSvc
+  ui -> orderRepo: save(order)
+  activate orderRepo
+  orderRepo --> ui: order updated (DELIVERED)
+  deactivate orderRepo
+end
+
+deactivate ui
+user <-- ui: Confirmation / status display
+
+deactivate user
+
+@enduml

@@ -8,11 +8,11 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Service class responsible for handling the business logic related to orders.
- * The OrderService acts as an intermediary between the application’s domain (Cart, Order)
- * and the infrastructure layer (HTTP handlers, repositories).
- */
+/*
+  Service class responsible for handling the business logic related to orders.
+  The OrderService acts as an intermediary between the application’s domain (Cart, Order)
+  and the infrastructure layer (HTTP handlers, repositories).
+*/
 public class OrderService {
 
     private final DeliveryCatalogRepository delivery;     // validate delivery locations and slots

@@ -1,0 +1,126 @@
+@startuml
+' Simplified sequence diagram aligned with the Clean Class Diagram (domain-centered)
+' Methods reflect the actual code. Keeps service/repository roles minimal and generic.
+
+autonumber
+skinparam actorStyle awesome
+skinparam sequenceMessageAlign center
+
+actor "CampusUser" as user
+boundary "HTTP Handler / UI" as ui
+control "CartService" as cartSvc
+entity "Cart" as cart
+control "OrderService" as orderSvc
+control "DeliveryCatalogRepository" as deliveryRepo
+entity "RestaurantRepository" as restRepo
+entity "OrderRepository" as orderRepo
+entity "DeliverySlot" as slot
+entity "Order" as order
+entity "Payment" as payment
+entity "StudentCredit" as credit
+
+' === Phase 1: Browse & Add to cart ===
+activate user
+user -> ui: Add dish to cart (restaurant, dish, qty)
+activate ui
+ui -> cartSvc: addItem(cart, restaurant, dish, qty)
+activate cartSvc
+cartSvc -> cart: addItem(OrderItem)
+cart --> cartSvc: cart updated
+
+opt (optional) Recompute available slots
+  cartSvc -> deliveryRepo: slotsFor(restaurant.id)
+  deliveryRepo --> cartSvc: slots[]
+  loop slots
+    cartSvc -> slot: canFit(totalQtyInCart)
+    slot --> cartSvc: true/false
+  end
+  cartSvc --> ui: availableSlots (filtered)
+end
+
+deactivate cartSvc
+ui --> user: Show updated cart + (optional) slots
+
+' === Phase 2: Place order ===
+user -> ui: Place order(cart, deliveryPlace, deliveryTime)
+ui -> orderSvc: placeOrder(cart, deliveryPlace, deliveryTime)
+activate orderSvc
+
+' Validate delivery location (catalog)
+orderSvc -> deliveryRepo: isValidLocation(deliveryPlace.name)
+deliveryRepo --> orderSvc: true/false
+
+' Enforce single-restaurant (menus scan)
+orderSvc -> restRepo: findAll()
+restRepo --> orderSvc: List<Restaurant>
+
+' Validate capacity and reserve slot
+orderSvc -> deliveryRepo: slotsFor(restaurant.id)
+deliveryRepo --> orderSvc: slots[]
+orderSvc -> slot: canFit(totalQty)
+slot --> orderSvc: true/false
+alt capacity OK
+  orderSvc -> slot: reserve(totalQty)
+  slot --> orderSvc: reserved
+  orderSvc -> order: <<create>>
+  order --> orderSvc: created
+  orderSvc --> ui: Order (status=CREATED)
+else capacity exceeded
+  orderSvc --> ui: error "DELIVERY_SLOT_CAPACITY_EXCEEDED"
+end
+
+deactivate orderSvc
+
+' Persist created order (outside service)
+ui -> orderRepo: save(order)
+orderRepo --> ui: order persisted
+
+' === Phase 3: Pay ===
+user -> ui: Choose payment method (External or StudentCredit)
+ui -> orderSvc: pay(order, method, user)
+activate orderSvc
+
+alt External payment
+  orderSvc --> ui: Payment(success=true)
+  note right of orderSvc
+    On success: sets order.payment,
+    status=PAID and paidAt.
+  end note
+else StudentCredit
+  alt user has sufficient credit
+    orderSvc -> credit: setBudget(budget - amount)
+    credit --> orderSvc: ok
+    orderSvc --> ui: Payment(success=true)
+  else insufficient credit
+    orderSvc --> ui: error "INSUFFICIENT_CREDIT"
+  end
+end
+
+deactivate orderSvc
+
+alt Payment success
+  ui -> orderRepo: save(order)
+  orderRepo --> ui: order updated (PAID)
+else Payment failure
+  ui --> user: Retry or cancel
+end
+
+' === Phase 4: Delivery ===
+opt if order.status == PAID
+  user -> ui: Mark delivered
+  ui -> orderSvc: markAsDelivered(order)
+  activate orderSvc
+  orderSvc --> ui: status=DELIVERED, deliveredAt set
+  deactivate orderSvc
+  ui -> orderRepo: save(order)
+  orderRepo --> ui: order updated (DELIVERED)
+end
+
+ui --> user: Show final order status
+
+deactivate ui
+user <-- ui: Done
+
+deactivate user
+
+@enduml

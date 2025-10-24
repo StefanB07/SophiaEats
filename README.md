@@ -14,7 +14,7 @@ The cucumber (integration) tests can be run from src/test/java/RunCucumberTest.j
 There are JUnit tests as well in src/test/java/unit. They can be run by right clicking the 'unit' package and selecting 'Run tests in unit' (how we did it) - or maven as well.
 Installation - just fork this repository and clone it locally. 
 
-You need Java level 21 (so Java1.21) , openJDK 24 and maven installed on your machine. Java 1.17 might work as well (and a lower jdk), but that's what we built on.
+You need Java level 21 (so Java1.21) , openJDK 24 and maven installed on your machine. Java 1.17 might work as well (and a lower jdk - if you look in pom.xml, which is the one already given, I left it as java ver 17 for simplicity), but that's what we built on.
 
 ## Installation & running short version:
 1. Clone the repository. 2
