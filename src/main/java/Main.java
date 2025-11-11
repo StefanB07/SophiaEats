@@ -5,6 +5,9 @@ import service.CartService;
 import service.OrderService;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 public class Main {
@@ -43,12 +46,21 @@ public class Main {
                     + (available.isEmpty() ? "none" : available.size()));
         });
 
+         // Role selection (User vs Manager)
+        System.out.println("Welcome to SophiaTech Eats (CLI demo)\n");
+        String role = chooseRole();
+        if ("2".equals(role)) {
+            // Manager flow only, then exit.
+            managerFlow(restaurants, delivery);
+            System.out.println("Goodbye!");
+            return;
+        }
+
         // Working state
         Cart cart = (currentUser != null)
                 ? cartService.getOrCreateCart(currentUser)
                 : carts.createCart();
 
-        System.out.println("Welcome to SophiaTech Eats (CLI demo)\n");
         if (currentUser != null) {
             System.out.println("Logged in as: " + currentUser.getName() + " (" + currentUser.getEmail() + ")");
         } else {
@@ -118,6 +130,85 @@ public class Main {
         }
 
         System.out.println("Goodbye!");
+    }
+
+    // --- New: Manager flow ---
+    private static String chooseRole() {
+        System.out.println("Choose role: 1) Customer  2) Restaurant Manager");
+        System.out.print("Pick: ");
+        String choice = in.nextLine().trim();
+        if (!"1".equals(choice) && !"2".equals(choice)) {
+            System.out.println("Defaulting to Customer.");
+            return "1";
+        }
+        return choice;
+    }
+
+    private static void managerFlow(RestaurantRepository restaurants, DeliveryCatalogRepository delivery) {
+        List<Restaurant> list = new ArrayList<>(restaurants.findAll());
+        if (list.isEmpty()) {
+            System.out.println("No restaurants available to manage.");
+            return;
+        }
+        System.out.println("\n--- Manager: pick a restaurant to manage ---");
+        Restaurant managed = chooseRestaurant(list);
+
+        while (true) {
+            System.out.println("\n--- Manager Menu for '" + managed.getName() + "' ---");
+            System.out.println("1) Add a dish");
+            System.out.println("2) Manage delivery time intervals/capacities");
+            System.out.println("0) Exit manager");
+            System.out.print("> ");
+            String pick = in.nextLine().trim();
+            if ("0".equals(pick)) break;
+            switch (pick) {
+                case "1":
+                    addDishFlow(managed, restaurants);
+                    break;
+                case "2":
+                    manageTimeIntervalsFlow(managed, delivery);
+                    break;
+                default:
+                    System.out.println("Unknown option");
+            }
+        }
+    }
+
+    private static void addDishFlow(Restaurant managed, RestaurantRepository restaurants) {
+        System.out.println("\nAdd new dish to '" + managed.getName() + "'");
+        String name = readNonEmpty("Dish name: ");
+        String description = readNonEmpty("Description: ");
+        System.out.print("Price: ");
+        double price = readDoubleMin(0);
+        DishCategory category = pickDishCategory();
+        System.out.print("Specific type (blank=none): ");
+        String type = in.nextLine().trim();
+        if (type.isBlank()) type = null;
+
+        Dish dish = new Dish(name, description, price, category, type);
+        managed.addDishToMenu(dish);
+        restaurants.save(managed);
+        System.out.println("Added dish: " + dish.getName() + " (" + category + ") to '" + managed.getName() + "'. Total dishes: " + managed.getMenu().size());
+    }
+
+    private static DishCategory pickDishCategory() {
+        System.out.println("Pick category:");
+        DishCategory[] values = DishCategory.values();
+        for (int i = 0; i < values.length; i++) {
+            System.out.printf("%d) %s%n", i + 1, values[i]);
+        }
+        System.out.print("Category number: ");
+        int idx = readInt(1, values.length);
+        return values[idx - 1];
+    }
+
+    private static String readNonEmpty(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String s = in.nextLine();
+            if (s != null && !s.trim().isBlank()) return s.trim();
+            System.out.println("Please enter a non-empty value.");
+        }
     }
 
     // --- UI helpers ---
@@ -368,5 +459,152 @@ public class Main {
         // Validate all items belong to same restaurant
         boolean single = cart.getItems().stream().allMatch(it -> found.getMenu().contains(it.getDish()));
         return single ? found : null;
+    }
+
+    // ================= Manager: manage time intervals =================
+    private static void manageTimeIntervalsFlow(Restaurant managed, DeliveryCatalogRepository delivery) {
+        String restId = managed.getId();
+        while (true) {
+            System.out.println("\nCurrent delivery half-hour slots for '" + managed.getName() + "':");
+            var current = new ArrayList<>(delivery.slotsFor(restId));
+            current.sort(Comparator.comparing(DeliverySlot::getStart));
+            if (current.isEmpty()) {
+                System.out.println("(none)");
+            } else {
+                for (DeliverySlot s : current) {
+                    System.out.printf("- %s  capacity=%d  reserved=%d%n", s.getLabel(), s.getCapacity(), s.getReserved());
+                }
+            }
+
+            // Only add/merge option
+            System.out.println("\nOptions: 1) Add interval  0) Back");
+            System.out.print("> ");
+            String pick = in.nextLine().trim();
+            if ("0".equals(pick)) return;
+            switch (pick) {
+                case "1":
+                    var toMerge = readIntervalsFromInput();
+                    if (toMerge != null) {
+                        // Refresh current in case repository changed
+                        current = new ArrayList<>(delivery.slotsFor(restId));
+                        // merge: overlay capacity for same start; add missing
+                        Map<LocalDateTime, DeliverySlot> map = new HashMap<>();
+                        for (DeliverySlot s : current) map.put(s.getStart(), s);
+                        for (DeliverySlot s : toMerge) map.put(s.getStart(), new DeliverySlot(s.getStart(), s.getCapacity()));
+                        var merged = new ArrayList<>(map.values());
+                        merged.sort(Comparator.comparing(DeliverySlot::getStart));
+                        delivery.setSlots(restId, merged);
+                        System.out.println("Intervals merged. Now: " + merged.size() + " half-hours");
+                    }
+                    break;
+                default:
+                    System.out.println("Unknown option");
+            }
+        }
+    }
+
+    private static List<DeliverySlot> readIntervalsFromInput() {
+        System.out.println("Enter one or more lines to define half-hour capacities. End with a blank line.");
+        System.out.println("Accepted format:");
+        System.out.println("- from HH:MM to HH:MM -> capacity N");
+        System.out.println("0 -> cancel input");
+
+        List<DeliverySlot> result = new ArrayList<>();
+        while (true) {
+            System.out.print("interval> ");
+            String line = in.nextLine();
+            if (line == null) break;
+            line = line.trim();
+            if (line.equals("0")) {
+                // Cancel input and signal caller by returning null
+                return null;
+            }
+            if (line.isEmpty()) break;
+
+            try {
+                ParsedInterval pi = parseIntervalLine(line);
+                if (pi == null) {
+                    System.out.println("Could not parse. Please use: from HH:MM to HH:MM -> capacity N");
+                    continue;
+                }
+                LocalDateTime base = LocalDateTime.now();
+                var starts = generateHalfHours(pi.start, pi.end);
+                if (starts.isEmpty()) {
+                    System.out.println("No half-hours generated (check times).");
+                    continue;
+                }
+                for (LocalTime t : starts) {
+                    result.add(new DeliverySlot(base.withHour(t.getHour()).withMinute(t.getMinute()).withSecond(0).withNano(0), pi.capacity));
+                }
+                System.out.println("Added " + starts.size() + " half-hours for capacity=" + pi.capacity);
+            } catch (IllegalArgumentException ex) {
+                System.out.println("! " + ex.getMessage());
+            }
+        }
+        return result;
+    }
+
+    private static List<LocalTime> generateHalfHours(LocalTime start, LocalTime end) {
+        if (start == null || end == null) throw new IllegalArgumentException("Start/end cannot be null");
+        if (!start.isBefore(end)) throw new IllegalArgumentException("Start must be before end");
+        List<LocalTime> times = new ArrayList<>();
+        LocalTime t = start;
+        while (t.isBefore(end)) {
+            times.add(t);
+            t = t.plusMinutes(30);
+        }
+        return times;
+    }
+
+    private static class ParsedInterval {
+        LocalTime start; LocalTime end; int capacity;
+    }
+
+    private static ParsedInterval parseIntervalLine(String line) {
+        // Only accept: from HH:MM to HH:MM -> capacity N (24h format)
+        String norm = line.trim().toLowerCase(Locale.ROOT);
+        norm = norm.replace("→", "->");
+        norm = norm.replaceAll("\\s+", " ");
+        if (!norm.startsWith("from ") || !norm.contains(" to ") || !norm.contains("-> capacity ")) return null;
+        try {
+            String left = norm.substring("from ".length(), norm.indexOf(" to ")).trim();
+            String rest = norm.substring(norm.indexOf(" to ") + 4);
+            String right = rest.substring(0, rest.indexOf("-> capacity ")).trim();
+            String after = rest.substring(rest.indexOf("-> capacity ") + "-> capacity ".length()).trim();
+
+            int cap;
+            int spaceIdx = after.indexOf(' ');
+            cap = (spaceIdx < 0) ? Integer.parseInt(after) : Integer.parseInt(after.substring(0, spaceIdx));
+
+            LocalTime t1 = parseFlexibleTime(left);
+            LocalTime t2 = parseFlexibleTime(right);
+            if (t1 == null || t2 == null) return null;
+            ParsedInterval pi = new ParsedInterval();
+            pi.start = t1;
+            pi.end = t2;
+            pi.capacity = cap;
+            return pi;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static LocalTime parseFlexibleTime(String s) {
+        s = s.trim();
+        List<DateTimeFormatter> fmts = List.of(
+                DateTimeFormatter.ofPattern("H:mm"),
+                DateTimeFormatter.ofPattern("HH:mm")
+        );
+        for (DateTimeFormatter f : fmts) {
+            try {
+                return LocalTime.parse(s, f);
+            } catch (DateTimeParseException ignored) { }
+        }
+        // Allow whole hour (e.g., '11')
+        try {
+            int h = Integer.parseInt(s);
+            if (h >= 0 && h <= 23) return LocalTime.of(h, 0);
+        } catch (NumberFormatException ignored) { }
+        return null;
     }
 }
