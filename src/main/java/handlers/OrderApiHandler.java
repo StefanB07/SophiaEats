@@ -42,9 +42,9 @@ public class OrderApiHandler extends BaseHandler {
             if (path.matches("^/orders/?$") && method.equals("POST")) { createOrder(ex); return; }
             if (path.startsWith("/orders/") && method.equals("GET")) { getOrder(ex, path.substring("/orders/".length())); return; }
 
-            sendText(ex, 404, "Not found");
+            sendError(ex, 404, "Not found");
         } catch (Exception e) {
-            sendText(ex, 500, "Server error: " + e.getMessage());
+            sendError(ex, 500, "Server error: " + e.getMessage());
         }
     }
 
@@ -62,14 +62,14 @@ public class OrderApiHandler extends BaseHandler {
     private void addToCart(HttpExchange ex) throws IOException {
         String userId = userId(ex);
         var p = body(ex).trim().split("\\|");
-        if (p.length < 3) { sendText(ex, 400, "Expected: dishName|qty|restaurantName"); return; }
+        if (p.length < 3) { sendError(ex, 400, "Expected: dishName|qty|restaurantName"); return; }
         int qty;
-        try { qty = Integer.parseInt(p[1].trim()); } catch (NumberFormatException e) { sendText(ex, 400, "Invalid qty"); return; }
+        try { qty = Integer.parseInt(p[1].trim()); } catch (NumberFormatException e) { sendError(ex, 400, "Invalid qty"); return; }
         var restName = p[2].trim();
         var restOpt = catalog.findByName(restName);
-        if (restOpt.isEmpty()) { sendText(ex, 404, "Restaurant not found"); return; }
+        if (restOpt.isEmpty()) { sendError(ex, 404, "Restaurant not found"); return; }
         Optional<Dish> dish = restOpt.get().getMenu().stream().filter(d -> d.getName().equals(p[0].trim())).findFirst();
-        if (dish.isEmpty()) { sendText(ex, 404, "Dish not found"); return; }
+        if (dish.isEmpty()) { sendError(ex, 404, "Dish not found"); return; }
         var cart = carts.getOrCreateCartByUserId(userId);
         carts.addItem(cart, restOpt.get(), dish.get(), qty);
         sendJson(ex, 201, "{\"userId\":\""+esc(userId)+"\",\"added\":\""+esc(dish.get().getName())+"\",\"qty\":"+qty+"}");
@@ -79,13 +79,13 @@ public class OrderApiHandler extends BaseHandler {
     private void createOrder(HttpExchange ex) throws IOException {
         String userId = userId(ex);
         var parts = body(ex).trim().split("\\|");
-        if (parts.length < 2) { sendText(ex, 400, "Expected: deliveryPlace|deliveryTime"); return; }
+        if (parts.length < 2) { sendError(ex, 400, "Expected: deliveryPlace|deliveryTime"); return; }
         String place = parts[0].trim();
         LocalDateTime when = parseTime(parts[1].trim());
-        if (when == null) { sendText(ex, 400, "Invalid datetime"); return; }
+        if (when == null) { sendError(ex, 400, "Invalid datetime"); return; }
 
         var cart = carts.getOrCreateCartByUserId(userId);
-        if (cart.getItems().isEmpty()) { sendText(ex, 400, "Cart is empty for user: " + userId); return; }
+        if (cart.getItems().isEmpty()) { sendError(ex, 400, "Cart is empty for user: " + userId); return; }
 
         Order order = ordersSvc.placeOrder(cart, new DeliveryLocation(place, "null"), when);
         ordersRepo.save(order);
@@ -97,7 +97,7 @@ public class OrderApiHandler extends BaseHandler {
 
     private void getOrder(HttpExchange ex, String id) throws IOException {
         var opt = ordersRepo.findById(id);
-        if (opt.isEmpty()) { sendText(ex, 404, "Order not found"); return; }
+        if (opt.isEmpty()) { sendError(ex, 404, "Order not found"); return; }
         sendJson(ex, 200, orderToJson(opt.get()));
     }
 

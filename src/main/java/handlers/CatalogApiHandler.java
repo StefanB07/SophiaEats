@@ -22,7 +22,7 @@ public class CatalogApiHandler extends BaseHandler {
         String path = ex.getRequestURI().getPath();
 
         try {
-            if (!"GET".equals(method)) { sendText(ex, 405, "Method Not Allowed"); return; }
+            if (!"GET".equals(method)) { sendError(ex, 405, "Method Not Allowed"); return; }
 
             // /restaurants
             if (path.matches("^/restaurants/?$")) { listAll(ex); return; }
@@ -31,9 +31,9 @@ public class CatalogApiHandler extends BaseHandler {
             // /restaurants/{name}
             if (path.startsWith("/restaurants/")) { one(ex, path.substring("/restaurants/".length())); return; }
 
-            sendText(ex, 404, "Not found");
+            sendError(ex, 404, "Not found");
         } catch (Exception e) {
-            sendText(ex, 500, "Server error: " + e.getMessage());
+            sendError(ex, 500, "Server error: " + e.getMessage());
         }
     }
 
@@ -47,7 +47,7 @@ public class CatalogApiHandler extends BaseHandler {
     private void one(HttpExchange ex, String nameEncoded) throws IOException {
         var name = nameEncoded.replace("%20"," ");
         var opt = catalog.findByName(name);
-        if (opt.isEmpty()) { sendText(ex, 404, "Restaurant not found"); return; }
+        if (opt.isEmpty()) { sendError(ex, 404, "Restaurant not found"); return; }
         var r = opt.get();
         var menu = r.getMenu().stream()
                 .map(d -> "{\"name\":\""+esc(d.getName())+"\",\"price\":"+d.getPrice()+"}")
@@ -80,4 +80,3 @@ public class CatalogApiHandler extends BaseHandler {
                         .collect(Collectors.toMap(a -> a[0], a -> a[1]));
     }
 }
-
