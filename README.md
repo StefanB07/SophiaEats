@@ -46,4 +46,23 @@ You need Java level 21 (so Java1.21) , openJDK 24 and maven installed on your ma
     - > steps/: contains the step definitions for the cucumber tests
     - > RunCucumberTest.java : the class that runs the cucumber tests
 
+
+## Overview
+
+The **Catalog Service** is a lightweight, read-only backend module that exposes restaurant and menu data.  
+It is responsible for listing all available restaurants, providing detailed menu information,  
+and supporting filtering by cuisine type, price range, or dietary tags.
+
+This service operates independently on port **8081** and uses in-memory seeding (no database)  
+via `DataSeeder.java` to populate sample data for testing and development.  
+It serves as the data source for the **Order Service** and is later integrated through the **API Gateway**.
+
+| Method | URL                       | Descriere                                 |
+| ------ | ------------------------- |-------------------------------------------|
+| GET    | `/restaurants`            | List all restaurants                      |
+| GET    | `/restaurants/{name}`     | Show details and menu for a restaurant    |
+| GET    | `/restaurants/filter?...` | Filter by criteria (cuisine, price, etc.) |
+| GET    | `/health`                 | Check service status ({"status":"UP"})    |
+
+
    

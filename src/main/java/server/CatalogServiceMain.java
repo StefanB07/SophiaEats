@@ -32,9 +32,29 @@ public class CatalogServiceMain {
         CatalogApiHandler handler = new CatalogApiHandler(catalogService);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
-        // only one context runs /restaurants, /restaurants/filter, /restaurants/{name}
+        // Only one context for /restaurants, /restaurants/filter, /restaurants/{name}
         server.createContext("/restaurants", handler);
         server.setExecutor(null);
+
+        // Health check endpoint
+        server.createContext("/health", ex -> {
+            if ("GET".equalsIgnoreCase(ex.getRequestMethod())) {
+                String body = "{\"status\":\"UP\"}";
+                ex.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
+                ex.sendResponseHeaders(200, body.getBytes().length);
+                try (var os = ex.getResponseBody()) {
+                    os.write(body.getBytes());
+                }
+            } else {
+                String err = "{\"error\":\"Method Not Allowed\",\"status\":405}";
+                ex.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
+                ex.sendResponseHeaders(405, err.getBytes().length);
+                try (var os = ex.getResponseBody()) {
+                    os.write(err.getBytes());
+                }
+            }
+        });
+
 
         System.out.println("CatalogService listening on http://localhost:" + port);
         server.start();
