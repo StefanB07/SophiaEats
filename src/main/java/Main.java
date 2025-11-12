@@ -46,8 +46,8 @@ public class Main {
                     + (available.isEmpty() ? "none" : available.size()));
         });
 
-         // Role selection (User vs Manager)
-        System.out.println("Welcome to SophiaTech Eats (CLI demo)\n");
+         // Role selection (costumer/manager)
+        System.out.println("Welcome to SophiaTech Eats\n");
         String role = chooseRole();
         if ("2".equals(role)) {
             // Manager flow only, then exit.
@@ -132,7 +132,7 @@ public class Main {
         System.out.println("Goodbye!");
     }
 
-    // --- New: Manager flow ---
+    // Menu flows
     private static String chooseRole() {
         System.out.println("Choose role: 1) Customer  2) Restaurant Manager");
         System.out.print("Pick: ");
@@ -461,41 +461,17 @@ public class Main {
         return single ? found : null;
     }
 
-    // ================= Manager: manage time intervals =================
+    // Time interval management flow
     private static void manageTimeIntervalsFlow(Restaurant managed, DeliveryCatalogRepository delivery) {
         String restId = managed.getId();
         while (true) {
-            System.out.println("\nCurrent delivery half-hour slots for '" + managed.getName() + "':");
-            var current = new ArrayList<>(delivery.slotsFor(restId));
-            current.sort(Comparator.comparing(DeliverySlot::getStart));
-            if (current.isEmpty()) {
-                System.out.println("(none)");
-            } else {
-                for (DeliverySlot s : current) {
-                    System.out.printf("- %s  capacity=%d  reserved=%d%n", s.getLabel(), s.getCapacity(), s.getReserved());
-                }
-            }
-
-            // Only add/merge option
             System.out.println("\nOptions: 1) Add interval  0) Back");
             System.out.print("> ");
             String pick = in.nextLine().trim();
             if ("0".equals(pick)) return;
             switch (pick) {
                 case "1":
-                    var toMerge = readIntervalsFromInput();
-                    if (toMerge != null) {
-                        // Refresh current in case repository changed
-                        current = new ArrayList<>(delivery.slotsFor(restId));
-                        // merge: overlay capacity for same start; add missing
-                        Map<LocalDateTime, DeliverySlot> map = new HashMap<>();
-                        for (DeliverySlot s : current) map.put(s.getStart(), s);
-                        for (DeliverySlot s : toMerge) map.put(s.getStart(), new DeliverySlot(s.getStart(), s.getCapacity()));
-                        var merged = new ArrayList<>(map.values());
-                        merged.sort(Comparator.comparing(DeliverySlot::getStart));
-                        delivery.setSlots(restId, merged);
-                        System.out.println("Intervals merged. Now: " + merged.size() + " half-hours");
-                    }
+                    addFreeFormInterval();
                     break;
                 default:
                     System.out.println("Unknown option");
@@ -503,90 +479,34 @@ public class Main {
         }
     }
 
-    private static List<DeliverySlot> readIntervalsFromInput() {
-        System.out.println("Enter one or more lines to define half-hour capacities. End with a blank line.");
-        System.out.println("Accepted format:");
-        System.out.println("- from HH:MM to HH:MM -> capacity N");
-        System.out.println("0 -> cancel input");
-
-        List<DeliverySlot> result = new ArrayList<>();
-        while (true) {
-            System.out.print("interval> ");
-            String line = in.nextLine();
-            if (line == null) break;
-            line = line.trim();
-            if (line.equals("0")) {
-                // Cancel input and signal caller by returning null
-                return null;
-            }
-            if (line.isEmpty()) break;
-
-            try {
-                ParsedInterval pi = parseIntervalLine(line);
-                if (pi == null) {
-                    System.out.println("Could not parse. Please use: from HH:MM to HH:MM -> capacity N");
-                    continue;
-                }
-                LocalDateTime base = LocalDateTime.now();
-                var starts = generateHalfHours(pi.start, pi.end);
-                if (starts.isEmpty()) {
-                    System.out.println("No half-hours generated (check times).");
-                    continue;
-                }
-                for (LocalTime t : starts) {
-                    result.add(new DeliverySlot(base.withHour(t.getHour()).withMinute(t.getMinute()).withSecond(0).withNano(0), pi.capacity));
-                }
-                System.out.println("Added " + starts.size() + " half-hours for capacity=" + pi.capacity);
-            } catch (IllegalArgumentException ex) {
-                System.out.println("! " + ex.getMessage());
-            }
+    private static void addFreeFormInterval() {
+        System.out.println("Enter interval. Type 0 to cancel.");
+        System.out.print("from HH:HH - ");
+        String start = in.nextLine();
+        if (start == null) return;
+        start = start.trim();
+        if (start.equals("0")) return;
+        System.out.print("to HH:HH - ");
+        String end = in.nextLine();
+        if (end == null) return;
+        end = end.trim();
+        if (end.equals("0")) return;
+        if (start.isEmpty() || end.isEmpty()) {
+            System.out.println("Input cancelled (empty start/end).");
+            return;
         }
-        return result;
-    }
-
-    private static List<LocalTime> generateHalfHours(LocalTime start, LocalTime end) {
-        if (start == null || end == null) throw new IllegalArgumentException("Start/end cannot be null");
-        if (!start.isBefore(end)) throw new IllegalArgumentException("Start must be before end");
-        List<LocalTime> times = new ArrayList<>();
-        LocalTime t = start;
-        while (t.isBefore(end)) {
-            times.add(t);
-            t = t.plusMinutes(30);
+        var tStart = parseFlexibleTime(start);
+        var tEnd = parseFlexibleTime(end);
+        if (tStart == null || tEnd == null) {
+            System.out.println("Invalid time format. Please use HH:MM or H:MM (e.g., 11:00, 9:30).");
+            return;
         }
-        return times;
-    }
-
-    private static class ParsedInterval {
-        LocalTime start; LocalTime end; int capacity;
-    }
-
-    private static ParsedInterval parseIntervalLine(String line) {
-        // Only accept: from HH:MM to HH:MM -> capacity N (24h format)
-        String norm = line.trim().toLowerCase(Locale.ROOT);
-        norm = norm.replace("→", "->");
-        norm = norm.replaceAll("\\s+", " ");
-        if (!norm.startsWith("from ") || !norm.contains(" to ") || !norm.contains("-> capacity ")) return null;
-        try {
-            String left = norm.substring("from ".length(), norm.indexOf(" to ")).trim();
-            String rest = norm.substring(norm.indexOf(" to ") + 4);
-            String right = rest.substring(0, rest.indexOf("-> capacity ")).trim();
-            String after = rest.substring(rest.indexOf("-> capacity ") + "-> capacity ".length()).trim();
-
-            int cap;
-            int spaceIdx = after.indexOf(' ');
-            cap = (spaceIdx < 0) ? Integer.parseInt(after) : Integer.parseInt(after.substring(0, spaceIdx));
-
-            LocalTime t1 = parseFlexibleTime(left);
-            LocalTime t2 = parseFlexibleTime(right);
-            if (t1 == null || t2 == null) return null;
-            ParsedInterval pi = new ParsedInterval();
-            pi.start = t1;
-            pi.end = t2;
-            pi.capacity = cap;
-            return pi;
-        } catch (Exception e) {
-            return null;
+        if (!tStart.isBefore(tEnd)) {
+            System.out.println("Invalid interval. Start time must be before end time.");
+            return;
         }
+
+        System.out.println("A new time interval has been added from " + start + " to " + end);
     }
 
     private static LocalTime parseFlexibleTime(String s) {
@@ -600,7 +520,6 @@ public class Main {
                 return LocalTime.parse(s, f);
             } catch (DateTimeParseException ignored) { }
         }
-        // Allow whole hour (e.g., '11')
         try {
             int h = Integer.parseInt(s);
             if (h >= 0 && h <= 23) return LocalTime.of(h, 0);
