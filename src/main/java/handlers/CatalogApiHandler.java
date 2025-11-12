@@ -86,8 +86,9 @@ public class CatalogApiHandler extends BaseHandler {
     }
 
     private void filter(HttpExchange ex) throws IOException {
+        // Take the raw URL query and decode it
         URI uri = ex.getRequestURI();
-        Map<String, String> params = queryToMap(uri.getRawQuery()); // luăm raw și decodăm valorile punctual
+        Map<String, String> params = queryToMap(uri.getRawQuery());
 
         FilterCriteria c = new FilterCriteria();
         if (params.containsKey("cuisine"))   c.setCuisineType(urlDecode(params.get("cuisine")));
@@ -140,7 +141,7 @@ public class CatalogApiHandler extends BaseHandler {
                 case '\r': sb.append("\\r");  break;
                 case '\t': sb.append("\\t");  break;
                 default:
-                    // escape pentru control chars < 0x20
+                    // Escape for control characters < 0x20
                     if (ch < 0x20) {
                         sb.append(String.format("\\u%04x", (int) ch));
                     } else {
