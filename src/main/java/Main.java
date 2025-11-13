@@ -590,12 +590,10 @@ public class Main {
             System.out.print("> ");
             String pick = in.nextLine().trim();
             if ("0".equals(pick)) return;
-            switch (pick) {
-                case "1":
-                    addFreeFormInterval();
-                    break;
-                default:
-                    System.out.println("Unknown option");
+            if (pick.equals("1")) {
+                addFreeFormInterval();
+            } else {
+                System.out.println("Unknown option");
             }
         }
     }
