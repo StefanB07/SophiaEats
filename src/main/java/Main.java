@@ -156,8 +156,9 @@ public class Main {
         while (true) {
             System.out.println("\n--- Manager Menu for '" + managed.getName() + "' ---");
             System.out.println("1) Add a dish");
-            System.out.println("2) Manage delivery time intervals/capacities");
-            System.out.println("0) Exit manager");
+            System.out.println("2) Update a dish"); // changed numbering
+            System.out.println("3) Manage delivery time intervals/capacities"); // shifted to 3
+            System.out.println("0) Exit");
             System.out.print("> ");
             String pick = in.nextLine().trim();
             if ("0".equals(pick)) break;
@@ -166,6 +167,9 @@ public class Main {
                     addDishFlow(managed, restaurants);
                     break;
                 case "2":
+                    updateDishFlow(managed, restaurants); // new flow
+                    break;
+                case "3":
                     manageTimeIntervalsFlow(managed, delivery);
                     break;
                 default:
@@ -176,8 +180,18 @@ public class Main {
 
     private static void addDishFlow(Restaurant managed, RestaurantRepository restaurants) {
         System.out.println("\nAdd new dish to '" + managed.getName() + "'");
-        String name = readNonEmpty("Dish name: ");
-        String description = readNonEmpty("Description: ");
+        System.out.print("Dish name: ");
+        String name = in.nextLine();
+        if (name.isEmpty()) {
+            System.out.println("Name cannot be empty. Aborting.");
+            return;
+        }
+        System.out.print("Description: ");
+        String description = in.nextLine();
+        if (description.isEmpty()) {
+            System.out.println("Description cannot be empty. Aborting.");
+            return;
+        }
         System.out.print("Price: ");
         double price = readDoubleMin(0);
         DishCategory category = pickDishCategory();
@@ -191,24 +205,131 @@ public class Main {
         System.out.println("Added dish: " + dish.getName() + " (" + category + ") to '" + managed.getName() + "'. Total dishes: " + managed.getMenu().size());
     }
 
+    private static void updateDishFlow(Restaurant managed, RestaurantRepository restaurants) {
+        if (managed.getMenu().isEmpty()) {
+            System.out.println("No dishes to update.");
+            return;
+        }
+        while (true) {
+            System.out.println("\nDishes for '" + managed.getName() + "':");
+            int i = 1;
+            for (Dish d : managed.getMenu()) {
+                System.out.println(i++ + ") " + d.getName() + " - " + String.format(java.util.Locale.US, "%.2f", d.getPrice()) + " (" + d.getCategory() + ")");
+            }
+            System.out.print("Pick dish to update (0=back): ");
+            int idx = readInt(0, managed.getMenu().size());
+            if (idx == 0) return;
+            Dish dish = managed.getMenu().get(idx - 1);
+            updateSingleDish(dish);
+            restaurants.save(managed); // persist changes
+        }
+    }
+
+    private static void updateSingleDish(Dish dish) {
+        while (true) {
+            System.out.println("\nUpdating dish: " + dish.getName());
+            System.out.println("Current description: " + dish.getDescription());
+            System.out.println("Current price: " + dish.getPrice());
+            System.out.println("Current category: " + dish.getCategory());
+            System.out.println("Current type: " + (dish.getType() == null ? "(none)" : dish.getType()));
+            System.out.println("Dietary tags: " + (dish.getDietaryTags().isEmpty() ? "(none)" : dish.getDietaryTags()));
+            System.out.println("Options:");
+            System.out.println("1) Change name");
+            System.out.println("2) Change description");
+            System.out.println("3) Change price");
+            System.out.println("4) Change category");
+            System.out.println("5) Change type");
+            System.out.println("6) Add dietary tag");
+            System.out.println("7) Remove dietary tag");
+            System.out.println("0) Back");
+            System.out.print("> ");
+            String pick = in.nextLine().trim();
+            switch (pick) {
+                case "0":
+                    return;
+                case "1":
+                    System.out.print("New name: ");
+                    String nn = in.nextLine().trim();
+                    if (!nn.isBlank()) forceSetField(dish, "name", nn);
+                    break;
+                case "2":
+                    System.out.print("New description: ");
+                    String nd = in.nextLine().trim();
+                    if (!nd.isBlank()) forceSetField(dish, "description", nd);
+                    break;
+                case "3":
+                    System.out.print("New price: ");
+                    double p = readDoubleMin(0);
+                    dish.setPrice(p);
+                    break;
+                case "4":
+                    DishCategory cat = pickDishCategory();
+                    forceSetField(dish, "category", cat);
+                    break;
+                case "5":
+                    System.out.print("New type (blank=none): ");
+                    String tp = in.nextLine().trim();
+                    forceSetField(dish, "type", tp.isBlank() ? null : tp);
+                    break;
+                case "6":
+                    DietaryTag tag = pickDietaryTag();
+                    if (tag != null) dish.addDietaryTag(tag);
+                    break;
+                case "7":
+                    removeDietaryTag(dish);
+                    break;
+                default:
+                    System.out.println("Unknown choice");
+            }
+        }
+    }
+
+    private static DietaryTag pickDietaryTag() {
+        System.out.println("Pick dietary tag:");
+        DietaryTag[] vals = DietaryTag.values();
+        for (int i = 0; i < vals.length; i++) {
+            System.out.println((i + 1) + ") " + vals[i]);
+        }
+        System.out.print("Tag number (0=cancel): ");
+        int idx = readInt(0, vals.length);
+        if (idx == 0) return null;
+        return vals[idx - 1];
+    }
+
+    private static void removeDietaryTag(Dish dish) {
+        if (dish.getDietaryTags().isEmpty()) {
+            System.out.println("No tags to remove.");
+            return;
+        }
+        System.out.println("Dietary tags:");
+        for (int i = 0; i < dish.getDietaryTags().size(); i++) {
+            System.out.println((i + 1) + ") " + dish.getDietaryTags().get(i));
+        }
+        System.out.print("Remove which (0=cancel): ");
+        int idx = readInt(0, dish.getDietaryTags().size());
+        if (idx == 0) return;
+        dish.getDietaryTags().remove(idx - 1);
+    }
+
+    private static void forceSetField(Object target, String fieldName, Object value) {
+        try {
+            var f = target.getClass().getDeclaredField(fieldName);
+            f.setAccessible(true);
+            f.set(target, value);
+        } catch (Exception e) {
+            System.out.println("Cannot update field '" + fieldName + "': " + e.getMessage());
+        }
+    }
+
     private static DishCategory pickDishCategory() {
         System.out.println("Pick category:");
         DishCategory[] values = DishCategory.values();
         for (int i = 0; i < values.length; i++) {
-            System.out.printf("%d) %s%n", i + 1, values[i]);
+            System.out.println((i + 1) + ") " + values[i]);
         }
         System.out.print("Category number: ");
         int idx = readInt(1, values.length);
         return values[idx - 1];
-    }
-
-    private static String readNonEmpty(String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            String s = in.nextLine();
-            if (s != null && !s.trim().isBlank()) return s.trim();
-            System.out.println("Please enter a non-empty value.");
-        }
     }
 
     // --- UI helpers ---
@@ -267,7 +388,7 @@ public class Main {
         System.out.println("\nMenu for " + r.getName() + ":");
         int i = 1;
         for (Dish d : r.getMenu()) {
-            System.out.printf("%d) %s - %.2f (%s)%n", i++, d.getName(), d.getPrice(), d.getCategory());
+            System.out.println(i++ + ") " + d.getName() + " - " + String.format(java.util.Locale.US, "%.2f", d.getPrice()) + " (" + d.getCategory() + ")");
         }
         System.out.print("Dish number (0=done): ");
         int idx = readInt(0, r.getMenu().size());

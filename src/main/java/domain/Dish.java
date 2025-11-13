@@ -14,7 +14,6 @@ public class Dish {
 
     // câmpuri suplimentare
     private List<DietaryTag> dietaryTags;
-    private List<ExtraOption> extraOptions;
 
     // === Constructor păstrat pentru compatibilitate handler ===
     public Dish(String name, String description, double price, DishCategory category, String type) {
@@ -25,7 +24,6 @@ public class Dish {
         this.category = category;
         this.type = type;
         this.dietaryTags = new ArrayList<>();
-        this.extraOptions = new ArrayList<>();
     }
 
     // === Getteri folosiți în handler ===
@@ -60,14 +58,6 @@ public class Dish {
 
     public List<DietaryTag> getDietaryTags() {
         return dietaryTags;
-    }
-
-    public void addExtraOption(ExtraOption option) {
-        extraOptions.add(option);
-    }
-
-    public List<ExtraOption> getExtraOptions() {
-        return extraOptions;
     }
 
     // Verifică dacă preparatul are un anumit tag alimentar.
