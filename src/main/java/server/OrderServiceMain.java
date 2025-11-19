@@ -3,8 +3,8 @@ package server;
 import com.sun.net.httpserver.HttpServer;
 import handlers.OrderApiHandler;
 import repository.*;
-import service.CatalogService;
 import service.CartService;
+import service.CatalogService;
 import service.OrderService;
 import bootstrap.DataSeeder;
 
@@ -14,30 +14,44 @@ import java.net.InetSocketAddress;
 public class OrderServiceMain {
     public static void main(String[] args) throws IOException {
         int port = 8082;
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        // Instantiate repositories
-        CampusUserRepository users = new CampusUserRepository();
+        // Repositories
         RestaurantRepository restaurants = new RestaurantRepository();
+        CampusUserRepository users = new CampusUserRepository();
         CartRepository carts = new CartRepository();
         OrderRepository orders = new OrderRepository();
         DeliveryCatalogRepository delivery = new DeliveryCatalogRepository();
 
-        // Seed data consistently across services (in-memory for demo)
+        // Seed shared demo data
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
 
         // Services
-        CatalogService catalogService = new CatalogService(restaurants);
         CartService cartService = new CartService(carts, restaurants);
         OrderService orderService = new OrderService(delivery, restaurants);
+        CatalogService catalogService = new CatalogService(restaurants);
 
-        // Single handler for all order-related APIs
-        OrderApiHandler api = new OrderApiHandler(cartService, orderService, orders, catalogService);
+        // Handler
+        OrderApiHandler handler = new OrderApiHandler(cartService, orderService, orders, catalogService);
 
-        server.createContext("/cart", api);
-        server.createContext("/orders", api);
-
+        // HTTP server
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        server.createContext("/cart", handler);
+        server.createContext("/orders", handler);
+        server.createContext("/health", ex -> {
+            if ("GET".equalsIgnoreCase(ex.getRequestMethod())) {
+                String body = "{\"status\":\"UP\"}";
+                ex.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
+                ex.sendResponseHeaders(200, body.getBytes().length);
+                try (var os = ex.getResponseBody()) { os.write(body.getBytes()); }
+            } else {
+                String err = "{\"error\":\"Method Not Allowed\",\"status\":405}";
+                ex.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
+                ex.sendResponseHeaders(405, err.getBytes().length);
+                try (var os = ex.getResponseBody()) { os.write(err.getBytes()); }
+            }
+        });
         server.setExecutor(null);
+
         System.out.println("OrderService listening on http://localhost:" + port);
         server.start();
     }

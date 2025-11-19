@@ -1,0 +1,42 @@
+### Order service — health
+GET http://localhost:8082/health
+Accept: application/json
+
+### Get cart (user-1)
+GET http://localhost:8082/cart
+X-User-Id: user-1
+Accept: application/json
+
+### Add to cart (user-1)
+POST http://localhost:8082/cart/items
+X-User-Id: user-1
+Content-Type: application/json
+
+{
+  "restaurant": "Restaurant A",
+  "dish": "Pizza Margherita",
+  "qty": 2
+}
+
+### Place order (user-1)
+POST http://localhost:8082/orders
+X-User-Id: user-1
+Content-Type: text/plain
+
+Library|2029-12-31 12:30
+
+### Fetch order by id (replace {{id}})
+GET http://localhost:8082/orders/{{id}}
+X-User-Id: user-1
+Accept: application/json
+
+### Concurrency check — user-2 separate cart
+POST http://localhost:8082/cart/items
+X-User-Id: user-2
+Content-Type: application/json
+
+{
+  "restaurant": "Restaurant A",
+  "dish": "Pizza Margherita",
+  "qty": 1
+}
