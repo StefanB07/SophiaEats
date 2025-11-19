@@ -48,15 +48,15 @@ public class GatewayHandler extends BaseHandler {
                         ? HttpRequest.BodyPublishers.ofByteArray(body)
                         : HttpRequest.BodyPublishers.noBody());
 
-        // Forward only essential headers
+        // Forward essential headers + Accept for JSON usage
         copyHeader(ex, b, "Content-Type");
         copyHeader(ex, b, "Authorization");
         copyHeader(ex, b, "X-User-Id");
+        copyHeader(ex, b, "Accept");
 
         try {
             HttpResponse<byte[]> resp = client.send(b.build(), HttpResponse.BodyHandlers.ofByteArray());
 
-            // Pass Content-Type if present
             String ct = resp.headers().firstValue("Content-Type").orElse("application/json");
             ex.getResponseHeaders().set("Content-Type", ct);
 
@@ -82,7 +82,7 @@ public class GatewayHandler extends BaseHandler {
         var h = ex.getResponseHeaders();
         h.set("Access-Control-Allow-Origin", "*");
         h.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-        h.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-User-Id");
+        h.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-User-Id, Accept");
         h.set("Access-Control-Max-Age", "3600");
     }
 }
