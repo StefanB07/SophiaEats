@@ -132,13 +132,6 @@ note right of Order
   DeliverySlot assignment is resolved by services; slots are not owned by Order.
 end note
 
-note bottom
-  Legend:
-  *--  composition (strong ownership, child lifecycle bound to parent)
-  o--  aggregation (weak ownership)
-  --   association
-  ..>  dependency / operation
-  {derived} indicates a derived/virtual association
-end note
+
 
 @enduml
