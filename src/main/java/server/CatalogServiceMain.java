@@ -3,9 +3,12 @@ package server;
 import com.sun.net.httpserver.HttpServer;
 import handlers.CatalogApiHandler;
 import repository.RestaurantRepository;
-import bootstrap.DataSeeder;
-import repository.*;
+import repository.CartRepository;
+import repository.OrderRepository;
+import repository.DeliveryCatalogRepository;
+import repository.CampusUserRepository;
 import service.CatalogService;
+import bootstrap.DataSeeder;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -13,23 +16,48 @@ import java.net.InetSocketAddress;
 public class CatalogServiceMain {
     public static void main(String[] args) throws IOException {
         int port = 8081;
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        // Repos for catalog
+        // Repos locale (in-memory)
         RestaurantRepository restaurantRepository = new RestaurantRepository();
-        // Seed using the same seeder as other services for consistency
-        DataSeeder.resetAndSeed(new CampusUserRepository(), restaurantRepository,
-                new CartRepository(), new OrderRepository(), new DeliveryCatalogRepository());
+        CampusUserRepository users = new CampusUserRepository();
+        CartRepository carts = new CartRepository();
+        OrderRepository orders = new OrderRepository();
+        DeliveryCatalogRepository delivery = new DeliveryCatalogRepository();
 
-        // Service + single handler
+        // Common data seeding for all services (avoiding divergence)
+        DataSeeder.resetAndSeed(users, restaurantRepository, carts, orders, delivery);
+
+        // Service + handler
         CatalogService catalogService = new CatalogService(restaurantRepository);
         CatalogApiHandler handler = new CatalogApiHandler(catalogService);
 
-        // One context is enough; it will handle /restaurants, /restaurants/filter, /restaurants/{name}
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        // Only one context for /restaurants, /restaurants/filter, /restaurants/{name}
         server.createContext("/restaurants", handler);
+        server.setExecutor(null);
 
-        server.setExecutor(null); // default executor (multi-threaded)
+        // Health check endpoint
+        server.createContext("/health", ex -> {
+            if ("GET".equalsIgnoreCase(ex.getRequestMethod())) {
+                String body = "{\"status\":\"UP\"}";
+                ex.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
+                ex.sendResponseHeaders(200, body.getBytes().length);
+                try (var os = ex.getResponseBody()) {
+                    os.write(body.getBytes());
+                }
+            } else {
+                String err = "{\"error\":\"Method Not Allowed\",\"status\":405}";
+                ex.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
+                ex.sendResponseHeaders(405, err.getBytes().length);
+                try (var os = ex.getResponseBody()) {
+                    os.write(err.getBytes());
+                }
+            }
+        });
+
+
         System.out.println("CatalogService listening on http://localhost:" + port);
         server.start();
     }
 }
+
