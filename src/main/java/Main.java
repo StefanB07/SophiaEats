@@ -5,6 +5,9 @@ import service.CartService;
 import service.OrderService;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 public class Main {
@@ -43,12 +46,21 @@ public class Main {
                     + (available.isEmpty() ? "none" : available.size()));
         });
 
+         // Role selection (costumer/manager)
+        System.out.println("Welcome to SophiaTech Eats\n");
+        String role = chooseRole();
+        if ("2".equals(role)) {
+            // Manager flow only, then exit.
+            managerFlow(restaurants, delivery);
+            System.out.println("Goodbye!");
+            return;
+        }
+
         // Working state
         Cart cart = (currentUser != null)
                 ? cartService.getOrCreateCart(currentUser)
                 : carts.createCart();
 
-        System.out.println("Welcome to SophiaTech Eats (CLI demo)\n");
         if (currentUser != null) {
             System.out.println("Logged in as: " + currentUser.getName() + " (" + currentUser.getEmail() + ")");
         } else {
@@ -120,6 +132,206 @@ public class Main {
         System.out.println("Goodbye!");
     }
 
+    // Menu flows
+    private static String chooseRole() {
+        System.out.println("Choose role: 1) Customer  2) Restaurant Manager");
+        System.out.print("Pick: ");
+        String choice = in.nextLine().trim();
+        if (!"1".equals(choice) && !"2".equals(choice)) {
+            System.out.println("Defaulting to Customer.");
+            return "1";
+        }
+        return choice;
+    }
+
+    private static void managerFlow(RestaurantRepository restaurants, DeliveryCatalogRepository delivery) {
+        List<Restaurant> list = new ArrayList<>(restaurants.findAll());
+        if (list.isEmpty()) {
+            System.out.println("No restaurants available to manage.");
+            return;
+        }
+        System.out.println("\n--- Manager: pick a restaurant to manage ---");
+        Restaurant managed = chooseRestaurant(list);
+
+        while (true) {
+            System.out.println("\n--- Manager Menu for '" + managed.getName() + "' ---");
+            System.out.println("1) Add a dish");
+            System.out.println("2) Update a dish"); // changed numbering
+            System.out.println("3) Manage delivery time intervals/capacities"); // shifted to 3
+            System.out.println("0) Exit");
+            System.out.print("> ");
+            String pick = in.nextLine().trim();
+            if ("0".equals(pick)) break;
+            switch (pick) {
+                case "1":
+                    addDishFlow(managed, restaurants);
+                    break;
+                case "2":
+                    updateDishFlow(managed, restaurants); // new flow
+                    break;
+                case "3":
+                    manageTimeIntervalsFlow(managed, delivery);
+                    break;
+                default:
+                    System.out.println("Unknown option");
+            }
+        }
+    }
+
+    private static void addDishFlow(Restaurant managed, RestaurantRepository restaurants) {
+        System.out.println("\nAdd new dish to '" + managed.getName() + "'");
+        System.out.print("Dish name: ");
+        String name = in.nextLine();
+        if (name.isEmpty()) {
+            System.out.println("Name cannot be empty. Aborting.");
+            return;
+        }
+        System.out.print("Description: ");
+        String description = in.nextLine();
+        if (description.isEmpty()) {
+            System.out.println("Description cannot be empty. Aborting.");
+            return;
+        }
+        System.out.print("Price: ");
+        double price = readDoubleMin(0);
+        DishCategory category = pickDishCategory();
+        System.out.print("Specific type (blank=none): ");
+        String type = in.nextLine().trim();
+        if (type.isBlank()) type = null;
+
+        Dish dish = new Dish(name, description, price, category, type);
+        managed.addDishToMenu(dish);
+        restaurants.save(managed);
+        System.out.println("Added dish: " + dish.getName() + " (" + category + ") to '" + managed.getName() + "'. Total dishes: " + managed.getMenu().size());
+    }
+
+    private static void updateDishFlow(Restaurant managed, RestaurantRepository restaurants) {
+        if (managed.getMenu().isEmpty()) {
+            System.out.println("No dishes to update.");
+            return;
+        }
+        while (true) {
+            System.out.println("\nDishes for '" + managed.getName() + "':");
+            int i = 1;
+            for (Dish d : managed.getMenu()) {
+                System.out.println(i++ + ") " + d.getName() + " - " + String.format(java.util.Locale.US, "%.2f", d.getPrice()) + " (" + d.getCategory() + ")");
+            }
+            System.out.print("Pick dish to update (0=back): ");
+            int idx = readInt(0, managed.getMenu().size());
+            if (idx == 0) return;
+            Dish dish = managed.getMenu().get(idx - 1);
+            updateSingleDish(dish);
+            restaurants.save(managed); // persist changes
+        }
+    }
+
+    private static void updateSingleDish(Dish dish) {
+        while (true) {
+            System.out.println("\nUpdating dish: " + dish.getName());
+            System.out.println("Current description: " + dish.getDescription());
+            System.out.println("Current price: " + dish.getPrice());
+            System.out.println("Current category: " + dish.getCategory());
+            System.out.println("Current type: " + (dish.getType() == null ? "(none)" : dish.getType()));
+            System.out.println("Dietary tags: " + (dish.getDietaryTags().isEmpty() ? "(none)" : dish.getDietaryTags()));
+            System.out.println("Options:");
+            System.out.println("1) Change name");
+            System.out.println("2) Change description");
+            System.out.println("3) Change price");
+            System.out.println("4) Change category");
+            System.out.println("5) Change type");
+            System.out.println("6) Add dietary tag");
+            System.out.println("7) Remove dietary tag");
+            System.out.println("0) Back");
+            System.out.print("> ");
+            String pick = in.nextLine().trim();
+            switch (pick) {
+                case "0":
+                    return;
+                case "1":
+                    System.out.print("New name: ");
+                    String nn = in.nextLine().trim();
+                    if (!nn.isBlank()) forceSetField(dish, "name", nn);
+                    break;
+                case "2":
+                    System.out.print("New description: ");
+                    String nd = in.nextLine().trim();
+                    if (!nd.isBlank()) forceSetField(dish, "description", nd);
+                    break;
+                case "3":
+                    System.out.print("New price: ");
+                    double p = readDoubleMin(0);
+                    dish.setPrice(p);
+                    break;
+                case "4":
+                    DishCategory cat = pickDishCategory();
+                    forceSetField(dish, "category", cat);
+                    break;
+                case "5":
+                    System.out.print("New type (blank=none): ");
+                    String tp = in.nextLine().trim();
+                    forceSetField(dish, "type", tp.isBlank() ? null : tp);
+                    break;
+                case "6":
+                    DietaryTag tag = pickDietaryTag();
+                    if (tag != null) dish.addDietaryTag(tag);
+                    break;
+                case "7":
+                    removeDietaryTag(dish);
+                    break;
+                default:
+                    System.out.println("Unknown choice");
+            }
+        }
+    }
+
+    private static DietaryTag pickDietaryTag() {
+        System.out.println("Pick dietary tag:");
+        DietaryTag[] vals = DietaryTag.values();
+        for (int i = 0; i < vals.length; i++) {
+            System.out.println((i + 1) + ") " + vals[i]);
+        }
+        System.out.print("Tag number (0=cancel): ");
+        int idx = readInt(0, vals.length);
+        if (idx == 0) return null;
+        return vals[idx - 1];
+    }
+
+    private static void removeDietaryTag(Dish dish) {
+        if (dish.getDietaryTags().isEmpty()) {
+            System.out.println("No tags to remove.");
+            return;
+        }
+        System.out.println("Dietary tags:");
+        for (int i = 0; i < dish.getDietaryTags().size(); i++) {
+            System.out.println((i + 1) + ") " + dish.getDietaryTags().get(i));
+        }
+        System.out.print("Remove which (0=cancel): ");
+        int idx = readInt(0, dish.getDietaryTags().size());
+        if (idx == 0) return;
+        dish.getDietaryTags().remove(idx - 1);
+    }
+
+    private static void forceSetField(Object target, String fieldName, Object value) {
+        try {
+            var f = target.getClass().getDeclaredField(fieldName);
+            f.setAccessible(true);
+            f.set(target, value);
+        } catch (Exception e) {
+            System.out.println("Cannot update field '" + fieldName + "': " + e.getMessage());
+        }
+    }
+
+    private static DishCategory pickDishCategory() {
+        System.out.println("Pick category:");
+        DishCategory[] values = DishCategory.values();
+        for (int i = 0; i < values.length; i++) {
+            System.out.println((i + 1) + ") " + values[i]);
+        }
+        System.out.print("Category number: ");
+        int idx = readInt(1, values.length);
+        return values[idx - 1];
+    }
+
     // --- UI helpers ---
 
     private static List<Restaurant> doFilter(RestaurantRepository restaurants) {
@@ -176,7 +388,7 @@ public class Main {
         System.out.println("\nMenu for " + r.getName() + ":");
         int i = 1;
         for (Dish d : r.getMenu()) {
-            System.out.printf("%d) %s - %.2f (%s)%n", i++, d.getName(), d.getPrice(), d.getCategory());
+            System.out.println(i++ + ") " + d.getName() + " - " + String.format(java.util.Locale.US, "%.2f", d.getPrice()) + " (" + d.getCategory() + ")");
         }
         System.out.print("Dish number (0=done): ");
         int idx = readInt(0, r.getMenu().size());
@@ -368,5 +580,69 @@ public class Main {
         // Validate all items belong to same restaurant
         boolean single = cart.getItems().stream().allMatch(it -> found.getMenu().contains(it.getDish()));
         return single ? found : null;
+    }
+
+    // Time interval management flow
+    private static void manageTimeIntervalsFlow(Restaurant managed, DeliveryCatalogRepository delivery) {
+        String restId = managed.getId();
+        while (true) {
+            System.out.println("\nOptions: 1) Add interval  0) Back");
+            System.out.print("> ");
+            String pick = in.nextLine().trim();
+            if ("0".equals(pick)) return;
+            if (pick.equals("1")) {
+                addFreeFormInterval();
+            } else {
+                System.out.println("Unknown option");
+            }
+        }
+    }
+
+    private static void addFreeFormInterval() {
+        System.out.println("Enter interval. Type 0 to cancel.");
+        System.out.print("from HH:HH - ");
+        String start = in.nextLine();
+        if (start == null) return;
+        start = start.trim();
+        if (start.equals("0")) return;
+        System.out.print("to HH:HH - ");
+        String end = in.nextLine();
+        if (end == null) return;
+        end = end.trim();
+        if (end.equals("0")) return;
+        if (start.isEmpty() || end.isEmpty()) {
+            System.out.println("Input cancelled (empty start/end).");
+            return;
+        }
+        var tStart = parseFlexibleTime(start);
+        var tEnd = parseFlexibleTime(end);
+        if (tStart == null || tEnd == null) {
+            System.out.println("Invalid time format. Please use HH:MM or H:MM (e.g., 11:00, 9:30).");
+            return;
+        }
+        if (!tStart.isBefore(tEnd)) {
+            System.out.println("Invalid interval. Start time must be before end time.");
+            return;
+        }
+
+        System.out.println("A new time interval has been added from " + start + " to " + end);
+    }
+
+    private static LocalTime parseFlexibleTime(String s) {
+        s = s.trim();
+        List<DateTimeFormatter> fmts = List.of(
+                DateTimeFormatter.ofPattern("H:mm"),
+                DateTimeFormatter.ofPattern("HH:mm")
+        );
+        for (DateTimeFormatter f : fmts) {
+            try {
+                return LocalTime.parse(s, f);
+            } catch (DateTimeParseException ignored) { }
+        }
+        try {
+            int h = Integer.parseInt(s);
+            if (h >= 0 && h <= 23) return LocalTime.of(h, 0);
+        } catch (NumberFormatException ignored) { }
+        return null;
     }
 }
