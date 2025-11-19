@@ -16,6 +16,14 @@ public class GatewayHandler extends BaseHandler {
 
     @Override
     public void handle(HttpExchange ex) throws IOException {
+        addCorsHeaders(ex);
+
+        if ("OPTIONS".equalsIgnoreCase(ex.getRequestMethod())) {
+            ex.sendResponseHeaders(204, -1);
+            ex.close();
+            return;
+        }
+
         String path = ex.getRequestURI().getRawPath();
         String base;
         if (path.startsWith("/restaurants")) {
@@ -68,5 +76,13 @@ public class GatewayHandler extends BaseHandler {
     private static void copyHeader(HttpExchange ex, HttpRequest.Builder b, String name) {
         var vals = ex.getRequestHeaders().get(name);
         if (vals != null) for (String v : vals) b.header(name, v);
+    }
+
+    private static void addCorsHeaders(HttpExchange ex) {
+        var h = ex.getResponseHeaders();
+        h.set("Access-Control-Allow-Origin", "*");
+        h.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+        h.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-User-Id");
+        h.set("Access-Control-Max-Age", "3600");
     }
 }

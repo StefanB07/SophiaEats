@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Campus Food Minimal</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        body { font-family: system-ui, sans-serif; margin:16px; }
+        h1 { margin:0 0 12px; }
+        section { margin-bottom:20px; }
+        ul { list-style:none; padding:0; }
+        li { padding:4px 0; }
+        button { cursor:pointer; }
+        .small { font-size:0.85em; color:#555; }
+        .err { color:#b00020; }
+    </style>
+</head>
+<body>
+<h1>Campus Food</h1>
+
+<section>
+    <label>User ID:
+        <input id="userId" placeholder="user-1">
+    </label>
+    <button id="saveUser">Save</button>
+    <span id="status" class="small"></span>
+</section>
+
+<section>
+    <h3>Restaurants</h3>
+    <ul id="restaurants"></ul>
+</section>
+
+<section>
+    <h3 id="menuTitle">Menu</h3>
+    <div id="menu"></div>
+</section>
+
+<section>
+    <h3>Cart</h3>
+    <div id="cart"></div>
+</section>
+
+<section>
+    <h3>Place Order</h3>
+    <label>Delivery place: <input id="deliveryPlace" placeholder="Building A"></label><br><br>
+    <label>Delivery time (yyyy-MM-dd HH:mm or ISO): <input id="deliveryTime" placeholder="2025-11-19T12:00"></label><br><br>
+    <button id="placeOrder">Order</button>
+    <div id="orderMsg" class="small"></div>
+</section>
+
+<script>
+    const BASE = 'http://localhost:8080';
+
+    function getUserId() { return localStorage.getItem('xUserId') || 'user-1'; }
+    function setUserId(v){ localStorage.setItem('xUserId', v || 'user-1'); }
+
+    function status(msg, isErr){
+        const s = document.getElementById('status');
+        s.textContent = msg;
+        s.className = 'small' + (isErr ? ' err' : '');
+    }
+
+    async function loadRestaurants(){
+        status('Loading...');
+        try {
+            const r = await fetch(BASE + '/restaurants');
+            if(!r.ok) throw new Error(await r.text());
+            const data = await r.json();
+            renderRestaurants(data);
+            status('Ready');
+        } catch(e){ status('Error: ' + e.message, true); }
+    }
+
+    function renderRestaurants(list){
+        const ul = document.getElementById('restaurants');
+        ul.innerHTML = '';
+        list.forEach(r=>{
+            const li = document.createElement('li');
+            li.innerHTML = '<strong>' + esc(r.name) + '</strong> ' +
+                '<span class="small">' + esc(r.cuisineType||'') + '</span>';
+            li.style.cursor='pointer';
+            li.onclick = ()=> loadRestaurant(r.name);
+            ul.appendChild(li);
+        });
+    }
+
+    async function loadRestaurant(name){
+        document.getElementById('menuTitle').textContent = 'Menu • ' + name;
+        const menuDiv = document.getElementById('menu');
+        menuDiv.textContent = 'Loading...';
+        try {
+            const r = await fetch(BASE + '/restaurants/' + encodeURIComponent(name));
+            if(!r.ok) throw new Error(await r.text());
+            const rest = await r.json();
+            renderMenu(rest);
+        } catch(e){
+            menuDiv.innerHTML = '<div class="err">' + esc(e.message) + '</div>';
+        }
+    }
+
+    function renderMenu(rest){
+        const menuDiv = document.getElementById('menu');
+        if(!rest.menu || !rest.menu.length){
+            menuDiv.innerHTML = '<div class="small">No items.</div>';
+            return;
+        }
+        const frag = document.createDocumentFragment();
+        rest.menu.forEach(d=>{
+            const row = document.createElement('div');
+            row.style.marginBottom='6px';
+            const qtyId = 'qty_' + Math.random().toString(36).slice(2);
+            row.innerHTML =
+                '<span><strong>' + esc(d.name) + '</strong> (' + d.price + '€)</span> ' +
+                '<input id="'+qtyId+'" type="number" min="1" value="1" style="width:60px"> ' +
+                '<button>Add</button>';
+            row.querySelector('button').onclick = ()=>{
+                const q = parseInt(document.getElementById(qtyId).value||'1',10);
+                addToCart(rest.name, d.name, q);
+            };
+            frag.appendChild(row);
+        });
+        menuDiv.innerHTML = '';
+        menuDiv.appendChild(frag);
+    }
+
+    async function addToCart(restaurant, dish, qty){
+        try{
+            const body = dish + '|' + qty + '|' + restaurant;
+            const r = await fetch(BASE + '/cart', {
+                method:'POST',
+                headers:{'Content-Type':'text/plain','X-User-Id':getUserId()},
+                body
+            });
+            if(!r.ok) throw new Error(await r.text());
+            await refreshCart();
+        } catch(e){ alert('Add failed: ' + e.message); }
+    }
+
+    async function refreshCart(){
+        try{
+            const r = await fetch(BASE + '/cart', { headers:{'X-User-Id':getUserId()} });
+            if(!r.ok) throw new Error(await r.text());
+            const c = await r.json();
+            renderCart(c);
+        } catch(e){
+            document.getElementById('cart').innerHTML = '<div class="err">'+esc(e.message)+'</div>';
+        }
+    }
+
+    function renderCart(c){
+        const div = document.getElementById('cart');
+        const items = c.items || [];
+        if(!items.length){
+            div.innerHTML = '<div class="small">Empty.</div>';
+            return;
+        }
+        const ul = document.createElement('ul');
+        items.forEach(it=>{
+            const li = document.createElement('li');
+            li.textContent = it.name + ' × ' + it.qty + ' = ' + it.lineTotal + '€';
+            ul.appendChild(li);
+        });
+        div.innerHTML = '';
+        div.appendChild(ul);
+        const total = document.createElement('div');
+        total.innerHTML = '<strong>Total: '+ c.total +'€</strong>';
+        div.appendChild(total);
+    }
+
+    async function placeOrder(){
+        const place = document.getElementById('deliveryPlace').value || 'Building A';
+        const time = document.getElementById('deliveryTime').value || new Date().toISOString();
+        const msg = document.getElementById('orderMsg');
+        msg.textContent = 'Placing...';
+        try{
+            const body = place + '|' + time;
+            const r = await fetch(BASE + '/orders', {
+                method:'POST',
+                headers:{'Content-Type':'text/plain','X-User-Id':getUserId()},
+                body
+            });
+            if(!r.ok) throw new Error(await r.text());
+            const o = await r.json();
+            msg.textContent = 'Order id: ' + o.id;
+            await refreshCart();
+        } catch(e){
+            msg.textContent = 'Error: ' + e.message;
+            msg.className='err';
+        }
+    }
+
+    function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    // Wire up
+    document.getElementById('saveUser').onclick = ()=>{
+        setUserId(document.getElementById('userId').value || 'user-1');
+        status('User set');
+        refreshCart();
+    };
+    document.getElementById('placeOrder').onclick = placeOrder;
+
+    // Init
+    document.getElementById('userId').value = getUserId();
+    loadRestaurants();
+    refreshCart();
+</script>
+</body>
+</html>
