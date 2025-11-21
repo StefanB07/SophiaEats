@@ -22,9 +22,6 @@ function AppLayout({ children }) {
                     </Link>
                     <Link to="/cart">Cart</Link>
                 </nav>
-<<<<<<< HEAD
-                {/* TODO here we will put user selector + health indicator later */}
-=======
 
                 {/* Current user selector (US4) */}
                 <div style={{ marginTop: "0.5rem" }}>
@@ -38,7 +35,6 @@ function AppLayout({ children }) {
                         />
                     </label>
                 </div>
->>>>>>> feature/us4-user-and-cart
             </header>
 
             <main style={{ padding: "1rem" }}>{children}</main>
