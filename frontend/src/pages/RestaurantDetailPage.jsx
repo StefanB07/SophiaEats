@@ -54,10 +54,8 @@ export default function RestaurantDetailPage() {
     }, [decodedName]);
 
     function handleAddToCart(dish) {
-        /* TODO here, later, we will call Cart Service / Order Service */
         addItem(dish, restaurant.name);
-        console.log("Added to cart:", dish);
-        alert(`(DEV) Added "${dish.name}" to cart (simulated).`);
+        console.log(`Added "${dish.name}" to cart.`);
     }
 
     if (loading) {

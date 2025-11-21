@@ -30,7 +30,12 @@ public final class DataSeeder {
         // Simple user
         CampusUser user1 = new CampusUser("Alice", "alice@campus", "Dorm A");
         users.save(user1);
+
+        CampusUser user2 = new CampusUser("Bob", "bob@campus", "Dorm B");
+        users.save(user2);
+
         System.out.println(user1.toString());
+        System.out.println(user2.toString());
 
         // Restaurants and dishes
         Restaurant restA = new Restaurant("Restaurant A", "Italian", "$$");

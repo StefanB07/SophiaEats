@@ -6,10 +6,10 @@ import PaymentAndConfirmationPage from "./pages/PaymentAndConfirmationPage.jsx";
 import { useUser } from "./context/UserContext.jsx";
 
 function AppLayout({ children }) {
-    const { currentUser, setCurrentUser } = useUser();
+    const { currentUser, setCurrentUser, seededUsers } = useUser();
 
     function handleUserChange(e) {
-        setCurrentUser(e.target.value.trim());
+        setCurrentUser(e.target.value);
     }
 
     return (
@@ -27,12 +27,17 @@ function AppLayout({ children }) {
                 <div style={{ marginTop: "0.5rem" }}>
                     <label>
                         Current user:{" "}
-                        <input
-                            type="text"
+                        <select
                             value={currentUser}
                             onChange={handleUserChange}
                             style={{ marginLeft: "0.5rem" }}
-                        />
+                        >
+                            {seededUsers.map((u) => (
+                                <option key={u.id} value={u.id}>
+                                    {u.name}
+                                </option>
+                            ))}
+                        </select>
                     </label>
                 </div>
             </header>
@@ -46,7 +51,7 @@ function AppLayout({ children }) {
                     marginTop: "2rem",
                 }}
             >
-                <small>© 2025 – Student project</small>
+                <small>© 2025 – Sophia Tech Eats</small>
             </footer>
         </div>
     );
