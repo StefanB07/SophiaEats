@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useCart } from "../context/CartContext.jsx";
 
 const CATALOG_API_BASE = import.meta.env.VITE_CATALOG_API_BASE;
 
@@ -10,6 +11,8 @@ export default function RestaurantDetailPage() {
     const [restaurant, setRestaurant] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
+    const { addItem } = useCart();
 
     useEffect(() => {
         async function loadRestaurant() {
@@ -52,7 +55,8 @@ export default function RestaurantDetailPage() {
 
     function handleAddToCart(dish) {
         /* TODO here, later, we will call Cart Service / Order Service */
-        console.log("Add to cart clicked for dish:", dish);
+        addItem(dish, restaurant.name);
+        console.log("Added to cart:", dish);
         alert(`(DEV) Added "${dish.name}" to cart (simulated).`);
     }
 

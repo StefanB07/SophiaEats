@@ -3,8 +3,15 @@ import RestaurantListPage from "./pages/RestaurantListPage.jsx";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage.jsx";
 import CartAndDeliveryPage from "./pages/CartAndDeliveryPage.jsx";
 import PaymentAndConfirmationPage from "./pages/PaymentAndConfirmationPage.jsx";
+import { useUser } from "./context/UserContext.jsx";
 
 function AppLayout({ children }) {
+    const { currentUser, setCurrentUser } = useUser();
+
+    function handleUserChange(e) {
+        setCurrentUser(e.target.value.trim());
+    }
+
     return (
         <div className="app">
             <header style={{ padding: "1rem", borderBottom: "1px solid #ddd" }}>
@@ -15,7 +22,19 @@ function AppLayout({ children }) {
                     </Link>
                     <Link to="/cart">Cart</Link>
                 </nav>
-                {/* aici vom pune user selector + health indicator mai târziu */}
+
+                {/* Current user selector (US4) */}
+                <div style={{ marginTop: "0.5rem" }}>
+                    <label>
+                        Current user:{" "}
+                        <input
+                            type="text"
+                            value={currentUser}
+                            onChange={handleUserChange}
+                            style={{ marginLeft: "0.5rem" }}
+                        />
+                    </label>
+                </div>
             </header>
 
             <main style={{ padding: "1rem" }}>{children}</main>
@@ -48,41 +67,3 @@ export default function App() {
         </AppLayout>
     );
 }
-
-
-// import { useState } from 'react'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from '/vite.svg'
-// import './App.css'
-//
-// function App() {
-//   const [count, setCount] = useState(0)
-//
-//   return (
-//     <>
-//       <div>
-//         <a href="https://vite.dev" target="_blank">
-//           <img src={viteLogo} className="logo" alt="Vite logo" />
-//         </a>
-//         <a href="https://react.dev" target="_blank">
-//           <img src={reactLogo} className="logo react" alt="React logo" />
-//         </a>
-//       </div>
-//       <h1>Vite + React</h1>
-//       <div className="card">
-//         <button onClick={() => setCount((count) => count + 1)}>
-//           count is {count}
-//         </button>
-//         <p>
-//           Edit <code>src/App.jsx</code> and save to test HMR
-//         </p>
-//       </div>
-//       <p className="read-the-docs">
-//         Click on the Vite and React logos to learn more
-//       </p>
-//     </>
-//   )
-// }
-//
-// export default App
-
