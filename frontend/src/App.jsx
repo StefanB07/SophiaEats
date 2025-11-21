@@ -3,8 +3,15 @@ import RestaurantListPage from "./pages/RestaurantListPage.jsx";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage.jsx";
 import CartAndDeliveryPage from "./pages/CartAndDeliveryPage.jsx";
 import PaymentAndConfirmationPage from "./pages/PaymentAndConfirmationPage.jsx";
+import { useUser } from "./context/UserContext.jsx";
 
 function AppLayout({ children }) {
+    const { currentUser, setCurrentUser } = useUser();
+
+    function handleUserChange(e) {
+        setCurrentUser(e.target.value.trim());
+    }
+
     return (
         <div className="app">
             <header style={{ padding: "1rem", borderBottom: "1px solid #ddd" }}>
@@ -15,7 +22,23 @@ function AppLayout({ children }) {
                     </Link>
                     <Link to="/cart">Cart</Link>
                 </nav>
+<<<<<<< HEAD
                 {/* TODO here we will put user selector + health indicator later */}
+=======
+
+                {/* Current user selector (US4) */}
+                <div style={{ marginTop: "0.5rem" }}>
+                    <label>
+                        Current user:{" "}
+                        <input
+                            type="text"
+                            value={currentUser}
+                            onChange={handleUserChange}
+                            style={{ marginLeft: "0.5rem" }}
+                        />
+                    </label>
+                </div>
+>>>>>>> feature/us4-user-and-cart
             </header>
 
             <main style={{ padding: "1rem" }}>{children}</main>
