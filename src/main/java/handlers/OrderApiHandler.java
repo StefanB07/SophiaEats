@@ -39,6 +39,10 @@ public class OrderApiHandler extends BaseHandler {
             // Cart endpoints
             if (path.matches("^/cart/?$") && method.equals("GET")) { getCart(ex); return; }
             if (path.matches("^/cart/?$") && method.equals("POST")) { addToCart(ex); return; }
+            if (path.matches("^/cart/delivery-options/?$") && method.equals("GET")) {
+                getDeliveryOptions(ex);
+                return;
+            }
             // Backward compatibility: old endpoint /cart/items for adding items
             if (path.matches("^/cart/items/?$") && method.equals("POST")) { addToCart(ex); return; }
 
@@ -138,6 +142,43 @@ public class OrderApiHandler extends BaseHandler {
         var opt = ordersRepo.findById(id);
         if (opt.isEmpty()) { sendError(ex, 404, "Order not found"); return; }
         sendJson(ex, 200, orderToJson(opt.get()));
+    }
+
+    private void getDeliveryOptions(HttpExchange ex) throws IOException {
+        // 1. Get the Cart (assuming a simple no-auth or mocked user scenario for now)
+        // If you have a specific user ID logic, use that.
+        var cart = carts.getOrCreateCartByUserId("1");
+
+        // 2. Determine relevant restaurant
+        String restaurantName = null;
+        if (!cart.getItems().isEmpty()) {
+            // Now this method exists!
+            restaurantName = cart.getItems().get(0).getRestaurantName();
+        }
+
+        // 3. Fetch Data
+        var locations = catalog.getAllLocations();
+
+        // [FIX] Use explicit List<DeliverySlot> to avoid "Cannot resolve method getLabel"
+        java.util.List<domain.DeliverySlot> slots;
+        if (restaurantName != null) {
+            slots = catalog.getSlotsForRestaurant(restaurantName);
+        } else {
+            slots = java.util.Collections.emptyList();
+        }
+
+        // 4. Construct JSON Response
+        String locationsJson = locations.stream()
+                .map(l -> "{\"name\":\"" + esc(l.getName()) + "\"}")
+                .collect(Collectors.joining(","));
+
+        String slotsJson = slots.stream()
+                .map(s -> "{\"label\":\"" + esc(s.getLabel()) + "\"}")
+                .collect(Collectors.joining(","));
+
+        String json = String.format("{\"locations\":[%s], \"slots\":[%s]}", locationsJson, slotsJson);
+
+        sendJson(ex, 200, json);
     }
 
     private String orderToJson(Order o) {

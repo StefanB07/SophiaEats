@@ -7,12 +7,18 @@ public class OrderItem {
 
     private Dish dish;
     private int quantity;
+    private String restaurantName;
     private List<ExtraOption> extraOptions;
 
-    public OrderItem(Dish dish, int quantity) {
+    public OrderItem(Dish dish, int quantity, String restaurantName) {
         this.dish = dish;
         this.quantity = quantity;
+        this.restaurantName = restaurantName;
         this.extraOptions = new ArrayList<>();
+    }
+
+    public String getRestaurantName() {
+        return restaurantName;
     }
 
     public void addExtraOptions(ExtraOption option) {
