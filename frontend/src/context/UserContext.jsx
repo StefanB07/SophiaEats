@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const UserContext = createContext(null);
 
@@ -9,13 +9,22 @@ export function UserProvider({ children }) {
         { name: "Bob", id: "bob" }
     ];
 
-    // default user id = "alice"s
-    const [currentUser, setCurrentUser] = useState(seededUsers[0].id);
+    // default user id = "alice" but hydrate from localStorage if present
+    const [currentUser, setCurrentUser] = useState(() => {
+        try {
+            const saved = localStorage.getItem("currentUserId");
+            if (saved && seededUsers.find(u => u.id === saved)) return saved;
+        } catch (e) { /* ignore */ }
+        return seededUsers[0].id;
+    });
+
+    useEffect(() => {
+        try { localStorage.setItem("currentUserId", currentUser); } catch (e) { /* ignore */ }
+    }, [currentUser]);
 
     function setUserById(userId) {
         const found = seededUsers.find(u => u.id === userId);
         if (!found) {
-            // if unknown id, fallback to first user
             setCurrentUser(seededUsers[0].id);
             return;
         }

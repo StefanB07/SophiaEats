@@ -80,22 +80,45 @@ export function CartProvider({ children }) {
                 newUserCart = [...userCart, { key, restaurantName, dish, quantity: 1 }];
             }
 
+            // Fire-and-forget backend sync (POST /cart)
+            try {
+                fetch('/api/cart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-Id': currentUser
+                    },
+                    body: JSON.stringify({ restaurant: restaurantName, dish: dish.name, qty: 1 })
+                }).catch(() => {/* ignore for now */});
+            } catch (e) { /* ignore */ }
+
             return { ...prev, [currentUser]: newUserCart };
         });
     }
 
     function clearCart() {
         setCarts((prev) => ({ ...prev, [currentUser]: [] }));
-        // [NEW] Clear delivery info when cart is cleared
         setDeliveryInfo({});
     }
 
-    return (
-        // [NEW] Expose deliveryInfo and updateDelivery
-        <CartContext.Provider value={{ items, addItem, clearCart, deliveryInfo, updateDelivery }}>
-            {children}
-        </CartContext.Provider>
-    );
+    function resetDeliveryOptions() {
+        setDeliveryInfo({});
+    }
+
+    // Provide both original keys and aliases expected by CartAndDeliveryPage
+    const value = {
+        items,
+        addItem,
+        clearCart,
+        deliveryInfo,
+        updateDelivery,
+        // aliases for backward compatibility / current page expectations
+        deliveryOptions: deliveryInfo,
+        updateDeliveryOptions: (address, slot) => updateDelivery({ address, slot }),
+        resetDeliveryOptions
+    };
+
+    return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
 export function useCart() {

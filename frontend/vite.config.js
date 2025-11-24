@@ -13,6 +13,17 @@ export default defineConfig({
                 // /api/catalog/restaurants -> /restaurants
                 rewrite: (path) => path.replace(/^\/api\/catalog/, ''),
             },
+            // NEW: Proxy cart & order API to OrderService (port 8082)
+            '/api/cart': {
+                target: 'http://localhost:8082',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api\/cart/, '/cart'),
+            },
+            '/api/orders': {
+                target: 'http://localhost:8082',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api\/orders/, '/orders'),
+            },
         },
     },
 })
