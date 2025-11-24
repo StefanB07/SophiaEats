@@ -64,6 +64,7 @@ export default function App() {
                 <Route path="/" element={<RestaurantListPage />} />
                 <Route path="/restaurants/:name" element={<RestaurantDetailPage />} />
                 <Route path="/cart" element={<CartAndDeliveryPage />} />
+                <Route path="/payment" element={<PaymentAndConfirmationPage />} />
                 <Route
                     path="/order/confirmation/:orderId"
                     element={<PaymentAndConfirmationPage />}

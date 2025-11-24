@@ -82,8 +82,8 @@ export default function CartAndDeliveryPage() {
         }
 
         return () => {
-            // On unmount: clear only selections (keep cart items) so page resets next visit
-            resetDeliveryOptions();
+            // Removed resetDeliveryOptions here to keep selected address & slot for payment step
+            // resetDeliveryOptions();
         };
     }, [items, currentUser]);
 
