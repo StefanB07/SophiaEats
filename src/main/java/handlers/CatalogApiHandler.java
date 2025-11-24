@@ -45,6 +45,17 @@ public class CatalogApiHandler extends BaseHandler {
                 return;
             }
 
+            // /delivery/locations
+            if (path.matches("^/delivery/locations/?$")) {
+                getLocations(ex);
+                return;
+            }
+            // /delivery/slots?restaurant=...
+            if (path.matches("^/delivery/slots/?$")) {
+                getSlots(ex);
+                return;
+            }
+
             sendError(ex, 404, "Not found");
         } catch (Exception e) {
             sendError(ex, 500, "Server error: " + e.getMessage());
@@ -151,5 +162,35 @@ public class CatalogApiHandler extends BaseHandler {
         }
         sb.append('"');
         return sb.toString();
+    }
+
+    private void getLocations(HttpExchange ex) throws IOException {
+        var json = "[" + catalog.getAllLocations().stream()
+                .map(l -> "{"
+                        + "\"name\":" + qs(l.getName()) + ","
+                        + "\"description\":" + qs(l.getDescription())
+                        + "}")
+                .collect(Collectors.joining(",")) + "]";
+        sendJson(ex, 200, json);
+    }
+
+    private void getSlots(HttpExchange ex) throws IOException {
+        URI uri = ex.getRequestURI();
+        Map<String, String> params = queryToMap(uri.getRawQuery());
+
+        String restaurantName = urlDecode(params.get("restaurant"));
+
+        if (restaurantName == null) {
+            sendError(ex, 400, "Missing 'restaurant' parameter");
+            return;
+        }
+
+        var json = "[" + catalog.getSlotsForRestaurant(restaurantName).stream()
+                .map(s -> "{"
+                        + "\"label\":" + qs(s.getLabel()) + "," // Assumes toString or getLabel exists
+                        + "\"capacity\":" + s.getCapacity()
+                        + "}")
+                .collect(Collectors.joining(",")) + "]";
+        sendJson(ex, 200, json);
     }
 }

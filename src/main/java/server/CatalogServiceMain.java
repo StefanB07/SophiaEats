@@ -28,12 +28,13 @@ public class CatalogServiceMain {
         DataSeeder.resetAndSeed(users, restaurantRepository, carts, orders, delivery);
 
         // Service + handler
-        CatalogService catalogService = new CatalogService(restaurantRepository);
+        CatalogService catalogService = new CatalogService(restaurantRepository, delivery);
         CatalogApiHandler handler = new CatalogApiHandler(catalogService);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         // Only one context for /restaurants, /restaurants/filter, /restaurants/{name}
         server.createContext("/restaurants", handler);
+        server.createContext("/delivery", handler);
         server.setExecutor(null);
 
         // Health check endpoint

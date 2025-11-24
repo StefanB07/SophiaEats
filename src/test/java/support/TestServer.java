@@ -43,7 +43,7 @@ public final class TestServer {
 
         CartService cartService = new CartService(cartRepo, restaurantRepo);
         OrderService orderService = new OrderService(deliveryRepo, restaurantRepo);
-        CatalogService catalogService = new CatalogService(restaurantRepo);
+        CatalogService catalogService = new CatalogService(restaurantRepo, deliveryRepo);
 
         OrderApiHandler orderApiHandler = new OrderApiHandler(cartService, orderService, orderRepo, catalogService);
         CatalogApiHandler catalogApiHandler = new CatalogApiHandler(catalogService);

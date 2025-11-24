@@ -28,7 +28,7 @@ public class OrderServiceMain {
         // Services
         CartService cartService = new CartService(carts, restaurants);
         OrderService orderService = new OrderService(delivery, restaurants);
-        CatalogService catalogService = new CatalogService(restaurants);
+        CatalogService catalogService = new CatalogService(restaurants, delivery);
 
         // Handler
         OrderApiHandler handler = new OrderApiHandler(cartService, orderService, orders, catalogService);

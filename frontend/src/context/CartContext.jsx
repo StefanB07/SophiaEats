@@ -15,6 +15,15 @@ export function CartProvider({ children }) {
         }
     });
 
+    // [NEW] State to hold delivery options (location & slot)
+    const [deliveryInfo, setDeliveryInfo] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem("deliveryInfo") || "{}");
+        } catch (e) {
+            return {};
+        }
+    });
+
     const { currentUser } = useUser();
 
     // derive current user's items (empty array if none)
@@ -28,6 +37,20 @@ export function CartProvider({ children }) {
         }
     }, [carts]);
 
+    // [NEW] Persist delivery info when it changes
+    useEffect(() => {
+        try {
+            localStorage.setItem("deliveryInfo", JSON.stringify(deliveryInfo));
+        } catch (e) {
+            console.warn("Failed to persist delivery info", e);
+        }
+    }, [deliveryInfo]);
+
+    // [NEW] Helper to update delivery info (partial updates allowed)
+    function updateDelivery(info) {
+        setDeliveryInfo((prev) => ({ ...prev, ...info }));
+    }
+
     function addItem(dish, restaurantName) {
         setCarts((prev) => {
             const userCart = prev[currentUser] ?? [];
@@ -35,7 +58,6 @@ export function CartProvider({ children }) {
             if (userCart.length > 0) {
                 const currentRestaurant = userCart[0].restaurantName;
                 if (currentRestaurant !== restaurantName) {
-                    // Not allowed to add items from a different restaurant
                     console.warn(
                         `Cannot add dish from "${restaurantName}" because cart already contains items from "${currentRestaurant}".`
                     );
@@ -64,10 +86,13 @@ export function CartProvider({ children }) {
 
     function clearCart() {
         setCarts((prev) => ({ ...prev, [currentUser]: [] }));
+        // [NEW] Clear delivery info when cart is cleared
+        setDeliveryInfo({});
     }
 
     return (
-        <CartContext.Provider value={{ items, addItem, clearCart }}>
+        // [NEW] Expose deliveryInfo and updateDelivery
+        <CartContext.Provider value={{ items, addItem, clearCart, deliveryInfo, updateDelivery }}>
             {children}
         </CartContext.Provider>
     );
