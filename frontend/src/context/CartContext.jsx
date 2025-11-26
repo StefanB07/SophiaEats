@@ -99,6 +99,12 @@ export function CartProvider({ children }) {
     function clearCart() {
         setCarts((prev) => ({ ...prev, [currentUser]: [] }));
         setDeliveryInfo({});
+        try {
+            fetch('/api/cart', {
+                method: 'DELETE',
+                headers: { 'X-User-Id': currentUser }
+            }).catch(() => { /* ignore network error; local state cleared */ });
+        } catch (e) { /* ignore */ }
     }
 
     function resetDeliveryOptions() {
