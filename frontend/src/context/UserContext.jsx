@@ -1,38 +1,68 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const UserContext = createContext(null);
 
-export function UserProvider({ children }) {
-    // seeded users (must match DataSeeder names)
-    const seededUsers = [
-        { name: "Alice", id: "alice" },
-        { name: "Bob", id: "bob" }
-    ];
+const API_BASE = import.meta.env.VITE_CATALOG_API_BASE || "http://localhost:8080";
 
-    // default user id = "alice" but hydrate from localStorage if present
-    const [currentUser, setCurrentUser] = useState(() => {
+export function UserProvider({ children }) {
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [currentUser, setCurrentUser] = useState(null);
+
+    // 1. Fetch users from backend once
+    useEffect(() => {
+        async function loadUsers() {
+            try {
+                const resp = await fetch(`${API_BASE}/users`, {
+                    headers: { Accept: "application/json" },
+                });
+                if (!resp.ok) throw new Error("HTTP " + resp.status);
+                const data = await resp.json();
+                setUsers(data);
+            } catch (e) {
+                console.error("Failed to load users, falling back to defaults", e);
+                // fallback
+                setUsers([
+                    { id: "alice", name: "Alice" },
+                    { id: "bob", name: "Bob" },
+                ]);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        loadUsers();
+    }, []);
+
+    // 2. Initialize currentUser after users are loaded
+    useEffect(() => {
+        if (loading || users.length === 0) return;
         try {
             const saved = localStorage.getItem("currentUserId");
-            if (saved && seededUsers.find(u => u.id === saved)) return saved;
-        } catch (e) { /* ignore */ }
-        return seededUsers[0].id;
-    });
+            const found = users.find((u) => u.id === saved);
+            setCurrentUser(found ? found.id : users[0].id);
+        } catch {
+            setCurrentUser(users[0].id);
+        }
+    }, [loading, users]);
 
+    // 3. Persist currentUser
     useEffect(() => {
-        try { localStorage.setItem("currentUserId", currentUser); } catch (e) { /* ignore */ }
+        if (!currentUser) return;
+        try {
+            localStorage.setItem("currentUserId", currentUser);
+        } catch {}
     }, [currentUser]);
 
-    function setUserById(userId) {
-        const found = seededUsers.find(u => u.id === userId);
-        if (!found) {
-            setCurrentUser(seededUsers[0].id);
-            return;
-        }
-        setCurrentUser(found.id);
+    function setUserById(id) {
+        if (!users.find((u) => u.id === id)) return;
+        setCurrentUser(id);
     }
 
     return (
-        <UserContext.Provider value={{ currentUser, setCurrentUser: setUserById, seededUsers }}>
+        <UserContext.Provider
+            value={{ currentUser, setCurrentUser: setUserById, users, loading }}
+        >
             {children}
         </UserContext.Provider>
     );
@@ -40,8 +70,6 @@ export function UserProvider({ children }) {
 
 export function useUser() {
     const ctx = useContext(UserContext);
-    if (!ctx) {
-        throw new Error("useUser must be used within a UserProvider");
-    }
+    if (!ctx) throw new Error("useUser must be used within a UserProvider");
     return ctx;
 }

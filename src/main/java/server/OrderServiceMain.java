@@ -7,6 +7,8 @@ import service.CartService;
 import service.CatalogService;
 import service.OrderService;
 import bootstrap.DataSeeder;
+import handlers.UsersApiHandler;
+
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -33,10 +35,18 @@ public class OrderServiceMain {
         // Handler
         OrderApiHandler handler = new OrderApiHandler(cartService, orderService, orders, catalogService);
 
+        // Handler for /api/users
+        UsersApiHandler usersHandler = new UsersApiHandler(users);
+
         // HTTP server
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/cart", handler);
         server.createContext("/orders", handler);
+
+        // Add contexts for /users and /api/users
+        server.createContext("/users", usersHandler);
+        server.createContext("/api/users", usersHandler);
+
         server.createContext("/health", ex -> {
             if ("GET".equalsIgnoreCase(ex.getRequestMethod())) {
                 String body = "{\"status\":\"UP\"}";

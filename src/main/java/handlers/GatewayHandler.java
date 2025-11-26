@@ -28,7 +28,7 @@ public class GatewayHandler extends BaseHandler {
         String base;
         if (path.startsWith("/restaurants")) {
             base = CATALOG_BASE;
-        } else if (path.startsWith("/cart") || path.startsWith("/orders")) {
+        } else if (path.startsWith("/cart") || path.startsWith("/orders") || path.startsWith("/users")) {
             base = ORDER_BASE;
         } else {
             sendError(ex, 404, "Unknown path");

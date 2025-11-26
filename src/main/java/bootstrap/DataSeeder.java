@@ -34,6 +34,9 @@ public final class DataSeeder {
         CampusUser user2 = new CampusUser("Bob", "bob@campus", "Dorm B");
         users.save(user2);
 
+        CampusUser user3 = new CampusUser("Miruna Iliescu", "miruna@iliescu.com", "Romania");
+        users.save(user3);
+
         System.out.println(user1.toString());
         System.out.println(user2.toString());
 

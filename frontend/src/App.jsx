@@ -6,11 +6,14 @@ import PaymentAndConfirmationPage from "./pages/PaymentAndConfirmationPage.jsx";
 import { useUser } from "./context/UserContext.jsx";
 
 function AppLayout({ children }) {
-    const { currentUser, setCurrentUser, seededUsers } = useUser();
+    const { currentUser, setCurrentUser, users } = useUser();
+
 
     function handleUserChange(e) {
         setCurrentUser(e.target.value);
     }
+
+    const hasUsers = Array.isArray(users) && users.length > 0;
 
     return (
         <div className="app">
@@ -31,12 +34,17 @@ function AppLayout({ children }) {
                             value={currentUser}
                             onChange={handleUserChange}
                             style={{ marginLeft: "0.5rem" }}
+                            disabled={!hasUsers}
                         >
-                            {seededUsers.map((u) => (
-                                <option key={u.id} value={u.id}>
-                                    {u.name}
-                                </option>
-                            ))}
+                            {!hasUsers && (
+                                <option value="">(no users loaded)</option>
+                            )}
+                            {hasUsers &&
+                                users.map((u) => (
+                                    <option key={u.id} value={u.id}>
+                                        {u.name}
+                                    </option>
+                                ))}
                         </select>
                     </label>
                 </div>
