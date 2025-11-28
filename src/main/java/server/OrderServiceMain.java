@@ -2,13 +2,12 @@ package server;
 
 import com.sun.net.httpserver.HttpServer;
 import handlers.OrderApiHandler;
+import handlers.UsersApiHandler;
 import repository.*;
 import service.CartService;
 import service.CatalogService;
 import service.OrderService;
 import bootstrap.DataSeeder;
-import handlers.UsersApiHandler;
-
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -33,7 +32,7 @@ public class OrderServiceMain {
         CatalogService catalogService = new CatalogService(restaurants, delivery);
 
         // Handler
-        OrderApiHandler handler = new OrderApiHandler(cartService, orderService, orders, catalogService);
+        OrderApiHandler handler = new OrderApiHandler(cartService, orderService, orders, catalogService, users);
 
         // Handler for /api/users
         UsersApiHandler usersHandler = new UsersApiHandler(users);

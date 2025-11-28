@@ -27,14 +27,17 @@ public final class DataSeeder {
         try { orders.clear(); } catch (Exception ignored) {}
         delivery.clear();
 
-        // Simple user
+        // Simple users with student credit
         CampusUser user1 = new CampusUser("Alice", "alice@campus", "Dorm A");
+        user1.assignStudentCredit(new StudentCredit(50.0));
         users.save(user1);
 
         CampusUser user2 = new CampusUser("Bob", "bob@campus", "Dorm B");
+        user2.assignStudentCredit(new StudentCredit(10.0));
         users.save(user2);
 
         CampusUser user3 = new CampusUser("Miruna Iliescu", "miruna@iliescu.com", "Romania");
+        user3.assignStudentCredit(new StudentCredit(0.0));
         users.save(user3);
 
         System.out.println(user1.toString());

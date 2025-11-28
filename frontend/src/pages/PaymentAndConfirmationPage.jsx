@@ -12,6 +12,7 @@ export default function PaymentAndConfirmationPage() {
     const [placing, setPlacing] = useState(false);
     const [error, setError] = useState(null);
     const [order, setOrder] = useState(null);
+    const [paymentMethod, setPaymentMethod] = useState("STUDENT_CREDIT");
 
     // If we already have an order id (confirmation route), fetch order details for recap
     useEffect(() => {
@@ -42,17 +43,25 @@ export default function PaymentAndConfirmationPage() {
             if (items.length === 0) throw new Error('Cart is empty');
             if (!deliveryOptions.address || !deliveryOptions.slot) throw new Error('Missing delivery information');
 
-            // Derive YYYY-MM-DD HH:mm from slot label like "12:00-12:30"
             const firstPart = deliveryOptions.slot.split('-')[0]; // HH:mm
             const now = new Date();
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             const deliveryTimeStr = `${dateStr} ${firstPart}`; // matches backend pattern yyyy-MM-dd HH:mm
             const deliveryPlace = deliveryOptions.address.trim();
-            const body = `${deliveryPlace}|${deliveryTimeStr}`;
+
+            const payload = {
+                deliveryPlace,
+                deliveryTime: deliveryTimeStr,
+                paymentMethod
+            };
+
             const resp = await fetch('/api/orders', {
                 method: 'POST',
-                headers: { 'X-User-Id': String(currentUser), 'Content-Type': 'text/plain' },
-                body
+                headers: {
+                    'X-User-Id': String(currentUser),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
             });
 
             if (!resp.ok) {
@@ -75,7 +84,7 @@ export default function PaymentAndConfirmationPage() {
     if (!orderId) {
         return (
             <div>
-                <h2>Confirm & Place Order</h2>
+                <h2>Confirm & Payment</h2>
                 {items.length === 0 && <p>Your cart is empty. Go back to add dishes.</p>}
                 {items.length > 0 && (
                     <>
@@ -86,11 +95,38 @@ export default function PaymentAndConfirmationPage() {
                             ))}
                         </ul>
                         <p><strong>Delivery:</strong> {deliveryOptions.address || '(none)'} – {deliveryOptions.slot || '(none)'}</p>
+
+                        <h3>Payment method</h3>
+                        <div style={{ marginBottom: '0.5rem' }}>
+                            <label>
+                                <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="STUDENT_CREDIT"
+                                    checked={paymentMethod === 'STUDENT_CREDIT'}
+                                    onChange={() => setPaymentMethod('STUDENT_CREDIT')}
+                                />{' '}
+                                Student credit
+                            </label>
+                        </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label>
+                                <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="EXTERNAL"
+                                    checked={paymentMethod === 'EXTERNAL'}
+                                    onChange={() => setPaymentMethod('EXTERNAL')}
+                                />{' '}
+                                External payment
+                            </label>
+                        </div>
+
                         <button
                             disabled={placing || items.length === 0 || !deliveryOptions.address || !deliveryOptions.slot}
                             onClick={handlePlaceOrder}
                             style={{ padding: '0.6rem 1rem', background: '#2196F3', color: '#fff', border: 'none', cursor: 'pointer' }}
-                        >{placing ? 'Placing...' : 'Confirm & place order'}</button>
+                        >{placing ? 'Placing...' : 'Confirm & pay'}</button>
                         {error && <p style={{ color: 'red' }}>{error}</p>}
                     </>
                 )}
