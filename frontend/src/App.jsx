@@ -10,6 +10,7 @@ import RestaurantListPage from "./pages/RestaurantListPage.jsx";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage.jsx";
 import CartAndDeliveryPage from "./pages/CartAndDeliveryPage.jsx";
 import PaymentAndConfirmationPage from "./pages/PaymentAndConfirmationPage.jsx";
+import OrderHistory from "./pages/OrderHistory.jsx";
 import RoleSelectionPage from "./pages/RoleSelectionPage.jsx";
 import ManagerDashboardPage from "./pages/ManagerDashboardPage.jsx";
 import { useUser } from "./context/UserContext.jsx";
@@ -47,6 +48,10 @@ function AppLayout({ children }) {
                                             </Link>
                                             <Link className="nav-link" to="/cart">
                                                 Cart
+                                            </Link>
+                                            {/* NEW: My Orders link (customer-only) */}
+                                            <Link className="nav-link" to="/orders">
+                                                My Orders
                                             </Link>
                                         </>
                                     )}
@@ -160,6 +165,15 @@ export default function App() {
                     element={
                         <CustomerRoute>
                             <PaymentAndConfirmationPage />
+                        </CustomerRoute>
+                    }
+                />
+                {/* NEW: Order history route (customer-only) */}
+                <Route
+                    path="/orders"
+                    element={
+                        <CustomerRoute>
+                            <OrderHistory />
                         </CustomerRoute>
                     }
                 />

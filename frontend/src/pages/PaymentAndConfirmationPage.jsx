@@ -3,6 +3,9 @@ import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
 import { useEffect, useState } from "react";
 
+const ORDERS_KEY_PREFIX = "orders:";
+const LAST_ORDER_KEY = "lastConfirmedOrderId";
+
 export default function PaymentAndConfirmationPage() {
     const { orderId } = useParams();
     const navigate = useNavigate();
@@ -14,7 +17,6 @@ export default function PaymentAndConfirmationPage() {
     const [order, setOrder] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState("STUDENT_CREDIT");
 
-    // If we already have an order id (confirmation route), fetch order details for recap
     useEffect(() => {
         async function fetchOrder() {
             if (!orderId) return;
@@ -25,6 +27,15 @@ export default function PaymentAndConfirmationPage() {
                 if (resp.ok) {
                     const data = await resp.json();
                     setOrder(data);
+
+                    // Pass order recap to "My Orders" (persist without altering UI logic)
+                    try {
+                        const key = `${ORDERS_KEY_PREFIX}${currentUser}`;
+                        const existing = JSON.parse(localStorage.getItem(key) || "[]");
+                        const deduped = [data, ...existing.filter((o) => o.id !== data.id)];
+                        localStorage.setItem(key, JSON.stringify(deduped));
+                        localStorage.setItem(LAST_ORDER_KEY, data.id);
+                    } catch {}
                 } else {
                     setError(`Failed to load order recap (HTTP ${resp.status})`);
                 }
@@ -46,14 +57,10 @@ export default function PaymentAndConfirmationPage() {
             const firstPart = deliveryOptions.slot.split('-')[0]; // HH:mm
             const now = new Date();
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-            const deliveryTimeStr = `${dateStr} ${firstPart}`; // matches backend pattern yyyy-MM-dd HH:mm
+            const deliveryTimeStr = `${dateStr} ${firstPart}`; // yyyy-MM-dd HH:mm
             const deliveryPlace = deliveryOptions.address.trim();
 
-            const payload = {
-                deliveryPlace,
-                deliveryTime: deliveryTimeStr,
-                paymentMethod
-            };
+            const payload = { deliveryPlace, deliveryTime: deliveryTimeStr, paymentMethod };
 
             const resp = await fetch('/api/orders', {
                 method: 'POST',
@@ -69,8 +76,7 @@ export default function PaymentAndConfirmationPage() {
                 throw new Error(`Backend error (${resp.status}): ${text}`);
             }
             const data = await resp.json();
-            // data.id should exist; navigate to confirmation route
-            clearCart(); // empty local cart after successful order (backend also clears)
+            clearCart();
             navigate(`/order/confirmation/${data.id}`);
         } catch (e) {
             console.error('Order placement failed', e);
@@ -80,7 +86,6 @@ export default function PaymentAndConfirmationPage() {
         }
     }
 
-    // If we are on the payment step (no orderId yet)
     if (!orderId) {
         return (
             <div>
@@ -134,7 +139,6 @@ export default function PaymentAndConfirmationPage() {
         );
     }
 
-    // Confirmation view with recap
     return (
         <div>
             <h2>Order confirmation</h2>
