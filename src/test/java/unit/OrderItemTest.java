@@ -13,7 +13,7 @@ class OrderItemTest {
     @Test
     void totalPrice_includesExtrasPerQuantity() {
         Dish d = new Dish("Burger", "", 8.0, DishCategory.MAIN_COURSE, "");
-        OrderItem item = new OrderItem(d, 2);
+        OrderItem item = new OrderItem(d, 2, "Restaurant A");
         item.addExtraOptions(new ExtraOption("Cheese", 1.5));
         item.addExtraOptions(new ExtraOption("Bacon", 2.0));
         // base: 2 * 8 = 16; extras: (1.5 + 2.0) * 2 = 7; total = 23
@@ -23,8 +23,7 @@ class OrderItemTest {
     @Test
     void toString_isNonNull() {
         Dish d = new Dish("Soup", "", 5.0, DishCategory.STARTER, "");
-        OrderItem item = new OrderItem(d, 1);
+        OrderItem item = new OrderItem(d, 1, "Restaurant A");
         assertNotNull(item.toString());
     }
 }
-

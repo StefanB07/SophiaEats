@@ -1,0 +1,51 @@
+GET /restaurants - List all restaurants
+GET /restaurants/filter?cuisine=Italian&price=$$ - Filter restaurants
+GET /restaurants/Le%20Resto - Get restaurant by name
+GET /delivery/locations - Get delivery locations
+GET /delivery/slots?restaurant=Le%20Resto - Get delivery slots for restaurant
+
+GET /users - List all users
+
+GET /cart - Get cart for default/alice
+POST /cart - Add item to cart (JSON)
+POST /cart - Add item to cart (legacy pipe)
+POST /cart/items - Add item to cart via /cart/items
+GET /cart/delivery-options - Get cart delivery options
+
+POST /orders - Create order (JSON)
+POST /orders - Create order (legacy pipe)
+GET /orders/{id} - Get order by id
+
+GET /health (8081) - Catalog service health
+GET /health (8082) - Order service health
+
+------------------------------------- MORE COMPLETE
+GET http://localhost:8080/restaurants - Gateway: list all restaurants
+GET http://localhost:8080/restaurants/filter?cuisine=Italian&price=$$ - Gateway: filter restaurants
+GET http://localhost:8080/restaurants/Le%20Resto - Gateway: restaurant by name
+GET http://localhost:8080/delivery/locations - Gateway: delivery locations
+GET http://localhost:8080/delivery/slots?restaurant=Le%20Resto - Gateway: delivery slots
+
+GET http://localhost:8080/users - Gateway: list users
+
+GET http://localhost:8080/cart - Gateway: get cart (X-User-Id optional)
+POST http://localhost:8080/cart - Gateway: add item to cart (JSON or pipe)
+POST http://localhost:8080/cart/items - Gateway: add item via /cart/items
+GET http://localhost:8080/cart/delivery-options - Gateway: cart delivery options
+
+POST http://localhost:8080/orders - Gateway: create order (JSON or pipe)
+GET http://localhost:8080/orders/{id} - Gateway: get order by id
+
+GET http://localhost:8081/health - Catalog service health
+GET http://localhost:8082/health - Order service health
+
+GET http://localhost:8082/users - Order service: list users
+GET http://localhost:8082/api/users - Order service: list users via /api
+
+GET http://localhost:8082/cart - Order service: get cart
+POST http://localhost:8082/cart - Order service: add item to cart
+POST http://localhost:8082/cart/items - Order service: add item via /cart/items
+GET http://localhost:8082/cart/delivery-options - Order service: cart delivery options
+
+POST http://localhost:8082/orders - Order service: create order
+GET http://localhost:8082/orders/{id} - Order service: get order by id
