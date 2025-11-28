@@ -6,6 +6,33 @@ const CATALOG_API_BASE =
 
 const CATEGORIES = ["STARTER", "MAIN_COURSE", "DESSERT", "DRINK"];
 
+const DISH_IMAGES = {
+    "Pizza Margherita": "/images/pizza-margherita.webp",
+    Pasta: "/images/pasta.jpeg",
+    Lasagna: "/images/lasagna.jpeg",
+    Bruschetta: "/images/bruschetta.jpg",
+    Tiramisu: "/images/tiramisu.webp",
+
+    Soba: "/images/soba.webp",
+    Udon: "/images/udon.jpeg",
+    Ramen: "/images/ramen.jpg",
+    Edamame: "/images/edamame.png",
+
+    "Buddha Bowl": "/images/buddha-bowl.jpeg",
+    "Veggie Burger": "/images/veggie-burger.webp",
+    "Caesar Salad": "/images/caesar-salad.jpg",
+    "Chia Pudding": "/images/chia-pudding.jpeg",
+
+    "Classic Burger": "/images/classic-burger.webp",
+    "Crispy Chicken Burger": "/images/crispy-chicken-burger.jpg",
+    "French Fries": "/images/french-fries.jpg",
+    "Chocolate Brownie": "/images/chocolate-brownie.jpeg",
+};
+
+function getDishImage(name) {
+    return DISH_IMAGES[name] || "/images/dish-placeholder.png";
+}
+
 export default function ManagerDashboardPage() {
     const { currentUser } = useUser();
 
@@ -36,9 +63,6 @@ export default function ManagerDashboardPage() {
             setLoadingRestaurants(true);
             setRestaurantsError("");
             try {
-                if (!CATALOG_API_BASE) {
-                    throw new Error("VITE_CATALOG_API_BASE is not defined");
-                }
                 const resp = await fetch(`${CATALOG_API_BASE}/restaurants`);
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                 const data = await resp.json();
@@ -49,7 +73,7 @@ export default function ManagerDashboardPage() {
             } catch (e) {
                 console.error("Failed to load restaurants for manager:", e);
                 setRestaurantsError(
-                    e instanceof Error ? e.message : "Unknown error loading restaurants"
+                    e instanceof Error ? e.message : "Unknown error loading restaurants",
                 );
             } finally {
                 setLoadingRestaurants(false);
@@ -66,7 +90,7 @@ export default function ManagerDashboardPage() {
             setLoadingMenu(true);
             setMenuError("");
             const url = `${CATALOG_API_BASE}/restaurants/${encodeURIComponent(
-                restaurantName
+                restaurantName,
             )}`;
             const resp = await fetch(url);
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -76,7 +100,7 @@ export default function ManagerDashboardPage() {
         } catch (e) {
             console.error("Failed to load menu for manager:", e);
             setMenuError(
-                e instanceof Error ? e.message : "Unknown error loading menu"
+                e instanceof Error ? e.message : "Unknown error loading menu",
             );
             setMenu([]);
         } finally {
@@ -115,7 +139,7 @@ export default function ManagerDashboardPage() {
         const infoFromTags =
             Array.isArray(dish.dietaryTags) && dish.dietaryTags.length > 0
                 ? dish.dietaryTags.join(", ")
-                : (dish.dietaryInfo || "");
+                : dish.dietaryInfo || "";
         setDietaryInfo(infoFromTags);
 
         setStatus(null);
@@ -128,7 +152,7 @@ export default function ManagerDashboardPage() {
         }
 
         const confirmed = window.confirm(
-            `Are you sure you want to delete dish "${dishName}" from "${selectedRestaurant}"?`
+            `Are you sure you want to delete dish "${dishName}" from "${selectedRestaurant}"?`,
         );
         if (!confirmed) return;
 
@@ -137,7 +161,7 @@ export default function ManagerDashboardPage() {
             setStatus(null);
 
             const baseUrl = `${CATALOG_API_BASE}/restaurants/${encodeURIComponent(
-                selectedRestaurant
+                selectedRestaurant,
             )}/dishes/${encodeURIComponent(dishName)}`;
 
             const resp = await fetch(baseUrl, {
@@ -168,7 +192,6 @@ export default function ManagerDashboardPage() {
         }
     }
 
-
     async function handleSubmit(e) {
         e.preventDefault();
         setStatus(null);
@@ -181,6 +204,10 @@ export default function ManagerDashboardPage() {
             setStatus({ type: "error", msg: "Dish name is required." });
             return;
         }
+        if (!description.trim()) {
+            setStatus({ type: "error", msg: "Description is required." });
+            return;
+        }
         const priceNum = Number(price);
         if (Number.isNaN(priceNum) || priceNum <= 0) {
             setStatus({ type: "error", msg: "Price must be a positive number." });
@@ -190,7 +217,7 @@ export default function ManagerDashboardPage() {
         setSubmitting(true);
         try {
             const baseUrl = `${CATALOG_API_BASE}/restaurants/${encodeURIComponent(
-                selectedRestaurant
+                selectedRestaurant,
             )}/dishes`;
 
             const payload = {
@@ -205,7 +232,7 @@ export default function ManagerDashboardPage() {
             let url = baseUrl;
             let method = "POST";
 
-            // If we want to edit -> PUT /restaurants/{rest}/dishes/{old_name}
+            // edit -> PUT /restaurants/{rest}/dishes/{old_name}
             if (editingDishName) {
                 url = `${baseUrl}/${encodeURIComponent(editingDishName)}`;
                 method = "PUT";
@@ -232,11 +259,7 @@ export default function ManagerDashboardPage() {
                     : `Dish "${result.name}" was added to ${selectedRestaurant}.`,
             });
 
-            // Reîncarc meniul ca să văd modificările reale (inclusiv din DataSeeder)
-            // Reload the menu to reflect changes
             await loadMenuForRestaurant(selectedRestaurant);
-
-            // după succes, goliți formularul sau rămâneți în modul edit – alegem să îl resetăm
             resetForm();
         } catch (e) {
             console.error("Failed to save dish", e);
@@ -250,16 +273,19 @@ export default function ManagerDashboardPage() {
     }
 
     return (
-        <div>
-            <h2>Manager dashboard</h2>
-            <p>
+        <div className="section">
+            <div className="section-header">
+                <div>
+                    <h2 className="page-title">Manager dashboard</h2>
+                    <p className="page-subtitle">
+                        Manage restaurant dishes (requirement R4* – add / update menu).
+                    </p>
+                </div>
+            </div>
+
+            <p style={{ marginTop: "0.25rem", fontSize: "0.9rem" }}>
                 Logged in as manager with user ID:{" "}
                 <strong>{currentUser || "(none)"}</strong>
-            </p>
-
-            <p style={{ marginTop: "0.5rem" }}>
-                From here you can manage restaurant dishes (requirement{" "}
-                <strong>R2</strong>).
             </p>
 
             {/* Restaurant selector */}
@@ -278,17 +304,22 @@ export default function ManagerDashboardPage() {
                         style={{
                             marginTop: "1rem",
                             padding: "0.75rem 1rem",
-                            borderRadius: "8px",
-                            border: "1px solid #ddd",
-                            backgroundColor: "#fafafa",
+                            borderRadius: "12px",
+                            border: "1px solid #e2e8f0",
+                            background:
+                                "linear-gradient(90deg,#eff6ff,#f9fafb,#fefce8)",
                         }}
                     >
-                        <label>
+                        <label style={{ fontSize: "0.9rem" }}>
                             Managing restaurant:{" "}
                             <select
                                 value={selectedRestaurant}
                                 onChange={(e) => setSelectedRestaurant(e.target.value)}
-                                style={{ marginLeft: "0.5rem", minWidth: "200px" }}
+                                style={{
+                                    marginLeft: "0.5rem",
+                                    minWidth: "220px",
+                                    padding: "0.3rem 0.5rem",
+                                }}
                             >
                                 {restaurants.map((r) => (
                                     <option key={r.name} value={r.name}>
@@ -323,48 +354,122 @@ export default function ManagerDashboardPage() {
                                     <div
                                         key={dish.name}
                                         style={{
-                                            border: "1px solid #ddd",
-                                            borderRadius: "8px",
+                                            border: "1px solid #e2e8f0",
+                                            borderRadius: "16px",
                                             padding: "0.75rem 1rem",
-                                            backgroundColor: "#fff",
+                                            backgroundColor: "#ffffff",
+                                            boxShadow: "0 10px 25px rgba(15,23,42,0.04)",
                                         }}
                                     >
                                         <div
                                             style={{
                                                 display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
+                                                gap: "1rem",
+                                                alignItems: "flex-start",
                                             }}
                                         >
-                                            <div>
-                                                <strong>{dish.name}</strong>{" "}
-                                                {dish.price != null && (
-                                                    <span>– {dish.price} €</span>
+                                            <img
+                                                src={getDishImage(dish.name)}
+                                                alt={dish.name}
+                                                style={{
+                                                    width: "72px",
+                                                    height: "72px",
+                                                    objectFit: "cover",
+                                                    borderRadius: "12px",
+                                                    flexShrink: 0,
+                                                }}
+                                            />
+
+                                            <div style={{ flex: 1 }}>
+                                                <div
+                                                    style={{
+                                                        display: "flex",
+                                                        justifyContent: "space-between",
+                                                        alignItems: "center",
+                                                    }}
+                                                >
+                                                    <div>
+                                                        <strong>{dish.name}</strong>{" "}
+                                                        {dish.price != null && (
+                                                            <span>– {dish.price} €</span>
+                                                        )}
+                                                        <div
+                                                            style={{
+                                                                marginTop: "0.2rem",
+                                                                fontSize: "0.8rem",
+                                                                color: "#6b7280",
+                                                            }}
+                                                        >
+                                                            {dish.category && (
+                                                                <span>
+                                                                    {dish.category}
+                                                                    {dish.type
+                                                                        ? ` · ${dish.type}`
+                                                                        : ""}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div
+                                                        style={{
+                                                            display: "flex",
+                                                            gap: "0.5rem",
+                                                        }}
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => startEdit(dish)}
+                                                            disabled={submitting}
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleDelete(dish.name)
+                                                            }
+                                                            disabled={submitting}
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {dish.description && (
+                                                    <p
+                                                        style={{
+                                                            marginTop: "0.35rem",
+                                                            fontSize: "0.9rem",
+                                                            color: "#4b5563",
+                                                        }}
+                                                    >
+                                                        {dish.description}
+                                                    </p>
                                                 )}
-                                            </div>
-                                            <div style={{ display: "flex", gap: "0.5rem" }}>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => startEdit(dish)}
-                                                    disabled={submitting}
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDelete(dish.name)}
-                                                    disabled={submitting}
-                                                >
-                                                    Delete
-                                                </button>
+
+                                                {Array.isArray(dish.dietaryTags) &&
+                                                    dish.dietaryTags.length > 0 && (
+                                                        <div
+                                                            style={{
+                                                                marginTop: "0.35rem",
+                                                                display: "flex",
+                                                                flexWrap: "wrap",
+                                                                gap: "0.25rem",
+                                                            }}
+                                                        >
+                                                            {dish.dietaryTags.map((tag) => (
+                                                                <span
+                                                                    key={tag}
+                                                                    className="tag"
+                                                                >
+                                                                    {tag}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                             </div>
                                         </div>
-
-                                        {dish.description && (
-                                            <p style={{ marginTop: "0.35rem" }}>
-                                                {dish.description}
-                                            </p>
-                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -372,70 +477,148 @@ export default function ManagerDashboardPage() {
                     </section>
 
                     {/* Form add / edit */}
+                    {/* Form add / edit */}
                     <section style={{ marginTop: "2rem" }}>
-                        <h3>
-                            {editingDishName
-                                ? `Edit dish: ${editingDishName}`
-                                : "Add a new dish"}
+                        <h3 className="card-title">
+                            {editingDishName ? `Edit dish: ${editingDishName}` : "Add a new dish"}
                         </h3>
+
+                        <p
+                            style={{
+                                marginTop: "0.35rem",
+                                fontSize: "0.85rem",
+                                color: "#6b7280",
+                            }}
+                        >
+                            Use this form to create or update dishes with{" "}
+                            <strong>name, description, category, type</strong> and{" "}
+                            <strong>dietary info</strong> (requirement R4*).
+                        </p>
 
                         <form
                             onSubmit={handleSubmit}
                             style={{
-                                display: "grid",
-                                gap: "0.75rem",
-                                maxWidth: "520px",
-                                padding: "1rem",
-                                border: "1px solid #ddd",
-                                borderRadius: "8px",
-                                backgroundColor: "#fafafa",
+                                marginTop: "1.25rem",
+                                marginBottom: "0.5rem",
+                                padding: "1.75rem 2rem",
+                                borderRadius: "24px",
+                                background:
+                                    "radial-gradient(circle at top left,#eef2ff,#f9fafb,#fee2e2)",
+                                boxShadow: "0 24px 60px rgba(15,23,42,0.16)",
+                                maxWidth: "720px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "1rem",
+                                border: "1px solid #e5e7eb",
                             }}
                         >
-                            <label>
-                                Name*:
+                            {/* Name */}
+                            <div>
+                                <label
+                                    style={{
+                                        display: "block",
+                                        fontSize: "0.9rem",
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    Name*:
+                                </label>
                                 <input
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    style={{ width: "100%" }}
+                                    placeholder="Pizza Margherita"
+                                    style={{
+                                        width: "100%",
+                                        marginTop: "0.35rem",
+                                        padding: "0.6rem 0.8rem",
+                                        borderRadius: "0.9rem",
+                                        border: "1px solid #d1d5db",
+                                    }}
                                 />
-                            </label>
+                            </div>
 
-                            <label>
-                                Description:
+                            {/* Description */}
+                            <div>
+                                <label
+                                    style={{
+                                        display: "block",
+                                        fontSize: "0.9rem",
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    Description*:
+                                </label>
                                 <textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     rows={3}
-                                    style={{ width: "100%" }}
+                                    placeholder="Classic pizza with tomato sauce and mozzarella."
+                                    style={{
+                                        width: "100%",
+                                        marginTop: "0.35rem",
+                                        padding: "0.6rem 0.8rem",
+                                        borderRadius: "0.9rem",
+                                        border: "1px solid #d1d5db",
+                                        resize: "vertical",
+                                    }}
                                 />
-                            </label>
+                            </div>
 
-                            <label>
-                                Price (€)*:
-                                <input
-                                    type="number"
-                                    step="0.1"
-                                    min="0"
-                                    value={price}
-                                    onChange={(e) => setPrice(e.target.value)}
-                                    style={{ width: "100%" }}
-                                />
-                            </label>
-
+                            {/* Price + Category + Type on one line */}
                             <div
                                 style={{
-                                    display: "flex",
-                                    gap: "1rem",
-                                    flexWrap: "wrap",
+                                    display: "grid",
+                                    gridTemplateColumns: "0.7fr 0.8fr 1fr",
+                                    gap: "0.75rem",
                                 }}
                             >
-                                <label>
-                                    Category:
+                                <div>
+                                    <label
+                                        style={{
+                                            display: "block",
+                                            fontSize: "0.9rem",
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        Price (€)*:
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        min="0"
+                                        value={price}
+                                        onChange={(e) => setPrice(e.target.value)}
+                                        style={{
+                                            width: "100%",
+                                            marginTop: "0.35rem",
+                                            padding: "0.6rem 0.8rem",
+                                            borderRadius: "0.9rem",
+                                            border: "1px solid #d1d5db",
+                                        }}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label
+                                        style={{
+                                            display: "block",
+                                            fontSize: "0.9rem",
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        Category*:
+                                    </label>
                                     <select
                                         value={category}
                                         onChange={(e) => setCategory(e.target.value)}
-                                        style={{ marginLeft: "0.5rem" }}
+                                        style={{
+                                            width: "100%",
+                                            marginTop: "0.35rem",
+                                            padding: "0.6rem 0.8rem",
+                                            borderRadius: "0.9rem",
+                                            border: "1px solid #d1d5db",
+                                        }}
                                     >
                                         {CATEGORIES.map((c) => (
                                             <option key={c} value={c}>
@@ -443,79 +626,136 @@ export default function ManagerDashboardPage() {
                                             </option>
                                         ))}
                                     </select>
-                                </label>
+                                </div>
 
-                                <label>
-                                    Type:
+                                <div>
+                                    <label
+                                        style={{
+                                            display: "block",
+                                            fontSize: "0.9rem",
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        Type (optional):
+                                    </label>
                                     <input
                                         type="text"
                                         value={type}
                                         onChange={(e) => setType(e.target.value)}
-                                        placeholder="Pasta, Pizza, Meat..."
-                                        style={{ marginLeft: "0.5rem" }}
+                                        placeholder="Pizza, Pasta, Burger…"
+                                        style={{
+                                            width: "100%",
+                                            marginTop: "0.35rem",
+                                            padding: "0.6rem 0.8rem",
+                                            borderRadius: "0.9rem",
+                                            border: "1px solid #d1d5db",
+                                        }}
                                     />
-                                </label>
+                                </div>
                             </div>
 
-                            <label>
-                                Dietary / composition info:
+                            {/* Dietary info */}
+                            <div>
+                                <label
+                                    style={{
+                                        display: "block",
+                                        fontSize: "0.9rem",
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    Dietary / composition info:
+                                </label>
                                 <input
                                     type="text"
                                     value={dietaryInfo}
                                     onChange={(e) => setDietaryInfo(e.target.value)}
-                                    placeholder="gluten-free, contains lactose..."
-                                    style={{ width: "100%" }}
+                                    placeholder="vegetarian, gluten-free, contains peanuts…"
+                                    style={{
+                                        width: "100%",
+                                        marginTop: "0.35rem",
+                                        padding: "0.6rem 0.8rem",
+                                        borderRadius: "0.9rem",
+                                        border: "1px solid #d1d5db",
+                                    }}
                                 />
-                            </label>
-
-                            <div style={{ marginTop: "0.5rem" }}>
-                                <button
-                                    type="submit"
-                                    disabled={submitting}
-                                    style={{ marginRight: "0.5rem" }}
-                                >
-                                    {submitting
-                                        ? "Saving..."
-                                        : editingDishName
-                                            ? "Save changes"
-                                            : "Add dish"}
-                                </button>
-                                {editingDishName && (
-                                    <button
-                                        type="button"
-                                        onClick={resetForm}
-                                        disabled={submitting}
-                                    >
-                                        Cancel edit
-                                    </button>
-                                )}
-                            </div>
-
-                            {status && (
                                 <p
                                     style={{
-                                        color:
-                                            status.type === "error" ? "red" : "green",
-                                        marginTop: "0.5rem",
+                                        marginTop: "0.25rem",
+                                        fontSize: "0.8rem",
+                                        color: "#6b7280",
                                     }}
                                 >
-                                    {status.msg}
+                                    This will be shown to students when they browse the menu (e.g.
+                                    vegetarian, vegan, contains lactose).
                                 </p>
-                            )}
+                            </div>
+
+                            {/* Buttons + status */}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    marginTop: "0.75rem",
+                                    gap: "0.75rem",
+                                    flexWrap: "wrap",
+                                }}
+                            >
+                                <div style={{ display: "flex", gap: "0.5rem" }}>
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="btn btn-primary"
+                                        style={{
+                                            borderRadius: "999px",
+                                            paddingInline: "1.5rem",
+                                        }}
+                                    >
+                                        {submitting
+                                            ? "Saving..."
+                                            : editingDishName
+                                                ? "Save changes"
+                                                : "Add dish"}
+                                    </button>
+
+                                    {editingDishName && (
+                                        <button
+                                            type="button"
+                                            onClick={resetForm}
+                                            disabled={submitting}
+                                            className="btn btn-ghost"
+                                        >
+                                            Cancel edit
+                                        </button>
+                                    )}
+                                </div>
+
+                                {status && (
+                                    <p
+                                        style={{
+                                            color: status.type === "error" ? "#b91c1c" : "#15803d",
+                                            fontSize: "0.9rem",
+                                        }}
+                                    >
+                                        {status.msg}
+                                    </p>
+                                )}
+                            </div>
 
                             <p
                                 style={{
                                     fontSize: "0.8rem",
-                                    color: "#666",
+                                    color: "#6b7280",
                                     marginTop: "0.5rem",
                                 }}
                             >
-                                Existing dishes from the data seeder can be edited by
-                                clicking &quot;Edit&quot; in the list above. Changes are
-                                kept in memory for the current server session.
+                                Existing dishes from the data seeder can be edited by clicking{" "}
+                                <strong>"Edit"</strong> in the list above. Changes are kept in
+                                memory for the current server session.
                             </p>
                         </form>
                     </section>
+
                 </>
             )}
         </div>
