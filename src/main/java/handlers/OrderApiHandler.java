@@ -1,9 +1,13 @@
 package handlers;
 
 import com.sun.net.httpserver.HttpExchange;
+import domain.CampusUser;
 import domain.DeliveryLocation;
 import domain.Dish;
 import domain.Order;
+import domain.Payment;
+import domain.PaymentMethod;
+import repository.CampusUserRepository;
 import service.CartService;
 import service.CatalogService;
 import service.OrderService;
@@ -23,12 +27,14 @@ public class OrderApiHandler extends BaseHandler {
     private final OrderService ordersSvc;
     private final OrderRepository ordersRepo;
     private final CatalogService catalog;
+    private final CampusUserRepository usersRepo;
 
-    public OrderApiHandler(CartService carts, OrderService ordersSvc, OrderRepository ordersRepo, CatalogService catalog) {
+    public OrderApiHandler(CartService carts, OrderService ordersSvc, OrderRepository ordersRepo, CatalogService catalog, CampusUserRepository usersRepo) {
         this.carts = carts;
         this.ordersSvc = ordersSvc;
         this.ordersRepo = ordersRepo;
         this.catalog = catalog;
+        this.usersRepo = usersRepo;
     }
 
     @Override
@@ -110,7 +116,7 @@ public class OrderApiHandler extends BaseHandler {
     }
 
     // POST /orders
-    // JSON: {"deliveryPlace":"..","deliveryTime":"ISO or yyyy-MM-dd HH:mm"}
+    // JSON: {"deliveryPlace":"..","deliveryTime":"ISO or yyyy-MM-dd HH:mm","paymentMethod":"STUDENT_CREDIT|EXTERNAL"}
     // Legacy fallback: deliveryPlace|deliveryTime
     private void createOrder(HttpExchange ex) throws IOException {
         String userId = requireUserId(ex);
@@ -120,33 +126,83 @@ public class OrderApiHandler extends BaseHandler {
         String ct = ex.getRequestHeaders().getFirst("Content-Type");
         String place;
         String timeStr;
+        String paymentMethodStr = "EXTERNAL"; // default if not provided
+
         if (ct != null && ct.contains("application/json")) {
             OrderPayload p = parseOrderPayload(raw);
-            if (p == null) { sendError(ex, 400, "Invalid JSON payload. Expected {\"deliveryPlace\":\"..\",\"deliveryTime\":\"..\"}"); return; }
-            place = p.deliveryPlace; timeStr = p.deliveryTime;
+            if (p == null) {
+                sendError(ex, 400,
+                        "Invalid JSON payload. Expected {\"deliveryPlace\":\"..\",\"deliveryTime\":\"..\",\"paymentMethod\":\"STUDENT_CREDIT|EXTERNAL\"}");
+                return;
+            }
+            place = p.deliveryPlace;
+            timeStr = p.deliveryTime;
+            if (p.paymentMethod != null && !p.paymentMethod.isBlank()) {
+                paymentMethodStr = p.paymentMethod;
+            }
         } else {
+            // legacy text/plain: deliveryPlace|deliveryTime
             var parts = raw.split("\\|");
-            if (parts.length < 2) { sendError(ex, 400, "Expected: deliveryPlace|deliveryTime (or JSON body)"); return; }
-            place = parts[0].trim(); timeStr = parts[1].trim();
+            if (parts.length < 2) {
+                sendError(ex, 400, "Expected: deliveryPlace|deliveryTime (or JSON body)");
+                return;
+            }
+            place = parts[0].trim();
+            timeStr = parts[1].trim();
         }
 
         LocalDateTime when = parseTime(timeStr);
-        if (when == null) { sendError(ex, 400, "Invalid datetime format"); return; }
+        if (when == null) {
+            sendError(ex, 400, "Invalid datetime format");
+            return;
+        }
 
         var cart = carts.getOrCreateCartByUserId(userId);
-        if (cart.getItems().isEmpty()) { sendError(ex, 400, "Cart is empty for user: " + userId); return; }
+        if (cart.getItems().isEmpty()) {
+            sendError(ex, 400, "Cart is empty for user: " + userId);
+            return;
+        }
+
+        PaymentMethod pm;
+        try {
+            pm = PaymentMethod.valueOf(paymentMethodStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            sendError(ex, 400, "Invalid paymentMethod. Use STUDENT_CREDIT or EXTERNAL");
+            return;
+        }
 
         Order order = ordersSvc.placeOrder(cart, new DeliveryLocation(place, "null"), when);
-        ordersRepo.save(order);
-        carts.clear(cart); // empty cart after order
 
-        sendJson(ex, 201, orderToJson(order));
+        CampusUser campusUser = null;
+        if (pm == PaymentMethod.STUDENT_CREDIT) {
+            campusUser = usersRepo.findById(userId).orElse(null);
+            if (campusUser == null) {
+                sendError(ex, 400, "Unknown user for student credit");
+                return;
+            }
+        }
+
+        Payment payment;
+        try {
+            payment = ordersSvc.pay(order, pm, campusUser);
+        } catch (IllegalArgumentException exPay) {
+            if ("INSUFFICIENT_CREDIT".equals(exPay.getMessage())) {
+                sendError(ex, 402, "INSUFFICIENT_CREDIT");
+                return;
+            }
+            throw exPay;
+        }
+
+        ordersRepo.save(order);
+        carts.clear(cart);
+
+        sendJson(ex, 201, orderToJson(order, payment));
     }
 
     private void getOrder(HttpExchange ex, String id) throws IOException {
         var opt = ordersRepo.findById(id);
         if (opt.isEmpty()) { sendError(ex, 404, "Order not found"); return; }
-        sendJson(ex, 200, orderToJson(opt.get()));
+        sendJson(ex, 200, orderToJson(opt.get(), opt.get().getPayment()));
     }
 
     private void getDeliveryOptions(HttpExchange ex) throws IOException {
@@ -178,10 +234,16 @@ public class OrderApiHandler extends BaseHandler {
         sendJson(ex, 200, json);
     }
 
-    private String orderToJson(Order o) {
+    private String orderToJson(Order o, Payment payment) {
         String items = o.getItems().stream()
                 .map(it -> "{\"name\":\""+esc(it.getDish().getName())+"\",\"qty\":"+it.getQuantity()+",\"lineTotal\":"+it.getTotalPrice()+"}")
                 .collect(Collectors.joining(","));
+
+        String paymentJson = payment == null ? "null" :
+                "{\"method\":\"" + payment.getMethod() + "\"," +
+                "\"amount\":" + payment.getAmount() + "," +
+                "\"success\":" + payment.isSuccess() + "}";
+
         return "{" +
                 "\"id\":\""+esc(o.getId())+"\"," +
                 "\"status\":\""+o.getStatus()+"\"," +
@@ -189,6 +251,7 @@ public class OrderApiHandler extends BaseHandler {
                 "\"deliveryPlace\":\""+esc(o.getDeliveryPlace().getName())+"\"," +
                 "\"deliveryTime\":\""+o.getDeliveryTime()+"\"," +
                 "\"total\":"+o.getTotal()+"," +
+                "\"payment\":" + paymentJson + "," +
                 "\"items\":["+items+"]" +
                 "}";
     }
@@ -226,16 +289,23 @@ public class OrderApiHandler extends BaseHandler {
         return new AddItemPayload(rest, dish, qty);
     }
 
-    private record OrderPayload(String deliveryPlace, String deliveryTime) {}
+    // order payload for JSON createOrder
+    private record OrderPayload(String deliveryPlace, String deliveryTime, String paymentMethod) {}
+
     private static final Pattern P_PLACE = Pattern.compile("\"deliveryPlace\"\\s*:\\s*\"([^\"]+)\"");
     private static final Pattern P_TIME  = Pattern.compile("\"deliveryTime\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern P_PAY   = Pattern.compile("\"paymentMethod\"\\s*:\\s*\"([^\"]+)\"");
 
     private OrderPayload parseOrderPayload(String json) {
         if (json == null) return null;
         Matcher m1 = P_PLACE.matcher(json);
         Matcher m2 = P_TIME.matcher(json);
+        Matcher m3 = P_PAY.matcher(json);
         if (!m1.find() || !m2.find()) return null;
-        return new OrderPayload(m1.group(1).trim(), m2.group(1).trim());
+        String place = m1.group(1).trim();
+        String time = m2.group(1).trim();
+        String method = m3.find() ? m3.group(1).trim() : "EXTERNAL";
+        return new OrderPayload(place, time, method);
     }
 
     // [NEW] DELETE /cart -> clears current user's cart

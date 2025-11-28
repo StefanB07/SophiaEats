@@ -19,11 +19,12 @@ class CampusUserTest {
         assertEquals(30.0, u.getStudentCredit().getBudget(), 0.0001);
 
         Order o = new Order(
-                List.of(new OrderItem(new Dish("Soup","",5.0, DishCategory.STARTER, ""), 1)),
+                List.of(new OrderItem(new Dish("Soup","",5.0, DishCategory.STARTER, ""), 1, "Restaurant A")),
                 new DeliveryLocation("Library", "Near main entrance"),
                 LocalDateTime.now().plusHours(1)
         );
         u.addOrder(o);
         assertEquals(1, u.getOrders().size());
+        assertEquals(o, u.getOrders().get(0));
     }
 }

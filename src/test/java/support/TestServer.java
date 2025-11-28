@@ -45,7 +45,7 @@ public final class TestServer {
         OrderService orderService = new OrderService(deliveryRepo, restaurantRepo);
         CatalogService catalogService = new CatalogService(restaurantRepo, deliveryRepo);
 
-        OrderApiHandler orderApiHandler = new OrderApiHandler(cartService, orderService, orderRepo, catalogService);
+        OrderApiHandler orderApiHandler = new OrderApiHandler(cartService, orderService, orderRepo, catalogService, userRepo);
         CatalogApiHandler catalogApiHandler = new CatalogApiHandler(catalogService);
 
         server.createContext("/cart", orderApiHandler);

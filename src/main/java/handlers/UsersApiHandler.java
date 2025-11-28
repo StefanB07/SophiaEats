@@ -38,11 +38,15 @@ public class UsersApiHandler extends BaseHandler {
         List<CampusUser> all = users.findAll();
 
         String json = all.stream()
-                .map(u -> "{" +
-                        "\"id\":\"" + esc(u.getId()) + "\"," +
-                        "\"name\":\"" + esc(u.getName()) + "\"," +
-                        "\"email\":\"" + esc(u.getEmail()) + "\"" +
-                        "}")
+                .map(u -> {
+                    double credit = u.getStudentCredit() != null ? u.getStudentCredit().getBudget() : 0.0;
+                    return "{" +
+                            "\"id\":\"" + esc(u.getId()) + "\"," +
+                            "\"name\":\"" + esc(u.getName()) + "\"," +
+                            "\"email\":\"" + esc(u.getEmail()) + "\"," +
+                            "\"studentCredit\":" + credit +
+                            "}";
+                })
                 .collect(Collectors.joining(","));
 
         sendJson(ex, 200, "[" + json + "]");

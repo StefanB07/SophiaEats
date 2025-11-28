@@ -9,8 +9,6 @@ import java.net.InetSocketAddress;
 public class ApiGatewayMain {
 
     public static void main(String[] args) throws IOException {
-        // this starts the other services in the same JVM for simplicity
-        // and also so it's easier to turn into an app/singular app than starting 3 things separately everytime.
         startService("CatalogService", () -> {
             try { CatalogServiceMain.main(new String[0]); }
             catch (Exception e) { System.err.println("CatalogService failed: " + e.getMessage()); e.printStackTrace(); }
@@ -24,7 +22,7 @@ public class ApiGatewayMain {
         // Start API Gateway (port 8080)
         int port = 8080;
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
-        server.createContext("/", new GatewayHandler()); // forwards /restaurants/**, /cart/**, /orders/**
+        server.createContext("/", new GatewayHandler());
         server.setExecutor(null);
         System.out.println("Gateway listening on http://localhost:" + port);
         server.start();
