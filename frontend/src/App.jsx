@@ -1,53 +1,47 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
 import RestaurantListPage from "./pages/RestaurantListPage.jsx";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage.jsx";
 import CartAndDeliveryPage from "./pages/CartAndDeliveryPage.jsx";
 import PaymentAndConfirmationPage from "./pages/PaymentAndConfirmationPage.jsx";
+import RoleSelectionPage from "./pages/RoleSelectionPage.jsx";
+import ManagerDashboardPage from "./pages/ManagerDashboardPage.jsx";
 import { useUser } from "./context/UserContext.jsx";
 
 function AppLayout({ children }) {
-    const { currentUser, setCurrentUser, users } = useUser();
-
-
-    function handleUserChange(e) {
-        setCurrentUser(e.target.value);
-    }
-
-    const hasUsers = Array.isArray(users) && users.length > 0;
+    const { role } = useUser();
+    const location = useLocation();
+    const isHome = location.pathname === "/"; // pagina de Role Selection
 
     return (
         <div className="app">
             <header style={{ padding: "1rem", borderBottom: "1px solid #ddd" }}>
                 <h1>Sophia Tech Eats</h1>
-                <nav style={{ marginTop: "0.5rem" }}>
-                    <Link to="/" style={{ marginRight: "1rem" }}>
-                        Home
-                    </Link>
-                    <Link to="/cart">Cart</Link>
-                </nav>
 
-                {/* Current user selector (US4) */}
-                <div style={{ marginTop: "0.5rem" }}>
-                    <label>
-                        Current user:{" "}
-                        <select
-                            value={currentUser}
-                            onChange={handleUserChange}
-                            style={{ marginLeft: "0.5rem" }}
-                            disabled={!hasUsers}
-                        >
-                            {!hasUsers && (
-                                <option value="">(no users loaded)</option>
-                            )}
-                            {hasUsers &&
-                                users.map((u) => (
-                                    <option key={u.id} value={u.id}>
-                                        {u.name}
-                                    </option>
-                                ))}
-                        </select>
-                    </label>
-                </div>
+                {/* Pe home NU arătăm nav-ul */}
+                {!isHome && (
+                    <nav style={{ marginTop: "0.5rem" }}>
+                        <Link to="/" style={{ marginRight: "1rem" }}>
+                            Home
+                        </Link>
+
+                        {role === "customer" && (
+                            <>
+                                <Link to="/restaurants" style={{ marginRight: "1rem" }}>
+                                    Restaurants
+                                </Link>
+                                <Link to="/cart" style={{ marginRight: "1rem" }}>
+                                    Cart
+                                </Link>
+                            </>
+                        )}
+
+                        {role === "manager" && (
+                            <Link to="/manager">
+                                Manager
+                            </Link>
+                        )}
+                    </nav>
+                )}
             </header>
 
             <main style={{ padding: "1rem" }}>{children}</main>
@@ -65,17 +59,81 @@ function AppLayout({ children }) {
     );
 }
 
+// Ruta protejată pentru CUSTOMER
+function CustomerRoute({ children }) {
+    const { role } = useUser();
+    if (role !== "customer") {
+        return <Navigate to="/" replace />;
+    }
+    return children;
+}
+
+// Ruta protejată pentru MANAGER
+function ManagerRoute({ children }) {
+    const { role } = useUser();
+    if (role !== "manager") {
+        return <Navigate to="/" replace />;
+    }
+    return children;
+}
+
 export default function App() {
     return (
         <AppLayout>
             <Routes>
-                <Route path="/" element={<RestaurantListPage />} />
-                <Route path="/restaurants/:name" element={<RestaurantDetailPage />} />
-                <Route path="/cart" element={<CartAndDeliveryPage />} />
-                <Route path="/payment" element={<PaymentAndConfirmationPage />} />
+                {/* Landing / Role selection */}
+                <Route path="/" element={<RoleSelectionPage />} />
+
+                {/* CUSTOMER flow (doar pentru role === "customer") */}
+                <Route
+                    path="/restaurants"
+                    element={
+                        <CustomerRoute>
+                            <RestaurantListPage />
+                        </CustomerRoute>
+                    }
+                />
+                <Route
+                    path="/restaurants/:name"
+                    element={
+                        <CustomerRoute>
+                            <RestaurantDetailPage />
+                        </CustomerRoute>
+                    }
+                />
+                <Route
+                    path="/cart"
+                    element={
+                        <CustomerRoute>
+                            <CartAndDeliveryPage />
+                        </CustomerRoute>
+                    }
+                />
+                <Route
+                    path="/payment"
+                    element={
+                        <CustomerRoute>
+                            <PaymentAndConfirmationPage />
+                        </CustomerRoute>
+                    }
+                />
                 <Route
                     path="/order/confirmation/:orderId"
-                    element={<PaymentAndConfirmationPage />}
+                    element={
+                        <CustomerRoute>
+                            <PaymentAndConfirmationPage />
+                        </CustomerRoute>
+                    }
+                />
+
+                {/* MANAGER flow (doar pentru role === "manager") */}
+                <Route
+                    path="/manager"
+                    element={
+                        <ManagerRoute>
+                            <ManagerDashboardPage />
+                        </ManagerRoute>
+                    }
                 />
             </Routes>
         </AppLayout>
