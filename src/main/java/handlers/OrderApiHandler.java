@@ -47,6 +47,7 @@ public class OrderApiHandler extends BaseHandler {
             // Cart endpoints (with or without /api prefix)
             if (path.matches("^/cart/?$") && method.equals("GET")) { getCart(ex); return; }
             if (path.matches("^/cart/?$") && method.equals("POST")) { addToCart(ex); return; }
+            if (path.matches("^/cart/?$") && method.equals("DELETE")) { clearCart(ex); return; }
             if (path.matches("^/cart/delivery-options/?$") && method.equals("GET")) { getDeliveryOptions(ex); return; }
             // Backward compatibility: old endpoint /cart/items for adding items
             if (path.matches("^/cart/items/?$") && method.equals("POST")) { addToCart(ex); return; }
@@ -305,5 +306,15 @@ public class OrderApiHandler extends BaseHandler {
         String time = m2.group(1).trim();
         String method = m3.find() ? m3.group(1).trim() : "EXTERNAL";
         return new OrderPayload(place, time, method);
+    }
+
+    // [NEW] DELETE /cart -> clears current user's cart
+    private void clearCart(HttpExchange ex) throws IOException {
+        String userId = requireUserId(ex);
+        if (userId == null) return;
+        var cart = carts.getOrCreateCartByUserId(userId);
+        carts.clear(cart);
+        // 204 No Content is typical for delete; include a small JSON for convenience
+        sendJson(ex, 200, "{\"cleared\":true,\"userId\":\"" + esc(userId) + "\"}");
     }
 }

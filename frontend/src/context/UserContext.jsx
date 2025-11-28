@@ -9,6 +9,15 @@ export function UserProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
 
+    // NEW: role state (customer | manager)
+    const [role, setRole] = useState(() => {
+        try {
+            return localStorage.getItem("currentRole") || null;
+        } catch {
+            return null;
+        }
+    });
+
     // 1. Fetch users from backend once
     useEffect(() => {
         async function loadUsers() {
@@ -54,6 +63,14 @@ export function UserProvider({ children }) {
         } catch {}
     }, [currentUser]);
 
+    // NEW: persist role
+    useEffect(() => {
+        if (!role) return;
+        try {
+            localStorage.setItem("currentRole", role);
+        } catch {}
+    }, [role]);
+
     function setUserById(id) {
         if (!users.find((u) => u.id === id)) return;
         setCurrentUser(id);
@@ -61,7 +78,12 @@ export function UserProvider({ children }) {
 
     return (
         <UserContext.Provider
-            value={{ currentUser, setCurrentUser: setUserById, users, loading }}
+            value={{
+                currentUser,
+                setCurrentUser: setUserById,
+                users, loading,
+                role, setRole
+            }}
         >
             {children}
         </UserContext.Provider>
