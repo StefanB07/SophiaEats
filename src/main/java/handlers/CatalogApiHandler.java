@@ -3,6 +3,10 @@ package handlers;
 import com.sun.net.httpserver.HttpExchange;
 import domain.FilterCriteria;
 import service.CatalogService;
+import domain.Dish;
+import domain.DishCategory;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import java.io.IOException;
 import java.net.URI;
@@ -13,6 +17,50 @@ import java.util.stream.Collectors;
 
 public class CatalogApiHandler extends BaseHandler {
     private final CatalogService catalog;
+    private record DishPayload(
+            String name,
+            String description,
+            double price,
+            String category,
+            String type,
+            String dietaryInfo
+    ) {}
+
+    private static final Pattern P_NAME  = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern P_DESC  = Pattern.compile("\"description\"\\s*:\\s*\"([^\"]*)\"");
+    private static final Pattern P_PRICE = Pattern.compile("\"price\"\\s*:\\s*(\\d+(?:\\.\\d+)?)");
+    private static final Pattern P_CAT   = Pattern.compile("\"category\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern P_TYPE  = Pattern.compile("\"type\"\\s*:\\s*\"([^\"]*)\"");
+    private static final Pattern P_INFO  = Pattern.compile("\"dietaryInfo\"\\s*:\\s*\"([^\"]*)\"");
+
+    private DishPayload parseDishPayload(String json) {
+        if (json == null) return null;
+        Matcher mName = P_NAME.matcher(json);
+        Matcher mPrice = P_PRICE.matcher(json);
+        Matcher mCat = P_CAT.matcher(json);
+
+        if (!mName.find() || !mPrice.find() || !mCat.find()) {
+            return null; // Missing required fields
+        }
+
+        String name = mName.group(1).trim();
+        double price = Double.parseDouble(mPrice.group(1));
+        String cat = mCat.group(1).trim();
+
+        String desc = "";
+        Matcher mDesc = P_DESC.matcher(json);
+        if (mDesc.find()) desc = mDesc.group(1).trim();
+
+        String type = "";
+        Matcher mType = P_TYPE.matcher(json);
+        if (mType.find()) type = mType.group(1).trim();
+
+        String info = "";
+        Matcher mInfo = P_INFO.matcher(json);
+        if (mInfo.find()) info = mInfo.group(1).trim();
+
+        return new DishPayload(name, desc, price, cat, type, info);
+    }
 
     public CatalogApiHandler(CatalogService catalog) {
         this.catalog = catalog;
@@ -21,37 +69,55 @@ public class CatalogApiHandler extends BaseHandler {
     @Override
     public void handle(HttpExchange ex) throws IOException {
         String method = ex.getRequestMethod();
-        String path = ex.getRequestURI().getPath();
+        String rawPath = ex.getRequestURI().getPath();
 
         try {
+            // --- R2: ADD DISH  as a manager ---
+            // POST /restaurants/{name}/dishes
+            if (rawPath.startsWith("/restaurants/") &&
+                    rawPath.endsWith("/dishes") &&
+                    "POST".equalsIgnoreCase(method)) {
+                addDish(ex, rawPath);
+                return;
+            }
+
+            // --- R2: UPDATE DISH ---
+            // PUT /restaurants/{restaurant}/dishes/{dish}
+            if (rawPath.startsWith("/restaurants/") &&
+                    rawPath.contains("/dishes/") &&
+                    "PUT".equalsIgnoreCase(method)) {
+                updateDish(ex, rawPath);
+                return;
+            }
+
             if (!"GET".equalsIgnoreCase(method)) {
                 sendError(ex, 405, "Method Not Allowed");
                 return;
             }
 
             // /restaurants
-            if (path.matches("^/restaurants/?$")) {
+            if (rawPath.matches("^/restaurants/?$")) {
                 listAll(ex);
                 return;
             }
             // /restaurants/filter
-            if (path.matches("^/restaurants/filter/?$")) {
+            if (rawPath.matches("^/restaurants/filter/?$")) {
                 filter(ex);
                 return;
             }
             // /restaurants/{name}
-            if (path.startsWith("/restaurants/")) {
-                one(ex, path.substring("/restaurants/".length()));
+            if (rawPath.startsWith("/restaurants/")) {
+                one(ex, rawPath.substring("/restaurants/".length()));
                 return;
             }
 
             // /delivery/locations
-            if (path.matches("^/delivery/locations/?$")) {
+            if (rawPath.matches("^/delivery/locations/?$")) {
                 getLocations(ex);
                 return;
             }
             // /delivery/slots?restaurant=...
-            if (path.matches("^/delivery/slots/?$")) {
+            if (rawPath.matches("^/delivery/slots/?$")) {
                 getSlots(ex);
                 return;
             }
@@ -62,13 +128,139 @@ public class CatalogApiHandler extends BaseHandler {
         }
     }
 
+    // New helper record to return both parsed payload and resolved category
+    private record ParsedDish(DishPayload payload, DishCategory category) {}
+
+    // Centralized parsing + validation for JSON body containing a dish
+    private ParsedDish parseAndValidateDish(HttpExchange ex) throws IOException {
+        String ct = ex.getRequestHeaders().getFirst("Content-Type");
+        if (ct == null || !ct.contains("application/json")) {
+            sendError(ex, 400, "Expected Content-Type: application/json");
+            return null;
+        }
+
+        String raw = body(ex).trim();
+        DishPayload p = parseDishPayload(raw);
+        if (p == null) {
+            sendError(ex, 400,
+                    "Invalid JSON payload. Expected at least fields: name, price, category");
+            return null;
+        }
+
+        DishCategory cat;
+        try {
+            cat = DishCategory.valueOf(p.category());
+        } catch (IllegalArgumentException e) {
+            sendError(ex, 400, "Unknown category: " + p.category());
+            return null;
+        }
+
+        return new ParsedDish(p, cat);
+    }
+
+    // POST /restaurants/{name}/dishes
+    private void addDish(HttpExchange ex, String rawPath) throws IOException {
+        String prefix = "/restaurants/";
+        String suffix = "/dishes";
+
+        String encodedName = rawPath.substring(prefix.length(), rawPath.length() - suffix.length());
+        String restaurantName = urlDecode(encodedName);
+
+        if (restaurantName == null || restaurantName.isBlank()) {
+            sendError(ex, 400, "Restaurant name is required in URL");
+            return;
+        }
+
+        ParsedDish parsed = parseAndValidateDish(ex);
+        if (parsed == null) return; // parseAndValidateDish already sent an error
+
+        DishPayload p = parsed.payload();
+        DishCategory cat = parsed.category();
+
+        Dish dish;
+        try {
+            dish = catalog.addDishToRestaurant(
+                    restaurantName,
+                    p.name(),
+                    p.description(),
+                    p.price(),
+                    cat,
+                    p.type(),
+                    p.dietaryInfo()
+            );
+        } catch (IllegalArgumentException e) {
+            sendError(ex, 404, e.getMessage());
+            return;
+        }
+
+        // JSON response with created dish info
+        String json = "{"
+                + "\"name\":" + qs(dish.getName()) + ","
+                + "\"description\":" + qs(dish.getDescription()) + ","
+                + "\"price\":" + dish.getPrice()
+                + "}";
+
+        sendJson(ex, 201, json);
+    }
+
+    // PUT /restaurants/{restaurant}/dishes/{dish}
+    private void updateDish(HttpExchange ex, String rawPath) throws IOException {
+        // The path can be something like this /restaurants/Restaurant%20A/dishes/Pizza%20Margherita
+        String prefix = "/restaurants/";
+        String middle = "/dishes/";
+
+        int idxMiddle = rawPath.indexOf(middle);
+        if (idxMiddle < 0) {
+            sendError(ex, 400, "Invalid path for dish update");
+            return;
+        }
+
+        String encodedRestaurant = rawPath.substring(prefix.length(), idxMiddle);
+        String encodedDishName  = rawPath.substring(idxMiddle + middle.length());
+
+        String restaurantName = urlDecode(encodedRestaurant);
+        String existingDishName = urlDecode(encodedDishName);
+
+        if (restaurantName == null || restaurantName.isBlank()
+                || existingDishName == null || existingDishName.isBlank()) {
+            sendError(ex, 400, "Restaurant and dish name are required in URL");
+            return;
+        }
+
+        ParsedDish parsed = parseAndValidateDish(ex);
+        if (parsed == null) return; // error already sent
+
+        DishPayload p = parsed.payload();
+        DishCategory cat = parsed.category();
+
+        try {
+            Dish updated = catalog.updateDishForRestaurant(
+                    restaurantName,
+                    existingDishName,
+                    p.name(),
+                    p.description(),
+                    p.price(),
+                    cat,
+                    (p.dietaryInfo() != null && !p.dietaryInfo().isBlank())
+                            ? p.dietaryInfo()
+                            : p.type()
+            );
+
+            String json = "{"
+                    + "\"name\":" + qs(updated.getName()) + ","
+                    + "\"price\":" + updated.getPrice()
+                    + "}";
+
+            sendJson(ex, 200, json);
+        } catch (IllegalArgumentException e) {
+            //  restaurant not found or dish not found
+            sendError(ex, 404, e.getMessage());
+        }
+    }
+
     private void listAll(HttpExchange ex) throws IOException {
         var json = "[" + catalog.listAll().stream()
-                .map(r -> "{"
-                        + "\"name\":"        + qs(r.getName())        + ","
-                        + "\"cuisineType\":" + qs(r.getCuisineType()) + ","
-                        + "\"priceRange\":"  + qs(r.getPriceRange())
-                        + "}")
+                .map(this::restaurantSummaryJson)
                 .collect(Collectors.joining(",")) + "]";
         sendJson(ex, 200, json);
     }
@@ -76,22 +268,13 @@ public class CatalogApiHandler extends BaseHandler {
     private void one(HttpExchange ex, String nameEncoded) throws IOException {
         var name = urlDecode(nameEncoded);
         var opt = catalog.findByName(name);
-        if (opt.isEmpty()) { sendError(ex, 404, "Restaurant not found"); return; }
+        if (opt.isEmpty()) {
+            sendError(ex, 404, "Restaurant not found");
+            return;
+        }
 
         var r = opt.get();
-        var menu = r.getMenu().stream()
-                .map(d -> "{"
-                        + "\"name\":"  + qs(d.getName()) + ","
-                        + "\"price\":" + d.getPrice()
-                        + "}")
-                .collect(Collectors.joining(","));
-
-        var json = "{"
-                + "\"name\":"        + qs(r.getName())        + ","
-                + "\"cuisineType\":" + qs(r.getCuisineType()) + ","
-                + "\"priceRange\":"  + qs(r.getPriceRange())  + ","
-                + "\"menu\":[" + menu + "]"
-                + "}";
+        var json = restaurantFullJson(r);
 
         sendJson(ex, 200, json);
     }
@@ -110,11 +293,7 @@ public class CatalogApiHandler extends BaseHandler {
 
         var list = catalog.filter(c);
         var json = "[" + list.stream()
-                .map(r -> "{"
-                        + "\"name\":"        + qs(r.getName())        + ","
-                        + "\"cuisineType\":" + qs(r.getCuisineType()) + ","
-                        + "\"priceRange\":"  + qs(r.getPriceRange())
-                        + "}")
+                .map(this::restaurantSummaryJson)
                 .collect(Collectors.joining(",")) + "]";
         sendJson(ex, 200, json);
     }
@@ -164,12 +343,68 @@ public class CatalogApiHandler extends BaseHandler {
         return sb.toString();
     }
 
+    // New helper methods to avoid duplicated JSON building
+    private String dishToJson(domain.Dish d) {
+        // Build dietaryTags JSON array
+        String tagsJson = "[]";
+        if (d.getDietaryTags() != null && !d.getDietaryTags().isEmpty()) {
+            tagsJson = "[" + d.getDietaryTags().stream()
+                    .map(tag -> qs(tag.name())) // enum -> string cu ghilimele
+                    .collect(Collectors.joining(",")) + "]";
+        }
+
+        return "{"
+                + "\"id\":"          + qs(d.getId()) + ","                                           // id unic
+                + "\"name\":"        + qs(d.getName()) + ","                                         // nume
+                + "\"description\":" + qs(d.getDescription()) + ","                                  // descriere
+                + "\"price\":"       + d.getPrice() + ","                                            // preț
+                + "\"category\":"    + (d.getCategory() != null                                      // MAIN_COURSE, STARTER etc.
+                ? qs(d.getCategory().name())
+                : "null") + ","
+                + "\"type\":"        + qs(d.getType()) + ","                                         // ex. "Vegetarian", "Contains meat"
+                + "\"dietaryTags\":" + tagsJson                                                      // array de enum-uri ca string
+                + "}";
+    }
+
+
+    private String restaurantSummaryJson(domain.Restaurant r) {
+        return "{"
+                + "\"name\":"        + qs(r.getName())        + ","
+                + "\"cuisineType\":" + qs(r.getCuisineType()) + ","
+                + "\"priceRange\":"  + qs(r.getPriceRange())
+                + "}";
+    }
+
+    private String restaurantFullJson(domain.Restaurant r) {
+        var menu = r.getMenu().stream()
+                .map(this::dishToJson)
+                .collect(Collectors.joining(","));
+
+        return "{"
+                + "\"name\":"        + qs(r.getName())        + ","
+                + "\"cuisineType\":" + qs(r.getCuisineType()) + ","
+                + "\"priceRange\":"  + qs(r.getPriceRange())  + ","
+                + "\"menu\":[" + menu + "]"
+                + "}";
+    }
+
+    private String locationToJson(domain.DeliveryLocation l) {
+        return "{"
+                + "\"name\":" + qs(l.getName()) + ","
+                + "\"description\":" + qs(l.getDescription())
+                + "}";
+    }
+
+    private String slotToJson(domain.DeliverySlot s) {
+        return "{"
+                + "\"label\":" + qs(s.getLabel()) + ","
+                + "\"capacity\":" + s.getCapacity()
+                + "}";
+    }
+
     private void getLocations(HttpExchange ex) throws IOException {
         var json = "[" + catalog.getAllLocations().stream()
-                .map(l -> "{"
-                        + "\"name\":" + qs(l.getName()) + ","
-                        + "\"description\":" + qs(l.getDescription())
-                        + "}")
+                .map(this::locationToJson)
                 .collect(Collectors.joining(",")) + "]";
         sendJson(ex, 200, json);
     }
@@ -186,10 +421,7 @@ public class CatalogApiHandler extends BaseHandler {
         }
 
         var json = "[" + catalog.getSlotsForRestaurant(restaurantName).stream()
-                .map(s -> "{"
-                        + "\"label\":" + qs(s.getLabel()) + "," // Assumes toString or getLabel exists
-                        + "\"capacity\":" + s.getCapacity()
-                        + "}")
+                .map(this::slotToJson)
                 .collect(Collectors.joining(",")) + "]";
         sendJson(ex, 200, json);
     }

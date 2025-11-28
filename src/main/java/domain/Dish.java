@@ -11,8 +11,6 @@ public class Dish {
     private double price;
     private DishCategory category;
     private String type;
-
-    // câmpuri suplimentare
     private List<DietaryTag> dietaryTags;
 
     // === Constructor păstrat pentru compatibilitate handler ===
