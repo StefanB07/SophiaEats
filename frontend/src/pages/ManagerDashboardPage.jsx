@@ -121,6 +121,54 @@ export default function ManagerDashboardPage() {
         setStatus(null);
     }
 
+    async function handleDelete(dishName) {
+        if (!selectedRestaurant) {
+            setStatus({ type: "error", msg: "Please select a restaurant first." });
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete dish "${dishName}" from "${selectedRestaurant}"?`
+        );
+        if (!confirmed) return;
+
+        try {
+            setSubmitting(true);
+            setStatus(null);
+
+            const baseUrl = `${CATALOG_API_BASE}/restaurants/${encodeURIComponent(
+                selectedRestaurant
+            )}/dishes/${encodeURIComponent(dishName)}`;
+
+            const resp = await fetch(baseUrl, {
+                method: "DELETE",
+                headers: { Accept: "application/json" },
+            });
+
+            if (!resp.ok) {
+                const text = await resp.text();
+                throw new Error(`Backend error (${resp.status}): ${text}`);
+            }
+
+            setStatus({
+                type: "success",
+                msg: `Dish "${dishName}" was deleted.`,
+            });
+
+            await loadMenuForRestaurant(selectedRestaurant);
+            resetForm();
+        } catch (e) {
+            console.error("Failed to delete dish", e);
+            setStatus({
+                type: "error",
+                msg: e instanceof Error ? e.message : "Could not delete dish.",
+            });
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+
     async function handleSubmit(e) {
         e.preventDefault();
         setStatus(null);
@@ -294,12 +342,22 @@ export default function ManagerDashboardPage() {
                                                     <span>– {dish.price} €</span>
                                                 )}
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => startEdit(dish)}
-                                            >
-                                                Edit
-                                            </button>
+                                            <div style={{ display: "flex", gap: "0.5rem" }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => startEdit(dish)}
+                                                    disabled={submitting}
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDelete(dish.name)}
+                                                    disabled={submitting}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
                                         </div>
 
                                         {dish.description && (

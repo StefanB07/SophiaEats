@@ -90,6 +90,15 @@ public class CatalogApiHandler extends BaseHandler {
                 return;
             }
 
+            // --- R2: DELETE DISH ---
+            // DELETE /restaurants/{restaurant}/dishes/{dish}
+            if (rawPath.startsWith("/restaurants/") &&
+                    rawPath.contains("/dishes/") &&
+                    "DELETE".equalsIgnoreCase(method)) {
+                deleteDish(ex, rawPath);
+                return;
+            }
+
             if (!"GET".equalsIgnoreCase(method)) {
                 sendError(ex, 405, "Method Not Allowed");
                 return;
@@ -257,6 +266,39 @@ public class CatalogApiHandler extends BaseHandler {
             sendError(ex, 404, e.getMessage());
         }
     }
+
+    // DELETE /restaurants/{restaurant}/dishes/{dish}
+    private void deleteDish(HttpExchange ex, String rawPath) throws IOException {
+        String prefix = "/restaurants/";
+        String middle = "/dishes/";
+
+        int idxMiddle = rawPath.indexOf(middle);
+        if (idxMiddle < 0) {
+            sendError(ex, 400, "Invalid path for dish delete");
+            return;
+        }
+
+        String encodedRestaurant = rawPath.substring(prefix.length(), idxMiddle);
+        String encodedDishName  = rawPath.substring(idxMiddle + middle.length());
+
+        String restaurantName = urlDecode(encodedRestaurant);
+        String dishName = urlDecode(encodedDishName);
+
+        if (restaurantName == null || restaurantName.isBlank()
+                || dishName == null || dishName.isBlank()) {
+            sendError(ex, 400, "Restaurant and dish name are required in URL");
+            return;
+        }
+
+        try {
+            catalog.deleteDishForRestaurant(restaurantName, dishName);
+            // 204 No Content ar fi ok, dar dăm 200 cu un mic JSON pt debugging
+            sendJson(ex, 200, "{\"deleted\":true}");
+        } catch (IllegalArgumentException e) {
+            sendError(ex, 404, e.getMessage());
+        }
+    }
+
 
     private void listAll(HttpExchange ex) throws IOException {
         var json = "[" + catalog.listAll().stream()

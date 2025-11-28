@@ -134,5 +134,19 @@ public class CatalogService {
                 "Dish '" + existingDishName + "' not found in restaurant '" + restaurantName + "'."
         );
     }
+
+    public void deleteDishForRestaurant(String restaurantName, String dishName) {
+        var restOpt = restaurants.findByName(restaurantName);
+        if (restOpt.isEmpty()) {
+            throw new IllegalArgumentException("Restaurant not found: " + restaurantName);
+        }
+
+        var r = restOpt.get();
+        boolean removed = r.getMenu().removeIf(d -> d.getName().equals(dishName));
+        if (!removed) {
+            throw new IllegalArgumentException("Dish not found: " + dishName);
+        }
+    }
+
 }
 
