@@ -29,15 +29,19 @@ public final class DataSeeder {
 
         // Simple user
         CampusUser user1 = new CampusUser("Alice", "alice@campus", "Dorm A");
+        user1.assignStudentCredit(new StudentCredit(50.0));
         users.save(user1);
 
         CampusUser user2 = new CampusUser("Bob", "bob@campus", "Dorm B");
+        user2.assignStudentCredit(new StudentCredit(10.0));
         users.save(user2);
 
         CampusUser user3 = new CampusUser("Miruna", "miruna@iliescu.com", "Romania");
+        user3.assignStudentCredit(new StudentCredit(100.0));
         users.save(user3);
 
         CampusUser user5 = new CampusUser("Stefan", "stefan@campus", "Romania");
+        user5.assignStudentCredit(new StudentCredit(100.0));
         users.save(user5);
 
         System.out.println(user1.toString());
