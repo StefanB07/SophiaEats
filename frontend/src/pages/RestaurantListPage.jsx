@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 const CATALOG_API_BASE = import.meta.env.VITE_CATALOG_API_BASE;
-console.log("CATALOG_API_BASE =", CATALOG_API_BASE);
+
+const restaurantImages = {
+    "Restaurant A": "/images/restaurant-a.jpg",
+    "Second Place": "/images/second-place.png",
+    "Green Garden": "/images/green-garden.jpeg",
+    "Burger Hub": "/images/burger-hub.png",
+};
 
 export default function RestaurantListPage() {
     const [restaurants, setRestaurants] = useState([]);
@@ -16,17 +22,12 @@ export default function RestaurantListPage() {
                     throw new Error("VITE_CATALOG_API_BASE is not defined");
                 }
 
-                const url = `${CATALOG_API_BASE}/restaurants`;
-                console.log("Fetching restaurants from:", url);
-
-                const response = await fetch(url);
-
+                const response = await fetch(`${CATALOG_API_BASE}/restaurants`);
                 if (!response.ok) {
                     throw new Error(`Backend responded with status ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log("Restaurants response data:", data);
                 setRestaurants(data);
                 setError("");
             } catch (err) {
@@ -47,8 +48,8 @@ export default function RestaurantListPage() {
     if (loading) {
         return (
             <div>
-                <h2>Restaurants</h2>
-                <p>Loading restaurants...</p>
+                <h2 className="page-title">Restaurants</h2>
+                <p className="page-subtitle">Loading restaurants…</p>
             </div>
         );
     }
@@ -56,55 +57,66 @@ export default function RestaurantListPage() {
     if (error) {
         return (
             <div>
-                <h2>Restaurants</h2>
-                <p style={{ color: "red" }}>
-                    Could not load restaurants. Details: {error}
-                </p>
-            </div>
-        );
-    }
-
-    if (restaurants.length === 0) {
-        return (
-            <div>
-                <h2>Restaurants</h2>
-                <p>No restaurants available.</p>
+                <h2 className="page-title">Restaurants</h2>
+                <p style={{ color: "red" }}>Could not load restaurants: {error}</p>
             </div>
         );
     }
 
     return (
         <div>
-            <h2>Restaurants</h2>
-            <p>Select a restaurant to see its menu.</p>
+            <h2 className="page-title">Restaurants</h2>
+            <p className="page-subtitle">
+                Choose a restaurant to browse its menu and place an order.
+            </p>
 
-            <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
-                {restaurants.map((restaurant) => (
-                    <div
-                        key={restaurant.name}
-                        style={{
-                            padding: "1rem",
-                            border: "1px solid #ddd",
-                            borderRadius: "8px",
-                            backgroundColor: "white",
-                        }}
-                    >
-                        <h3 style={{ marginTop: 0 }}>{restaurant.name}</h3>
-                        <p>
-                            <strong>Cuisine:</strong> {restaurant.cuisineType}
-                        </p>
-                        <p>
-                            <strong>Price range:</strong> {restaurant.priceRange}
-                        </p>
+            <div className="card-grid">
+                {restaurants.map((r) => {
+                    const imgSrc =
+                        restaurantImages[r.name] || "/images/restaurant-placeholder.jpg";
+                    return (
+                        <article key={r.name} className="card">
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    marginBottom: "0.5rem",
+                                }}
+                            >
+                                <div>
+                                    <h3>{r.name}</h3>
+                                    <div className="card-meta">
+                                        Cuisine: {r.cuisineType || "N/A"} · Price:{" "}
+                                        {r.priceRange || "N/A"}
+                                    </div>
+                                </div>
+                                <span className="badge">Open</span>
+                            </div>
 
-                        <Link
-                            to={`/restaurants/${encodeURIComponent(restaurant.name)}`}
-                            style={{ marginTop: "0.5rem", display: "inline-block" }}
-                        >
-                            View menu →
-                        </Link>
-                    </div>
-                ))}
+                            <img
+                                src={imgSrc}
+                                alt={r.name}
+                                style={{
+                                    width: "100%",
+                                    borderRadius: "12px",
+                                    maxHeight: "150px",
+                                    objectFit: "cover",
+                                    marginBottom: "0.75rem",
+                                }}
+                            />
+
+                            <button className="btn btn-full" type="button">
+                                <Link
+                                    to={`/restaurants/${encodeURIComponent(r.name)}`}
+                                    style={{ color: "inherit", textDecoration: "none" }}
+                                >
+                                    View menu →
+                                </Link>
+                            </button>
+                        </article>
+                    );
+                })}
             </div>
         </div>
     );

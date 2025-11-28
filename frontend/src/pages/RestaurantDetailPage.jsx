@@ -1,11 +1,35 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 
 const CATALOG_API_BASE = import.meta.env.VITE_CATALOG_API_BASE;
 
+// imagini pentru DISH-uri, după numele din DataSeeder
+const dishImages = {
+    "Pizza Margherita": "/images/pizza-margherita.webp",
+    "Pasta": "/images/pasta.jpeg",
+    "Lasagna": "/images/lasagna.jpeg",
+    "Bruschetta": "/images/bruschetta.jpg",
+    "Tiramisu": "/images/tiramisu.webp",
+
+    "Soba": "/images/soba.png",
+    "Udon": "/images/udon.png",
+    "Ramen": "/images/ramen.png",
+    "Edamame": "/images/edamame.png",
+
+    "Buddha Bowl": "/images/buddha-bowl.png",
+    "Veggie Burger": "/images/veggie-burger.png",
+    "Caesar Salad": "/images/caesar-salad.png",
+    "Chia Pudding": "/images/chia-pudding.png",
+
+    "Classic Burger": "/images/classic-burger.png",
+    "Crispy Chicken Burger": "/images/crispy-chicken-burger.png",
+    "French Fries": "/images/french-fries.png",
+    "Chocolate Brownie": "/images/chocolate-brownie.png",
+};
+
 export default function RestaurantDetailPage() {
-    const { name } = useParams(); // restaurant name from URL (encoded)
+    const { name } = useParams();
     const decodedName = decodeURIComponent(name || "");
 
     const [restaurant, setRestaurant] = useState(null);
@@ -13,6 +37,9 @@ export default function RestaurantDetailPage() {
     const [error, setError] = useState("");
 
     const { addItem } = useCart();
+
+    // pentru feedback vizual pe buton ("Added ✓")
+    const [lastAddedDish, setLastAddedDish] = useState(null);
 
     useEffect(() => {
         async function loadRestaurant() {
@@ -27,15 +54,12 @@ export default function RestaurantDetailPage() {
                 const url = `${CATALOG_API_BASE}/restaurants/${encodeURIComponent(
                     decodedName
                 )}`;
-                console.log("Fetching restaurant details from:", url);
-
                 const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`Backend responded with status ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log("Restaurant details:", data);
                 setRestaurant(data);
                 setError("");
             } catch (err) {
@@ -54,15 +78,22 @@ export default function RestaurantDetailPage() {
     }, [decodedName]);
 
     function handleAddToCart(dish) {
+        if (!restaurant) return;
         addItem(dish, restaurant.name);
-        console.log(`Added "${dish.name}" to cart.`);
+
+        // marcăm dish-ul ca "tocmai adăugat"
+        setLastAddedDish(dish.name);
+        // după 1 secundă revenim la starea normală
+        setTimeout(() => {
+            setLastAddedDish((prev) => (prev === dish.name ? null : prev));
+        }, 1000);
     }
 
     if (loading) {
         return (
             <div>
-                <h2>Restaurant menu</h2>
-                <p>Loading restaurant details...</p>
+                <h2 className="page-title">Restaurant menu</h2>
+                <p className="page-subtitle">Loading restaurant details…</p>
             </div>
         );
     }
@@ -70,10 +101,13 @@ export default function RestaurantDetailPage() {
     if (error) {
         return (
             <div>
-                <h2>Restaurant menu</h2>
+                <h2 className="page-title">Restaurant menu</h2>
                 <p style={{ color: "red" }}>
                     Could not load restaurant details. Details: {error}
                 </p>
+                <Link className="btn btn-ghost" to="/">
+                    ← Back to restaurants
+                </Link>
             </div>
         );
     }
@@ -81,7 +115,7 @@ export default function RestaurantDetailPage() {
     if (!restaurant) {
         return (
             <div>
-                <h2>Restaurant menu</h2>
+                <h2 className="page-title">Restaurant menu</h2>
                 <p>No data found for this restaurant.</p>
             </div>
         );
@@ -91,69 +125,99 @@ export default function RestaurantDetailPage() {
 
     return (
         <div>
-            <h2>{restaurant.name}</h2>
-            <p>
-                <strong>Cuisine:</strong> {restaurant.cuisineType || "N/A"}
-            </p>
-            <p>
-                <strong>Price range:</strong> {restaurant.priceRange || "N/A"}
-            </p>
-            {/* TODO : Opening Hours*/}
-            {restaurant.openingHours && (
-                <p>
-                    <strong>Opening hours:</strong> {restaurant.openingHours}
-                </p>
-            )}
-
-            <h3 style={{ marginTop: "2rem" }}>Menu</h3>
-
-            {menu.length === 0 ? (
-                <p>No dishes defined for this restaurant.</p>
-            ) : (
-                <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
-                    {menu.map((dish) => (
-                        <div
-                            key={dish.name}
-                            style={{
-                                padding: "1rem",
-                                border: "1px solid #ddd",
-                                borderRadius: "8px",
-                                backgroundColor: "white",
-                            }}
-                        >
-                            <h4 style={{ marginTop: 0 }}>{dish.name}</h4>
-                            {dish.description && <p>{dish.description}</p>}
-                            <p>
-                                <strong>Price:</strong>{" "}
-                                {dish.price != null ? `${dish.price} €` : "N/A"}
-                            </p>
-
-                            {/* TODO here, if you have categories/tags */}
-                            {dish.categories && dish.categories.length > 0 && (
-                                <p style={{ fontSize: "0.9rem" }}>
-                                    <strong>Categories:</strong> {dish.categories.join(", ")}
-                                </p>
-                            )}
-
-                            {/* TODO extensions / options – for now we just display them, without complex UI */}
-                            {dish.extensions && dish.extensions.length > 0 && (
-                                <p style={{ fontSize: "0.9rem" }}>
-                                    <strong>Options:</strong>{" "}
-                                    {dish.extensions.map((ext) => ext.name || ext).join(", ")}
-                                </p>
-                            )}
-
-                            <button
-                                type="button"
-                                onClick={() => handleAddToCart(dish)}
-                                style={{ marginTop: "0.5rem" }}
-                            >
-                                Add to cart
-                            </button>
-                        </div>
-                    ))}
+            <div className="section-header">
+                <div>
+                    <h2 className="page-title">{restaurant.name}</h2>
+                    <p className="page-subtitle">
+                        Cuisine: {restaurant.cuisineType || "N/A"} · Price range:{" "}
+                        {restaurant.priceRange || "N/A"}
+                    </p>
                 </div>
-            )}
+                <Link className="btn btn-ghost" to="/">
+                    ← Back to restaurants
+                </Link>
+            </div>
+
+            {/* am scos complet poza mare a restaurantului */}
+
+            <div className="section">
+                <h3 className="page-title">Menu</h3>
+                <p className="page-subtitle">
+                    Choose your dishes and add them to the cart.
+                </p>
+
+                {menu.length === 0 ? (
+                    <p>No dishes defined for this restaurant yet.</p>
+                ) : (
+                    <div className="card-grid">
+                        {menu.map((dish) => {
+                            const isJustAdded = lastAddedDish === dish.name;
+                            const dishImg =
+                                dishImages[dish.name] || "/images/dish-placeholder.png";
+
+                            return (
+                                <article key={dish.name} className="card">
+                                    <img
+                                        src={dishImg}
+                                        alt={dish.name}
+                                        style={{
+                                            width: "100%",
+                                            borderRadius: "12px",
+                                            maxHeight: "140px",
+                                            objectFit: "cover",
+                                            marginBottom: "0.5rem",
+                                        }}
+                                    />
+
+                                    <div className="card-header-row">
+                                        <div>
+                                            <h4 className="card-title">{dish.name}</h4>
+                                            {dish.description && (
+                                                <div className="card-meta">{dish.description}</div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <p style={{ marginTop: "0.5rem", fontWeight: 500 }}>
+                                        {dish.price != null ? `${dish.price} €` : "Price N/A"}
+                                    </p>
+
+                                    {dish.categories && dish.categories.length > 0 && (
+                                        <div className="tag-list">
+                                            {dish.categories.map((c) => (
+                                                <span key={c} className="tag">
+                          {c}
+                        </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {dish.tags && dish.tags.length > 0 && (
+                                        <div className="tag-list">
+                                            {dish.tags.map((t) => (
+                                                <span key={t} className="tag">
+                          {t}
+                        </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAddToCart(dish)}
+                                        className={`btn btn-primary btn-full ${
+                                            isJustAdded ? "btn-added" : ""
+                                        }`}
+                                        style={{ marginTop: "0.75rem" }}
+                                    >
+                                        {isJustAdded ? "Added ✓" : "Add to cart"}
+                                    </button>
+                                </article>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

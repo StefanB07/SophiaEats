@@ -17,6 +17,10 @@ public class OrderItem {
         this.extraOptions = new ArrayList<>();
     }
 
+    public OrderItem(Dish dish, int quantity) {
+        this(dish, quantity, null);
+    }
+
     public String getRestaurantName() {
         return restaurantName;
     }

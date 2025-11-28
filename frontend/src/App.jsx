@@ -8,59 +8,58 @@ import { useUser } from "./context/UserContext.jsx";
 function AppLayout({ children }) {
     const { currentUser, setCurrentUser, users } = useUser();
 
+    const hasUsers = Array.isArray(users) && users.length > 0;
 
     function handleUserChange(e) {
         setCurrentUser(e.target.value);
     }
 
-    const hasUsers = Array.isArray(users) && users.length > 0;
-
     return (
         <div className="app">
-            <header style={{ padding: "1rem", borderBottom: "1px solid #ddd" }}>
-                <h1>Sophia Tech Eats</h1>
-                <nav style={{ marginTop: "0.5rem" }}>
-                    <Link to="/" style={{ marginRight: "1rem" }}>
-                        Home
-                    </Link>
-                    <Link to="/cart">Cart</Link>
-                </nav>
+            <div className="app-shell">
+                <header className="app-header">
+                    <div className="app-header-top">
+                        <div>
+                            <div className="app-title">Sophia Tech Eats</div>
+                            <nav className="app-nav">
+                                <Link className="nav-link" to="/">
+                                    Home
+                                </Link>
+                                <Link className="nav-link" to="/cart">
+                                    Cart
+                                </Link>
+                            </nav>
+                        </div>
+                        <div className="app-user">
+                            <label>
+                                Current user:{" "}
+                                <select
+                                    className="select"
+                                    value={currentUser || ""}
+                                    onChange={handleUserChange}
+                                    disabled={!hasUsers}
+                                >
+                                    {!hasUsers && (
+                                        <option value="">(no users loaded)</option>
+                                    )}
+                                    {hasUsers &&
+                                        users.map((u) => (
+                                            <option key={u.id} value={u.id}>
+                                                {u.name}
+                                            </option>
+                                        ))}
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+                </header>
 
-                {/* Current user selector (US4) */}
-                <div style={{ marginTop: "0.5rem" }}>
-                    <label>
-                        Current user:{" "}
-                        <select
-                            value={currentUser}
-                            onChange={handleUserChange}
-                            style={{ marginLeft: "0.5rem" }}
-                            disabled={!hasUsers}
-                        >
-                            {!hasUsers && (
-                                <option value="">(no users loaded)</option>
-                            )}
-                            {hasUsers &&
-                                users.map((u) => (
-                                    <option key={u.id} value={u.id}>
-                                        {u.name}
-                                    </option>
-                                ))}
-                        </select>
-                    </label>
-                </div>
-            </header>
+                <main className="app-main">{children}</main>
 
-            <main style={{ padding: "1rem" }}>{children}</main>
-
-            <footer
-                style={{
-                    padding: "1rem",
-                    borderTop: "1px solid #ddd",
-                    marginTop: "2rem",
-                }}
-            >
-                <small>© 2025 – Sophia Tech Eats</small>
-            </footer>
+                <footer className="app-footer">
+                    <span>© 2025 – Sophia Tech Eats</span>
+                </footer>
+            </div>
         </div>
     );
 }
