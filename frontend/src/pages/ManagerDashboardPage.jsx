@@ -45,6 +45,15 @@ export default function ManagerDashboardPage() {
     const [loadingMenu, setLoadingMenu] = useState(false);
     const [menuError, setMenuError] = useState("");
 
+    const [slots, setSlots] = useState([]);
+    const [loadingSlots, setLoadingSlots] = useState(false);
+    const [slotsError, setSlotsError] = useState("");
+
+    // add-slot form
+    const [slotDate, setSlotDate] = useState("");      // yyyy-MM-dd
+    const [slotTime, setSlotTime] = useState("");      // HH:mm
+    const [slotCapacity, setSlotCapacity] = useState("");
+
     // form state (add / edit)
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -56,6 +65,7 @@ export default function ManagerDashboardPage() {
     const [editingDishName, setEditingDishName] = useState(null);
     const [status, setStatus] = useState(null); // {type:"success"|"error", msg:string}
     const [submitting, setSubmitting] = useState(false);
+
 
     // 1) Load all restaurants on mount
     useEffect(() => {
@@ -108,12 +118,37 @@ export default function ManagerDashboardPage() {
         }
     }
 
+    async function loadSlotsForRestaurant(restaurantName) {
+        if (!restaurantName) return;
+        try {
+            setLoadingSlots(true);
+            setSlotsError("");
+            const url = `${CATALOG_API_BASE}/delivery/slots?restaurant=${encodeURIComponent(
+                restaurantName
+            )}`;
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            setSlots(Array.isArray(data) ? data : []);
+        } catch (e) {
+            console.error("Failed to load slots for manager:", e);
+            setSlotsError(
+                e instanceof Error ? e.message : "Unknown error loading slots"
+            );
+            setSlots([]);
+        } finally {
+            setLoadingSlots(false);
+        }
+    }
+
+
     // 2) Load menu when selectedRestaurant changes
     useEffect(() => {
         if (!selectedRestaurant) return;
         setEditingDishName(null);
         resetForm();
         void loadMenuForRestaurant(selectedRestaurant);
+        void loadSlotsForRestaurant(selectedRestaurant);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedRestaurant]);
 
@@ -266,6 +301,193 @@ export default function ManagerDashboardPage() {
             setStatus({
                 type: "error",
                 msg: e instanceof Error ? e.message : "Could not save dish.",
+            });
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    function handleSlotCapacityChange(index, value) {
+        setSlots((prev) =>
+            prev.map((s, i) =>
+                i === index
+                    ? { ...s, capacity: value === "" ? "" : Number(value) || 0 }
+                    : s
+            )
+        );
+    }
+
+    async function handleSaveSlots(e) {
+        e.preventDefault();
+        setStatus(null);
+
+        if (!selectedRestaurant) {
+            setStatus({ type: "error", msg: "Please select a restaurant first." });
+            return;
+        }
+
+        const cleaned = slots
+            .map((s) => ({
+                label: s.label,
+                capacity: Number(s.capacity),
+            }))
+            .filter(
+                (s) =>
+                    s.label &&
+                    !Number.isNaN(s.capacity) &&
+                    s.capacity >= 0
+            );
+
+        if (cleaned.length === 0) {
+            setStatus({
+                type: "error",
+                msg: "No valid slots to send.",
+            });
+            return;
+        }
+
+        try {
+            const url = `${CATALOG_API_BASE}/restaurants/${encodeURIComponent(
+                selectedRestaurant
+            )}/slots`;
+
+            const resp = await fetch(url, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ slots: cleaned }),
+            });
+
+            if (!resp.ok) {
+                const text = await resp.text();
+                throw new Error(`Backend error (${resp.status}): ${text}`);
+            }
+
+            setStatus({
+                type: "success",
+                msg: "Delivery slot capacities updated.",
+            });
+
+            await loadSlotsForRestaurant(selectedRestaurant);
+        } catch (e) {
+            console.error("Failed to update slots", e);
+            setStatus({
+                type: "error",
+                msg: e instanceof Error ? e.message : "Could not update slots.",
+            });
+        }
+    }
+
+    async function handleAddSlot(e) {
+        e.preventDefault();
+        setStatus(null);
+
+        if (!selectedRestaurant) {
+            setStatus({ type: "error", msg: "Please select a restaurant first." });
+            return;
+        }
+
+        if (!slotDate || !slotTime) {
+            setStatus({
+                type: "error",
+                msg: "Please select both date and time for the new slot.",
+            });
+            return;
+        }
+
+        const capNum = Number(slotCapacity);
+        if (Number.isNaN(capNum) || capNum <= 0) {
+            setStatus({
+                type: "error",
+                msg: "Capacity for new slot must be a positive number.",
+            });
+            return;
+        }
+
+        const timePart = slotTime.slice(0, 5); // HH:mm
+        const start = `${slotDate} ${timePart}`;
+
+        try {
+            setSubmitting(true);
+            const url = `${CATALOG_API_BASE}/restaurants/${encodeURIComponent(
+                selectedRestaurant
+            )}/slots`;
+
+            const resp = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    start,
+                    capacity: capNum,
+                }),
+            });
+
+            if (!resp.ok) {
+                const text = await resp.text();
+                throw new Error(`Backend error (${resp.status}): ${text}`);
+            }
+
+            const created = await resp.json();
+            console.log("New slot created:", created);
+
+            setStatus({
+                type: "success",
+                msg: `New slot ${created.label} added for ${selectedRestaurant}.`,
+            });
+
+            setSlotDate("");
+            setSlotTime("");
+            setSlotCapacity("");
+
+            await loadSlotsForRestaurant(selectedRestaurant);
+        } catch (e) {
+            console.error("Failed to add slot", e);
+            setStatus({
+                type: "error",
+                msg: e instanceof Error ? e.message : "Could not add slot.",
+            });
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    async function handleDeleteSlot(label) {
+        if (!selectedRestaurant) {
+            setStatus({ type: "error", msg: "Please select a restaurant first." });
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete slot "${label}" for "${selectedRestaurant}"?`
+        );
+        if (!confirmed) return;
+
+        try {
+            setSubmitting(true);
+            const url = `${CATALOG_API_BASE}/restaurants/${encodeURIComponent(
+                selectedRestaurant
+            )}/slots?label=${encodeURIComponent(label)}`;
+
+            const resp = await fetch(url, {
+                method: "DELETE",
+                headers: { Accept: "application/json" },
+            });
+
+            if (!resp.ok) {
+                const text = await resp.text();
+                throw new Error(`Backend error (${resp.status}): ${text}`);
+            }
+
+            setStatus({
+                type: "success",
+                msg: `Slot "${label}" was deleted.`,
+            });
+
+            await loadSlotsForRestaurant(selectedRestaurant);
+        } catch (e) {
+            console.error("Failed to delete slot", e);
+            setStatus({
+                type: "error",
+                msg: e instanceof Error ? e.message : "Could not delete slot.",
             });
         } finally {
             setSubmitting(false);
@@ -476,7 +698,6 @@ export default function ManagerDashboardPage() {
                         )}
                     </section>
 
-                    {/* Form add / edit */}
                     {/* Form add / edit */}
                     <section style={{ marginTop: "2rem" }}>
                         <h3 className="card-title">
@@ -755,9 +976,197 @@ export default function ManagerDashboardPage() {
                             </p>
                         </form>
                     </section>
+                    {/* R5: manage opening hours / capacities */}
+                    <section style={{ marginTop: "2rem" }}>
+                        <h3>Delivery capacities (R5)</h3>
+                        <p style={{ fontSize: "0.9rem", color: "#555" }}>
+                            Slots are pre-seeded in the backend (DataSeeder) and you can
+                            adjust the <strong>capacity</strong> (number of orders per half
+                            hour), add new slots or delete existing ones for the selected
+                            restaurant.
+                        </p>
 
+                        {loadingSlots && <p>Loading delivery slots...</p>}
+                        {slotsError && (
+                            <p style={{ color: "red" }}>Error: {slotsError}</p>
+                        )}
+
+                        {!loadingSlots && !slotsError && slots.length === 0 && (
+                            <p>No delivery slots defined for this restaurant.</p>
+                        )}
+
+                        {!loadingSlots && !slotsError && slots.length > 0 && (
+                            <form
+                                onSubmit={handleSaveSlots}
+                                style={{
+                                    marginTop: "1rem",
+                                    padding: "1rem",
+                                    borderRadius: "8px",
+                                    border: "1px solid #ddd",
+                                    backgroundColor: "#fafafa",
+                                }}
+                            >
+                                <table
+                                    style={{
+                                        width: "100%",
+                                        borderCollapse: "collapse",
+                                        fontSize: "0.95rem",
+                                    }}
+                                >
+                                    <thead>
+                                    <tr>
+                                        <th
+                                            style={{
+                                                textAlign: "left",
+                                                borderBottom: "1px solid #ccc",
+                                                paddingBottom: "0.5rem",
+                                            }}
+                                        >
+                                            Time slot
+                                        </th>
+                                        <th
+                                            style={{
+                                                textAlign: "left",
+                                                borderBottom: "1px solid #ccc",
+                                                paddingBottom: "0.5rem",
+                                            }}
+                                        >
+                                            Capacity (orders / 30 min)
+                                        </th>
+                                        <th
+                                            style={{
+                                                textAlign: "left",
+                                                borderBottom: "1px solid #ccc",
+                                                paddingBottom: "0.5rem",
+                                            }}
+                                        >
+                                            Actions
+                                        </th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {slots.map((slot, idx) => (
+                                        <tr key={slot.label}>
+                                            <td style={{ padding: "0.4rem 0" }}>
+                                                {slot.label}
+                                            </td>
+                                            <td style={{ padding: "0.4rem 0" }}>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={slot.capacity ?? 0}
+                                                    onChange={(e) =>
+                                                        handleSlotCapacityChange(
+                                                            idx,
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    style={{ width: "80px" }}
+                                                />
+                                            </td>
+                                            <td style={{ padding: "0.4rem 0" }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleDeleteSlot(slot.label)
+                                                    }
+                                                    disabled={submitting}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    style={{ marginTop: "0.75rem" }}
+                                >
+                                    {submitting ? "Saving..." : "Save capacities"}
+                                </button>
+                            </form>
+                        )}
+
+                        {/* Add new slot */}
+                        <form
+                            onSubmit={handleAddSlot}
+                            style={{
+                                marginTop: "1.5rem",
+                                padding: "1rem",
+                                borderRadius: "8px",
+                                border: "1px solid #ddd",
+                                backgroundColor: "#fafafa",
+                                maxWidth: "520px",
+                            }}
+                        >
+                            <h4>Add a new slot</h4>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: "0.75rem",
+                                    marginTop: "0.5rem",
+                                }}
+                            >
+                                <label>
+                                    Date:
+                                    <input
+                                        type="date"
+                                        value={slotDate}
+                                        onChange={(e) => setSlotDate(e.target.value)}
+                                    />
+                                </label>
+
+                                <label>
+                                    Time:
+                                    <input
+                                        type="time"
+                                        value={slotTime}
+                                        onChange={(e) => setSlotTime(e.target.value)}
+                                    />
+                                </label>
+
+                                <label>
+                                    Capacity:
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={slotCapacity}
+                                        onChange={(e) =>
+                                            setSlotCapacity(e.target.value)
+                                        }
+                                        style={{ width: "90px" }}
+                                    />
+                                </label>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                style={{ marginTop: "0.75rem" }}
+                            >
+                                {submitting ? "Adding..." : "Add slot"}
+                            </button>
+                        </form>
+                    </section>
+
+                    {status && (
+                        <p
+                            style={{
+                                color: status.type === "error" ? "red" : "green",
+                                marginTop: "1rem",
+                                fontWeight: 500,
+                            }}
+                        >
+                            {status.msg}
+                        </p>
+                    )}
                 </>
             )}
         </div>
     );
 }
+
