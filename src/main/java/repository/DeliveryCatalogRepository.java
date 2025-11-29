@@ -81,4 +81,25 @@ public class DeliveryCatalogRepository {
         return list.removeIf(s -> s.getLabel().equalsIgnoreCase(label));
     }
 
+    // în DeliveryCatalogRepository
+    public boolean consumeCapacity(String restaurantId, String label) {
+        List<DeliverySlot> list = slotsByRestaurant.get(restaurantId);
+        if (list == null) return false;
+
+        Iterator<DeliverySlot> it = list.iterator();
+        while (it.hasNext()) {
+            DeliverySlot s = it.next();
+            if (s.getLabel().equalsIgnoreCase(label)) {
+                int newCap = s.getCapacity() - 1;
+                if (newCap <= 0) {
+                    it.remove();           // când ajunge la 0, dispare slotul
+                } else {
+                    s.setCapacity(newCap);  // altfel doar decrementăm
+                }
+                return true;
+            }
+        }
+        return false; // nu am găsit slotul
+    }
+
 }

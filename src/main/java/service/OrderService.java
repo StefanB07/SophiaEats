@@ -58,6 +58,56 @@ public class OrderService {
         });
     }
 
+//    public Order placeOrder(Cart cart, DeliveryLocation deliveryPlace, LocalDateTime deliveryTime) {
+//        if (cart == null || cart.getItems().isEmpty())
+//            throw new IllegalArgumentException("Cart is empty");
+//        if (deliveryPlace == null || deliveryPlace.getName().isBlank())
+//            throw new IllegalArgumentException("Delivery place required");
+//        if (deliveryTime == null || deliveryTime.isBefore(LocalDateTime.now()))
+//            throw new IllegalArgumentException("Delivery time must be in the future");
+//
+//        // Validate: delivery location must exist in catalog (if repo is injected)
+//        if (delivery != null && !delivery.isValidLocation(deliveryPlace.getName())) {
+//            throw new IllegalArgumentException("Invalid delivery location: " + deliveryPlace);
+//        }
+//
+//        // Validate: all items must come from a single restaurant (if repo is injected)
+//        Restaurant sourceRestaurant = null;
+//        if (restaurants != null) {
+//            ensureSingleRestaurant(cart.getItems());
+//            // Determine the source restaurant using the first dish
+//            sourceRestaurant = findRestaurantByDishOrThrow(cart.getItems().get(0).getDish());
+//        }
+//
+//        // Validate: the selected slot can accept the ordered quantity (minimal check)
+//        if (delivery != null && sourceRestaurant != null) {
+//            int totalQty = cart.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
+//            var slots = delivery.slotsFor(sourceRestaurant.getId());
+//            var selectedSlotOpt = slots.stream()
+//                    .filter(s -> deliveryTime.equals(s.getStart()))
+//                    .findFirst();
+//            if (selectedSlotOpt.isEmpty()) {
+//                throw new IllegalArgumentException("No delivery slot available at requested time");
+//            }
+//            var slot = selectedSlotOpt.get();
+//            if (!slot.canFit(totalQty)) {
+//                throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
+//            }
+//            // Reserve capacity for this order so later availability reflects it
+//            boolean reservedOk = slot.reserve(totalQty);
+//            if (!reservedOk) {
+//                // Edge case: capacity changed between check and reserve
+//                throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
+//            }
+//        }
+//
+//        // Copy the items from the cart to the order
+//        List<OrderItem> items = List.copyOf(cart.getItems());
+//        Order order = new Order(items, deliveryPlace, deliveryTime);
+//        cart.clear(); // empty the cart after placing the order
+//        return order;
+//
+//    }
     public Order placeOrder(Cart cart, DeliveryLocation deliveryPlace, LocalDateTime deliveryTime) {
         if (cart == null || cart.getItems().isEmpty())
             throw new IllegalArgumentException("Cart is empty");
@@ -66,49 +116,63 @@ public class OrderService {
         if (deliveryTime == null || deliveryTime.isBefore(LocalDateTime.now()))
             throw new IllegalArgumentException("Delivery time must be in the future");
 
-        // Validate: delivery location must exist in catalog (if repo is injected)
+        // 1) Validare: locația de livrare trebuie să existe în catalog (dacă avem repo injectat)
         if (delivery != null && !delivery.isValidLocation(deliveryPlace.getName())) {
             throw new IllegalArgumentException("Invalid delivery location: " + deliveryPlace);
         }
 
-        // Validate: all items must come from a single restaurant (if repo is injected)
+        // 2) Validare: toate item-ele trebuie să provină dintr-un singur restaurant
         Restaurant sourceRestaurant = null;
         if (restaurants != null) {
             ensureSingleRestaurant(cart.getItems());
-            // Determine the source restaurant using the first dish
+            // determinăm restaurantul sursă folosind primul dish
             sourceRestaurant = findRestaurantByDishOrThrow(cart.getItems().get(0).getDish());
         }
 
-        // Validate: the selected slot can accept the ordered quantity (minimal check)
+        // 3) Validare + consumare slot de livrare (R5)
         if (delivery != null && sourceRestaurant != null) {
             int totalQty = cart.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
-            var slots = delivery.slotsFor(sourceRestaurant.getId());
-            var selectedSlotOpt = slots.stream()
+
+            // luăm lista de sloturi pentru restaurant (lista reală din repo)
+            List<DeliverySlot> slots = delivery.slotsFor(sourceRestaurant.getId());
+
+            // găsim slotul exact pentru ora cerută
+            Optional<DeliverySlot> selectedSlotOpt = slots.stream()
                     .filter(s -> deliveryTime.equals(s.getStart()))
                     .findFirst();
+
             if (selectedSlotOpt.isEmpty()) {
                 throw new IllegalArgumentException("No delivery slot available at requested time");
             }
-            var slot = selectedSlotOpt.get();
+
+            DeliverySlot slot = selectedSlotOpt.get();
+
+            // verificăm dacă încap toate comenzile în slot
             if (!slot.canFit(totalQty)) {
                 throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
             }
-            // Reserve capacity for this order so later availability reflects it
+
+            // rezervăm efectiv capacitatea
             boolean reservedOk = slot.reserve(totalQty);
             if (!reservedOk) {
-                // Edge case: capacity changed between check and reserve
+                // Edge case: între timp slotul a fost modificat de altă comandă
                 throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
+            }
+
+            // 🔴 NOU: dacă după rezervare capacitatea a ajuns la 0, scoatem slotul din listă
+            // astfel nu va mai apărea la următoarele /delivery/slots sau /cart/delivery-options
+            if (slot.getCapacity() <= 0) {
+                slots.remove(slot);
             }
         }
 
-        // Copy the items from the cart to the order
+        // 4) creăm efectiv comanda și golim coșul
         List<OrderItem> items = List.copyOf(cart.getItems());
         Order order = new Order(items, deliveryPlace, deliveryTime);
-        cart.clear(); // empty the cart after placing the order
+        cart.clear(); // curățăm coșul după plasare
+
         return order;
-
     }
-
 
     /**
      * Create and process a Payment for the given order using the given method.

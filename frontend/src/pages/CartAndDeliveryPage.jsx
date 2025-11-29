@@ -83,12 +83,12 @@ export default function CartAndDeliveryPage() {
                 const data = await resp.json();
                 if (cancelled) return;
 
-                // 🟢 IMPORTANT: convertim orice obiect la string
                 const rawLocs = Array.isArray(data.locations)
                     ? data.locations
                     : [];
                 const rawSlots = Array.isArray(data.slots) ? data.slots : [];
 
+                // locațiile -> string
                 const locs = rawLocs.map((loc) => {
                     if (typeof loc === "string") return loc;
                     if (loc && typeof loc === "object" && "name" in loc)
@@ -96,10 +96,11 @@ export default function CartAndDeliveryPage() {
                     return String(loc);
                 });
 
+                // sloturile -> folosim câmpul "label" din obiect
                 const slots = rawSlots.map((slot) => {
                     if (typeof slot === "string") return slot;
-                    if (slot && typeof slot === "object" && "name" in slot)
-                        return String(slot.name);
+                    if (slot && typeof slot === "object" && "label" in slot)
+                        return String(slot.label);
                     return String(slot);
                 });
 
