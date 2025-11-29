@@ -26,7 +26,7 @@ public class GatewayHandler extends BaseHandler {
 
         String path = ex.getRequestURI().getRawPath();
         String base;
-        if (path.startsWith("/restaurants")) {
+        if (path.startsWith("/restaurants") || path.startsWith("/delivery")) {
             base = CATALOG_BASE;
         } else if (path.startsWith("/cart") || path.startsWith("/orders") || path.startsWith("/users")) {
             base = ORDER_BASE;

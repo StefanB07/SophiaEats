@@ -1,10 +1,15 @@
 package handlers;
 
 import com.sun.net.httpserver.HttpExchange;
+import domain.DeliverySlot;
 import domain.FilterCriteria;
 import service.CatalogService;
 import domain.Dish;
 import domain.DishCategory;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +30,38 @@ public class CatalogApiHandler extends BaseHandler {
             String type,
             String dietaryInfo
     ) {}
+
+    private record SlotPayload(String label, int capacity) {}
+
+    private static final Pattern P_SLOT =
+            Pattern.compile("\\{[^}]*\"label\"\\s*:\\s*\"([^\"]+)\"[^}]*\"capacity\"\\s*:\\s*(\\d+)[^}]*\\}");
+
+    // payload pentru POST /restaurants/{name}/slots
+    private record AddSlotPayload(String start, int capacity) {}
+
+    private static final Pattern P_START = Pattern.compile("\"start\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern P_CAP   = Pattern.compile("\"capacity\"\\s*:\\s*(\\d+)");
+
+    private AddSlotPayload parseAddSlotPayload(String json) {
+        if (json == null) return null;
+        Matcher m1 = P_START.matcher(json);
+        Matcher m2 = P_CAP.matcher(json);
+        if (!m1.find() || !m2.find()) return null;
+        String start = m1.group(1).trim();
+        int cap = Integer.parseInt(m2.group(1));
+        return new AddSlotPayload(start, cap);
+    }
+
+    private static LocalDateTime parseTime(String s) {
+        if (s == null || s.isBlank()) return null;
+        try {
+            return LocalDateTime.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        } catch (DateTimeParseException ignore) {
+            try { return LocalDateTime.parse(s); }
+            catch (DateTimeParseException e) { return null; }
+        }
+    }
+
 
     private static final Pattern P_NAME  = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"");
     private static final Pattern P_DESC  = Pattern.compile("\"description\"\\s*:\\s*\"([^\"]*)\"");
@@ -99,6 +136,32 @@ public class CatalogApiHandler extends BaseHandler {
                 return;
             }
 
+            // --- R5: manager slot operations ---
+
+            // POST /restaurants/{name}/slots -> add slot
+            if (rawPath.startsWith("/restaurants/")
+                    && rawPath.endsWith("/slots")
+                    && "POST".equalsIgnoreCase(method)) {
+                addSlot(ex, rawPath);
+                return;
+            }
+
+            // PUT /restaurants/{name}/slots
+            if (rawPath.startsWith("/restaurants/")
+                    && rawPath.endsWith("/slots")
+                    && "PUT".equalsIgnoreCase(method)) {
+                updateSlots(ex, rawPath);
+                return;
+            }
+
+            // DELETE /restaurants/{name}/slots?label=... -> delete slot
+            if (rawPath.startsWith("/restaurants/")
+                    && rawPath.endsWith("/slots")
+                    && "DELETE".equalsIgnoreCase(method)) {
+                deleteSlot(ex, rawPath);
+                return;
+            }
+
             if (!"GET".equalsIgnoreCase(method)) {
                 sendError(ex, 405, "Method Not Allowed");
                 return;
@@ -139,6 +202,20 @@ public class CatalogApiHandler extends BaseHandler {
 
     // New helper record to return both parsed payload and resolved category
     private record ParsedDish(DishPayload payload, DishCategory category) {}
+
+    // New method to parse slots payload from JSON
+    private java.util.List<SlotPayload> parseSlotsPayload(String json) {
+        if (json == null || json.isBlank()) return java.util.List.of();
+        java.util.List<SlotPayload> result = new java.util.ArrayList<>();
+        Matcher m = P_SLOT.matcher(json);
+        while (m.find()) {
+            String label = m.group(1).trim();
+            int cap = Integer.parseInt(m.group(2));
+            result.add(new SlotPayload(label, cap));
+        }
+        return result;
+    }
+
 
     // Centralized parsing + validation for JSON body containing a dish
     private ParsedDish parseAndValidateDish(HttpExchange ex) throws IOException {
@@ -299,6 +376,126 @@ public class CatalogApiHandler extends BaseHandler {
         }
     }
 
+    // PUT /restaurants/{name}/slots
+    // Body JSON: {"slots":[{"label":"11:00-11:30","capacity":5}, ...]}
+    private void updateSlots(HttpExchange ex, String rawPath) throws IOException {
+        String prefix = "/restaurants/";
+        String suffix = "/slots";
+
+        String encodedName = rawPath.substring(prefix.length(), rawPath.length() - suffix.length());
+        String restaurantName = urlDecode(encodedName);
+
+        if (restaurantName == null || restaurantName.isBlank()) {
+            sendError(ex, 400, "Restaurant name is required in URL");
+            return;
+        }
+
+        String ct = ex.getRequestHeaders().getFirst("Content-Type");
+        if (ct == null || !ct.contains("application/json")) {
+            sendError(ex, 400, "Expected Content-Type: application/json");
+            return;
+        }
+
+        String raw = body(ex).trim();
+        var slots = parseSlotsPayload(raw);
+        if (slots.isEmpty()) {
+            sendError(ex, 400, "Invalid payload. Expected at least one slot with label & capacity.");
+            return;
+        }
+
+        try {
+            catalog.updateSlotsForRestaurant(
+                    restaurantName,
+                    slots.stream()
+                            .map(s -> new service.CatalogService.SlotUpdate(s.label(), s.capacity()))
+                            .collect(java.util.stream.Collectors.toList())
+            );
+            sendJson(ex, 200, "{\"updated\":true}");
+        } catch (IllegalArgumentException e) {
+            sendError(ex, 404, e.getMessage());
+        } catch (Exception e) {
+            sendError(ex, 500, "Failed to update slots: " + e.getMessage());
+        }
+    }
+
+    private void addSlot(HttpExchange ex, String path) throws IOException {
+        String prefix = "/restaurants/";
+        String suffix = "/slots";
+
+        String encodedName = path.substring(prefix.length(), path.length() - suffix.length());
+        String restaurantName = urlDecode(encodedName);
+
+        if (restaurantName == null || restaurantName.isBlank()) {
+            sendError(ex, 400, "Restaurant name is required in URL");
+            return;
+        }
+
+        String ct = ex.getRequestHeaders().getFirst("Content-Type");
+        if (ct == null || !ct.contains("application/json")) {
+            sendError(ex, 400, "Expected Content-Type: application/json");
+            return;
+        }
+
+        String raw = body(ex).trim();
+        AddSlotPayload p = parseAddSlotPayload(raw);
+        if (p == null) {
+            sendError(ex, 400,
+                    "Invalid JSON payload. Expected {\"start\":\"yyyy-MM-dd HH:mm\",\"capacity\":N}");
+            return;
+        }
+
+        LocalDateTime start = parseTime(p.start());
+        if (start == null) {
+            sendError(ex, 400, "Invalid datetime format for 'start'");
+            return;
+        }
+        if (p.capacity() <= 0) {
+            sendError(ex, 400, "capacity must be > 0");
+            return;
+        }
+
+        try {
+            DeliverySlot slot = catalog.addSlotForRestaurant(restaurantName, start, p.capacity());
+            String json = "{"
+                    + "\"label\":" + qs(slot.getLabel()) + ","
+                    + "\"capacity\":" + slot.getCapacity()
+                    + "}";
+            sendJson(ex, 201, json);
+        } catch (IllegalArgumentException e) {
+            sendError(ex, 404, e.getMessage());
+        }
+    }
+
+
+    private void deleteSlot(HttpExchange ex, String path) throws IOException {
+        String prefix = "/restaurants/";
+        String suffix = "/slots";
+
+        String encodedName = path.substring(prefix.length(), path.length() - suffix.length());
+        String restaurantName = urlDecode(encodedName);
+
+        if (restaurantName == null || restaurantName.isBlank()) {
+            sendError(ex, 400, "Restaurant name is required in URL");
+            return;
+        }
+
+        // luăm label-ul din query: /restaurants/{name}/slots?label=...
+        URI uri = ex.getRequestURI();
+        Map<String, String> params = queryToMap(uri.getRawQuery());
+
+        String label = urlDecode(params.get("label"));
+        if (label == null || label.isBlank()) {
+            sendError(ex, 400, "Missing 'label' query parameter");
+            return;
+        }
+
+        try {
+            catalog.deleteSlotForRestaurant(restaurantName, label);
+            sendJson(ex, 200, "{\"deleted\":true}");
+        } catch (IllegalArgumentException e) {
+            sendError(ex, 404, e.getMessage());
+        }
+    }
 
     private void listAll(HttpExchange ex) throws IOException {
         var json = "[" + catalog.listAll().stream()

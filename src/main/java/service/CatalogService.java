@@ -4,6 +4,7 @@ import domain.*;
 import repository.DeliveryCatalogRepository;
 import repository.RestaurantRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -13,6 +14,8 @@ import java.util.stream.Collectors;
 public class CatalogService {
     private final RestaurantRepository restaurants;
     private final DeliveryCatalogRepository delivery;
+    public static record SlotUpdate(String label, int capacity) {}
+
 
     public CatalogService(RestaurantRepository restaurants, DeliveryCatalogRepository delivery) {
         this.restaurants = Objects.requireNonNull(restaurants);
@@ -51,6 +54,14 @@ public class CatalogService {
         }
         return delivery.slotsFor(restOpt.get().getId());
     }
+
+//    public DeliverySlot addOrUpdateSlot(String restaurantName, LocalDateTime start, int capacity) {
+//        var rest = restaurants.findByName(restaurantName)
+//                .orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantName));
+//
+//        return delivery.addOrUpdateSlot(rest.getId(), start, capacity);
+//    }
+
 
     /**
      * R2 – Add a new dish to an existing restaurant.
@@ -147,6 +158,40 @@ public class CatalogService {
             throw new IllegalArgumentException("Dish not found: " + dishName);
         }
     }
+
+    public void updateSlotsForRestaurant(String restaurantName, java.util.List<SlotUpdate> updates) {
+        var restOpt = restaurants.findByName(restaurantName);
+        if (restOpt.isEmpty()) {
+            throw new IllegalArgumentException("Restaurant not found: " + restaurantName);
+        }
+        var restaurant = restOpt.get();
+
+        // Mapăm label -> capacity pentru update rapid
+        java.util.Map<String, Integer> newCaps = updates.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        SlotUpdate::label,
+                        SlotUpdate::capacity,
+                        (a, b) -> b
+                ));
+
+        delivery.updateSlotCapacities(restaurant.getId(), newCaps);
+    }
+
+    public DeliverySlot addSlotForRestaurant(String restaurantName, LocalDateTime start, int capacity) {
+        Restaurant r = restaurants.findByName(restaurantName)
+                .orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantName));
+        return delivery.addSlot(r.getId(), start, capacity);
+    }
+
+    public void deleteSlotForRestaurant(String restaurantName, String label) {
+        Restaurant r = restaurants.findByName(restaurantName)
+                .orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantName));
+        boolean removed = delivery.deleteSlot(r.getId(), label);
+        if (!removed) {
+            throw new IllegalArgumentException("Slot not found for label: " + label);
+        }
+    }
+
 
 }
 
