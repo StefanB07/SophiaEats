@@ -292,16 +292,10 @@ public final class DataSeeder {
         ));
 
         // Burger Hub – sloturi spre seară
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime bhStart = now.plusMinutes(2).withSecond(0).withNano(0);
-
-// Generate slots every minute for 6 hours (360 minutes)
-        List<DeliverySlot> bhSlots = new java.util.ArrayList<>();
-        for (int i = 0; i < 360; i++) {
-            bhSlots.add(new DeliverySlot(bhStart.plusMinutes(i), 80));
-        }
-
-        delivery.setSlots(restD.getId(), bhSlots);
+        delivery.setSlots(restD.getId(), List.of(
+                new DeliverySlot(base.plusHours(10), 80),
+                new DeliverySlot(base.plusHours(10).plusMinutes(30), 80)
+        ));
 
         // ============================
         // RETURN SEED IDS (cele folosite de teste)

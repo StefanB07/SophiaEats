@@ -36,6 +36,9 @@ export default function RestaurantDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    // NEW: State for the active filter
+    const [activeFilter, setActiveFilter] = useState("All");
+
     const { addItem } = useCart();
 
     // pentru feedback vizual pe buton ("Added ✓")
@@ -123,6 +126,23 @@ export default function RestaurantDetailPage() {
 
     const menu = restaurant.menu || [];
 
+    // --- NEW: Filter Logic ---
+    // 1. Extract unique categories and tags
+    const allTags = new Set();
+    menu.forEach(dish => {
+        dish.categories?.forEach(c => allTags.add(c));
+        dish.dietaryTags?.forEach(t => allTags.add(t));
+    });
+    const filterOptions = ["All", ...Array.from(allTags)];
+
+    // 2. Filter the menu based on selection
+    const filteredMenu = activeFilter === "All"
+        ? menu
+        : menu.filter(dish =>
+            dish.categories?.includes(activeFilter) ||
+            dish.dietaryTags?.includes(activeFilter)
+        );
+
     return (
         <div>
             <div className="section-header">
@@ -146,11 +166,28 @@ export default function RestaurantDetailPage() {
                     Choose your dishes and add them to the cart.
                 </p>
 
+                {/* --- NEW: Filter Buttons UI --- */}
+                {menu.length > 0 && (
+                    <div className="filter-container">
+                        {filterOptions.map(option => (
+                            <button
+                                key={option}
+                                onClick={() => setActiveFilter(option)}
+                                className={`filter-btn ${activeFilter === option ? 'active' : ''}`}
+                            >
+                                {option}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 {menu.length === 0 ? (
                     <p>No dishes defined for this restaurant yet.</p>
+                ) : filteredMenu.length === 0 ? (
+                    <p>No dishes found for the selected filter.</p>
                 ) : (
                     <div className="card-grid">
-                        {menu.map((dish) => {
+                        {filteredMenu.map((dish) => {
                             const isJustAdded = lastAddedDish === dish.name;
                             const dishImg =
                                 dishImages[dish.name] || "/images/dish-placeholder.png";
@@ -186,18 +223,18 @@ export default function RestaurantDetailPage() {
                                         <div className="tag-list">
                                             {dish.categories.map((c) => (
                                                 <span key={c} className="tag">
-                          {c}
-                        </span>
+                                                    {c}
+                                                </span>
                                             ))}
                                         </div>
                                     )}
 
-                                    {dish.tags && dish.tags.length > 0 && (
+                                    {dish.dietaryTags && dish.dietaryTags.length > 0 && (
                                         <div className="tag-list">
-                                            {dish.tags.map((t) => (
+                                            {dish.dietaryTags.map((t) => (
                                                 <span key={t} className="tag">
-                          {t}
-                        </span>
+                                                    {t}
+                                                </span>
                                             ))}
                                         </div>
                                     )}
