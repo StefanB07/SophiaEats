@@ -16,15 +16,9 @@ import ManagerDashboardPage from "./pages/ManagerDashboardPage.jsx";
 import { useUser } from "./context/UserContext.jsx";
 
 function AppLayout({ children }) {
-    const { role, currentUser, setCurrentUser, users } = useUser();
+    const { role } = useUser();
     const location = useLocation();
     const isHome = location.pathname === "/"; // pagina de Role Selection
-
-    const hasUsers = Array.isArray(users) && users.length > 0;
-
-    function handleUserChange(e) {
-        setCurrentUser(e.target.value);
-    }
 
     return (
         <div className="app">
@@ -43,10 +37,16 @@ function AppLayout({ children }) {
 
                                     {role === "customer" && (
                                         <>
-                                            <Link className="nav-link" to="/restaurants">
+                                            <Link
+                                                className="nav-link"
+                                                to="/restaurants"
+                                            >
                                                 Restaurants
                                             </Link>
-                                            <Link className="nav-link" to="/cart">
+                                            <Link
+                                                className="nav-link"
+                                                to="/cart"
+                                            >
                                                 Cart
                                             </Link>
                                             {/* NEW: My Orders link (customer-only) */}
@@ -57,38 +57,16 @@ function AppLayout({ children }) {
                                     )}
 
                                     {role === "manager" && (
-                                        <Link className="nav-link" to="/manager">
+                                        <Link
+                                            className="nav-link"
+                                            to="/manager"
+                                        >
                                             Manager
                                         </Link>
                                     )}
                                 </nav>
                             )}
                         </div>
-
-                        {/* selectorul de user îl arătăm doar pentru client și nu pe home */}
-                        {!isHome && role === "customer" && (
-                            <div className="app-user">
-                                <label>
-                                    Current user:{" "}
-                                    <select
-                                        className="select"
-                                        value={currentUser || ""}
-                                        onChange={handleUserChange}
-                                        disabled={!hasUsers}
-                                    >
-                                        {!hasUsers && (
-                                            <option value="">(no users loaded)</option>
-                                        )}
-                                        {hasUsers &&
-                                            users.map((u) => (
-                                                <option key={u.id} value={u.id}>
-                                                    {u.name}
-                                                </option>
-                                            ))}
-                                    </select>
-                                </label>
-                            </div>
-                        )}
                     </div>
                 </header>
 

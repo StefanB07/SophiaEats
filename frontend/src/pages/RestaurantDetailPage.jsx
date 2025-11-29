@@ -7,25 +7,25 @@ const CATALOG_API_BASE = import.meta.env.VITE_CATALOG_API_BASE;
 // imagini pentru DISH-uri, după numele din DataSeeder
 const dishImages = {
     "Pizza Margherita": "/images/pizza-margherita.webp",
-    "Pasta": "/images/pasta.jpeg",
-    "Lasagna": "/images/lasagna.jpeg",
-    "Bruschetta": "/images/bruschetta.jpg",
-    "Tiramisu": "/images/tiramisu.webp",
+    Pasta: "/images/pasta.jpeg",
+    Lasagna: "/images/lasagna.jpeg",
+    Bruschetta: "/images/bruschetta.jpg",
+    Tiramisu: "/images/tiramisu.webp",
 
-    "Soba": "/images/soba.png",
-    "Udon": "/images/udon.png",
-    "Ramen": "/images/ramen.png",
-    "Edamame": "/images/edamame.png",
+    Soba: "/images/soba.webp",
+    Udon: "/images/udon.jpeg",
+    Ramen: "/images/ramen.jpg",
+    Edamame: "/images/edamame.png",
 
-    "Buddha Bowl": "/images/buddha-bowl.png",
-    "Veggie Burger": "/images/veggie-burger.png",
-    "Caesar Salad": "/images/caesar-salad.png",
-    "Chia Pudding": "/images/chia-pudding.png",
+    "Buddha Bowl": "/images/buddha-bowl.jpeg",
+    "Veggie Burger": "/images/veggie-burger.webp",
+    "Caesar Salad": "/images/caesar-salad.jpg",
+    "Chia Pudding": "/images/chia-pudding.jpeg",
 
-    "Classic Burger": "/images/classic-burger.png",
-    "Crispy Chicken Burger": "/images/crispy-chicken-burger.png",
-    "French Fries": "/images/french-fries.png",
-    "Chocolate Brownie": "/images/chocolate-brownie.png",
+    "Classic Burger": "/images/classic-burger.webp",
+    "Crispy Chicken Burger": "/images/crispy-chicken-burger.jpg",
+    "French Fries": "/images/french-fries.jpg",
+    "Chocolate Brownie": "/images/chocolate-brownie.jpeg",
 };
 
 export default function RestaurantDetailPage() {
@@ -108,7 +108,7 @@ export default function RestaurantDetailPage() {
                 <p style={{ color: "red" }}>
                     Could not load restaurant details. Details: {error}
                 </p>
-                <Link className="btn btn-ghost" to="/">
+                <Link className="btn btn-ghost" to="/restaurants">
                     ← Back to restaurants
                 </Link>
             </div>
@@ -153,7 +153,7 @@ export default function RestaurantDetailPage() {
                         {restaurant.priceRange || "N/A"}
                     </p>
                 </div>
-                <Link className="btn btn-ghost" to="/">
+                <Link className="btn btn-ghost" to="/restaurants">
                     ← Back to restaurants
                 </Link>
             </div>
