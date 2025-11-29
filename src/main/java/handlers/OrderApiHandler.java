@@ -63,15 +63,12 @@ public class OrderApiHandler extends BaseHandler {
     }
 
     private void getCart(HttpExchange ex) throws IOException {
-        // Previously required X-User-Id header and returned 400 if missing.
-        // On SPA refresh to /cart the browser requests this path without custom headers,
-        // causing the raw JSON error to render instead of the app shell. To fix this,
-        // we allow a fallback user id when the header is absent.
         String userId = ex.getRequestHeaders().getFirst("X-User-Id");
         if (userId == null || userId.isBlank()) {
-            userId = "alice"; // fallback default user (must exist in DataSeeder / frontend seeded users)
+            sendError(ex, 400, "X-User-Id header is required");
+            return;
         }
-        var cart = carts.getOrCreateCartByUserId(userId);
+        var cart = carts.getOrCreateCartByUserId(userId.trim());
         var items = cart.getItems().stream()
                 .map(it -> "{\"name\":\""+esc(it.getDish().getName())+"\",\"qty\":"+it.getQuantity()+",\"lineTotal\":"+it.getTotalPrice()+"}")
                 .collect(Collectors.joining(","));

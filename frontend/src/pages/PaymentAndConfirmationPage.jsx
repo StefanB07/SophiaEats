@@ -4,7 +4,6 @@ import { useUser } from "../context/UserContext.jsx";
 import { useEffect, useState } from "react";
 
 const ORDERS_KEY_PREFIX = "orders:";
-const LAST_ORDER_KEY = "lastConfirmedOrderId";
 
 export default function PaymentAndConfirmationPage() {
     const { orderId } = useParams();
@@ -34,7 +33,6 @@ export default function PaymentAndConfirmationPage() {
                         const existing = JSON.parse(localStorage.getItem(key) || "[]");
                         const deduped = [data, ...existing.filter((o) => o.id !== data.id)];
                         localStorage.setItem(key, JSON.stringify(deduped));
-                        localStorage.setItem(LAST_ORDER_KEY, data.id);
                     } catch {}
                 } else {
                     setError(`Failed to load order recap (HTTP ${resp.status})`);
@@ -155,7 +153,7 @@ export default function PaymentAndConfirmationPage() {
                     </ul>
                     <p><strong>Total:</strong> {order.total} €</p>
                     <p><strong>Delivery place:</strong> {order.deliveryPlace}</p>
-                    <p><strong>Delivery time:</strong> {order.deliveryTime}</p>
+                    <p><strong>Delivery time:</strong> {(order.deliveryTime || '').replace('T', ' ')}</p>
                 </>
             )}
         </div>
