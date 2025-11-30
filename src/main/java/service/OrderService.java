@@ -131,14 +131,24 @@ public class OrderService {
 
         // 3) Validare + consumare slot de livrare (R5)
         if (delivery != null && sourceRestaurant != null) {
-            int totalQty = cart.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
+            int totalQty = cart.getItems().stream()
+                    .mapToInt(OrderItem::getQuantity)
+                    .sum();
 
             // luăm lista de sloturi pentru restaurant (lista reală din repo)
             List<DeliverySlot> slots = delivery.slotsFor(sourceRestaurant.getId());
 
-            // găsim slotul exact pentru ora cerută
+            // construim labelul așteptat pentru ora cerută (ex: "13:30-14:00")
+            var end = deliveryTime.plusMinutes(30);
+            String requestedLabel = String.format(
+                    "%02d:%02d-%02d:%02d",
+                    deliveryTime.getHour(), deliveryTime.getMinute(),
+                    end.getHour(), end.getMinute()
+            );
+
+            // căutăm slotul după label, nu după data exactă, ca să nu depindem de zi
             Optional<DeliverySlot> selectedSlotOpt = slots.stream()
-                    .filter(s -> deliveryTime.equals(s.getStart()))
+                    .filter(s -> requestedLabel.equals(s.getLabel()))
                     .findFirst();
 
             if (selectedSlotOpt.isEmpty()) {
@@ -155,16 +165,15 @@ public class OrderService {
             // rezervăm efectiv capacitatea
             boolean reservedOk = slot.reserve(totalQty);
             if (!reservedOk) {
-                // Edge case: între timp slotul a fost modificat de altă comandă
                 throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
             }
 
-            // 🔴 NOU: dacă după rezervare capacitatea a ajuns la 0, scoatem slotul din listă
-            // astfel nu va mai apărea la următoarele /delivery/slots sau /cart/delivery-options
+            // dacă după rezervare capacitatea a ajuns la 0, scoatem slotul din listă
             if (slot.getCapacity() <= 0) {
                 slots.remove(slot);
             }
         }
+
 
         // 4) creăm efectiv comanda și golim coșul
         List<OrderItem> items = List.copyOf(cart.getItems());

@@ -238,8 +238,8 @@ public class OrderApiHandler extends BaseHandler {
 
         String paymentJson = payment == null ? "null" :
                 "{\"method\":\"" + payment.getMethod() + "\"," +
-                "\"amount\":" + payment.getAmount() + "," +
-                "\"success\":" + payment.isSuccess() + "}";
+                        "\"amount\":" + payment.getAmount() + "," +
+                        "\"success\":" + payment.isSuccess() + "}";
 
         return "{" +
                 "\"id\":\""+esc(o.getId())+"\"," +

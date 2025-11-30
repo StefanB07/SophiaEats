@@ -109,13 +109,16 @@ export default function RoleSelectionPage() {
     const handleCustomerChange = (e) => {
         const id = e.target.value;
         setSelectedUserId(id);
-        if (!id) return;
+        // aici DOAR selectăm user-ul în dropdown
+    };
 
-        // setăm userul și rolul, apoi mergem la flow-ul de customer
-        setCurrentUser(id);
+    const handleCustomerContinue = () => {
+        if (!selectedUserId) return;
+        setCurrentUser(selectedUserId);
         setRole("customer");
         navigate("/restaurants");
     };
+
 
     const handleChooseManager = () => {
         // pentru simplificare: un singur manager, nu alegem user
@@ -200,7 +203,26 @@ export default function RoleSelectionPage() {
                                 </option>
                             ))}
                     </select>
+
+                    {/*  NOU: buton separat care chiar „pornește” aplicația ca și customer */}
+                    <button
+                        type="button"
+                        onClick={handleCustomerContinue}
+                        disabled={!selectedUserId}
+                        style={{
+                            padding: "0.6rem 1.5rem",
+                            borderRadius: "999px",
+                            border: "1px solid #2563eb",
+                            backgroundColor: "#2563eb",
+                            color: "white",
+                            fontSize: "0.95rem",
+                            cursor: selectedUserId ? "pointer" : "not-allowed",
+                        }}
+                    >
+                        Continue as customer
+                    </button>
                 </div>
+
 
                 {/* MANAGER = buton simplu */}
                 <button

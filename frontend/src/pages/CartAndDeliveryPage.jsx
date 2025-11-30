@@ -96,7 +96,7 @@ export default function CartAndDeliveryPage() {
                     return String(loc);
                 });
 
-                // sloturile -> folosim câmpul "label" din obiect
+                // sloturile -> folosim câmpul "label" din obiect, fără filtrare
                 const slots = rawSlots.map((slot) => {
                     if (typeof slot === "string") return slot;
                     if (slot && typeof slot === "object" && "label" in slot)
@@ -221,8 +221,8 @@ export default function CartAndDeliveryPage() {
                                             <strong>{item.dish.name}</strong>{" "}
                                             {item.restaurantName && (
                                                 <span style={{ color: "#6b7280", fontSize: "0.9rem" }}>
-                            ({item.restaurantName})
-                        </span>
+                                                    ({item.restaurantName})
+                                                </span>
                                             )}
                                         </div>
                                         <div style={{ fontSize: "0.9rem" }}>
