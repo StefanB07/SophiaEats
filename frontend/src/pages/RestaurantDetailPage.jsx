@@ -28,21 +28,80 @@ const dishImages = {
     "Chocolate Brownie": "/images/chocolate-brownie.jpeg",
 };
 
+function getDishImage(name) {
+    return dishImages[name] || "/images/dish-placeholder.png";
+}
+
+// mock toppings / extensions aux plats (R2)
+const EXTRA_OPTIONS = {
+    "Pizza Margherita": [
+        { id: "extra-cheese", label: "Extra cheese", price: 1.0 },
+        { id: "olives", label: "Olives", price: 0.5 },
+        { id: "spicy-oil", label: "Spicy oil", price: 0.3 },
+    ],
+    Pasta: [
+        { id: "extra-parmesan", label: "Extra parmesan", price: 0.8 },
+        { id: "garlic-bread", label: "Garlic bread", price: 1.5 },
+    ],
+    Ramen: [
+        { id: "extra-egg", label: "Extra egg", price: 1.0 },
+        { id: "extra-noodles", label: "Extra noodles", price: 1.5 },
+    ],
+    "Classic Burger": [
+        { id: "extra-patty", label: "Double patty", price: 2.5 },
+        { id: "extra-cheddar", label: "Extra cheddar", price: 0.8 },
+        { id: "bacon", label: "Bacon", price: 1.2 },
+    ],
+};
+
+function getDishCategory(dish) {
+    if (dish.category) return dish.category;
+    if (Array.isArray(dish.categories) && dish.categories.length > 0) {
+        return dish.categories[0];
+    }
+    return null;
+}
+
+function getDietaryTags(dish) {
+    if (Array.isArray(dish.dietaryTags)) return dish.dietaryTags;
+    if (Array.isArray(dish.tags)) return dish.tags;
+    if (typeof dish.dietaryInfo === "string" && dish.dietaryInfo.trim() !== "") {
+        return dish.dietaryInfo.split(",").map((t) => t.trim());
+    }
+    return [];
+}
+
+function isVegetarianDish(dish) {
+    const tags = getDietaryTags(dish).map((t) => t.toLowerCase());
+    if (tags.some((t) => t.includes("vegetarian") || t.includes("vegan"))) return true;
+
+    // fallback: descrierea conține "vegetarian"/"vegan"
+    if (typeof dish.description === "string") {
+        const d = dish.description.toLowerCase();
+        if (d.includes("vegetarian") || d.includes("vegan")) return true;
+    }
+    return false;
+}
+
 export default function RestaurantDetailPage() {
     const { name } = useParams();
     const decodedName = decodeURIComponent(name || "");
+
+    const { addItem } = useCart();
 
     const [restaurant, setRestaurant] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // NEW: State for the active filter
-    const [activeFilter, setActiveFilter] = useState("All");
-
-    const { addItem } = useCart();
-
-    // pentru feedback vizual pe buton ("Added ✓")
     const [lastAddedDish, setLastAddedDish] = useState(null);
+    const [addError, setAddError] = useState("");
+
+    // filtre R2 + C2
+    const [activeCategory, setActiveCategory] = useState("ALL");
+    const [onlyVegetarian, setOnlyVegetarian] = useState(false);
+
+    // toppings selectate per dish
+    const [selectedExtras, setSelectedExtras] = useState({}); // { [dishName]: string[] }
 
     useEffect(() => {
         async function loadRestaurant() {
@@ -80,16 +139,67 @@ export default function RestaurantDetailPage() {
         void loadRestaurant();
     }, [decodedName]);
 
-    function handleAddToCart(dish) {
-        if (!restaurant) return;
-        addItem(dish, restaurant.name);
+    function toggleExtra(dishName, optionId) {
+        setSelectedExtras((prev) => {
+            const current = prev[dishName] || [];
+            if (current.includes(optionId)) {
+                return {
+                    ...prev,
+                    [dishName]: current.filter((id) => id !== optionId),
+                };
+            }
+            return {
+                ...prev,
+                [dishName]: [...current, optionId],
+            };
+        });
+    }
 
-        // marcăm dish-ul ca "tocmai adăugat"
-        setLastAddedDish(dish.name);
-        // după 1 secundă revenim la starea normală
-        setTimeout(() => {
-            setLastAddedDish((prev) => (prev === dish.name ? null : prev));
-        }, 1000);
+    function getSelectedExtrasForDish(dish) {
+        const allExtras = EXTRA_OPTIONS[dish.name] || [];
+        const selectedIds = selectedExtras[dish.name] || [];
+        return allExtras.filter((opt) => selectedIds.includes(opt.id));
+    }
+
+    async function handleAddToCart(dish) {
+        if (!restaurant) return;
+
+        try {
+            setAddError("");
+
+            const extras = getSelectedExtrasForDish(dish);
+            let dishForCart = dish;
+
+            if (extras.length > 0) {
+                const extrasTotal = extras.reduce(
+                    (sum, e) => sum + (e.price || 0),
+                    0
+                );
+                dishForCart = {
+                    ...dish,
+                    // cresc prețul pentru a include toppings (R2 – extra paid options)
+                    price:
+                        typeof dish.price === "number"
+                            ? dish.price + extrasTotal
+                            : dish.price,
+                    selectedExtras: extras,
+                };
+            }
+
+            await addItem(dishForCart, restaurant.name);
+
+            setLastAddedDish(dish.name);
+            setTimeout(() => {
+                setLastAddedDish((prev) => (prev === dish.name ? null : prev));
+            }, 1000);
+        } catch (err) {
+            console.error("Failed to add dish to cart:", err);
+            const msg =
+                err && typeof err.message === "string"
+                    ? err.message
+                    : "Could not add this dish to cart (maybe you already have items from another restaurant).";
+            setAddError(msg);
+        }
     }
 
     if (loading) {
@@ -120,28 +230,36 @@ export default function RestaurantDetailPage() {
             <div>
                 <h2 className="page-title">Restaurant menu</h2>
                 <p>No data found for this restaurant.</p>
+                <Link className="btn btn-ghost" to="/restaurants">
+                    ← Back to restaurants
+                </Link>
             </div>
         );
     }
 
-    const menu = restaurant.menu || [];
+    const menu = Array.isArray(restaurant.menu) ? restaurant.menu : [];
 
-    // --- NEW: Filter Logic ---
-    // 1. Extract unique categories and tags
-    const allTags = new Set();
-    menu.forEach(dish => {
-        dish.categories?.forEach(c => allTags.add(c));
-        dish.dietaryTags?.forEach(t => allTags.add(t));
+    // categoriile existente în meniu (R2 – folosim categoria pentru selecție)
+    const categorySet = new Set();
+    menu.forEach((dish) => {
+        const c = getDishCategory(dish);
+        if (c) categorySet.add(c);
     });
-    const filterOptions = ["All", ...Array.from(allTags)];
+    const availableCategories = ["ALL", ...Array.from(categorySet)];
 
-    // 2. Filter the menu based on selection
-    const filteredMenu = activeFilter === "All"
-        ? menu
-        : menu.filter(dish =>
-            dish.categories?.includes(activeFilter) ||
-            dish.dietaryTags?.includes(activeFilter)
-        );
+    const filteredMenu = menu.filter((dish) => {
+        const cat = getDishCategory(dish);
+
+        if (activeCategory !== "ALL" && cat !== activeCategory) {
+            return false;
+        }
+
+        if (onlyVegetarian && !isVegetarianDish(dish)) {
+            return false;
+        }
+
+        return true;
+    });
 
     return (
         <div>
@@ -158,44 +276,95 @@ export default function RestaurantDetailPage() {
                 </Link>
             </div>
 
-            {/* am scos complet poza mare a restaurantului */}
-
             <div className="section">
+                {/* FILTRE – R2 & C2 */}
+                <div
+                    className="card"
+                    style={{
+                        padding: "1rem 1.25rem",
+                        marginBottom: "1.25rem",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.75rem",
+                    }}
+                >
+                    <div>
+                        <span
+                            style={{
+                                fontSize: "0.9rem",
+                                fontWeight: 500,
+                                marginRight: "0.75rem",
+                            }}
+                        >
+                            Filter by category:
+                        </span>
+                        <div
+                            style={{
+                                display: "inline-flex",
+                                flexWrap: "wrap",
+                                gap: "0.4rem",
+                            }}
+                        >
+                            {availableCategories.map((c) => (
+                                <button
+                                    key={c}
+                                    type="button"
+                                    className={
+                                        activeCategory === c ? "pill pill-active" : "pill"
+                                    }
+                                    onClick={() => setActiveCategory(c)}
+                                >
+                                    {c === "ALL" ? "All" : c.replace("_", " ")}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <label
+                        style={{
+                            fontSize: "0.9rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.4rem",
+                        }}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={onlyVegetarian}
+                            onChange={(e) => setOnlyVegetarian(e.target.checked)}
+                        />
+                        Show only vegetarian dishes
+                    </label>
+
+                    {addError && (
+                        <p style={{ color: "#b91c1c", fontSize: "0.9rem" }}>
+                            {addError}
+                        </p>
+                    )}
+                </div>
+
                 <h3 className="page-title">Menu</h3>
                 <p className="page-subtitle">
-                    Choose your dishes and add them to the cart.
+                    Choose your dishes and add them to the cart. You can also select
+                    extra paid toppings.
                 </p>
 
-                {/* --- NEW: Filter Buttons UI --- */}
-                {menu.length > 0 && (
-                    <div className="filter-container">
-                        {filterOptions.map(option => (
-                            <button
-                                key={option}
-                                onClick={() => setActiveFilter(option)}
-                                className={`filter-btn ${activeFilter === option ? 'active' : ''}`}
-                            >
-                                {option}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {menu.length === 0 ? (
-                    <p>No dishes defined for this restaurant yet.</p>
-                ) : filteredMenu.length === 0 ? (
-                    <p>No dishes found for the selected filter.</p>
+                {filteredMenu.length === 0 ? (
+                    <p>No dishes match the selected filters for this restaurant.</p>
                 ) : (
                     <div className="card-grid">
                         {filteredMenu.map((dish) => {
                             const isJustAdded = lastAddedDish === dish.name;
-                            const dishImg =
-                                dishImages[dish.name] || "/images/dish-placeholder.png";
+                            const imgSrc = getDishImage(dish.name);
+                            const category = getDishCategory(dish);
+                            const dietaryTags = getDietaryTags(dish);
+                            const extras = EXTRA_OPTIONS[dish.name] || [];
+                            const selectedForDish = selectedExtras[dish.name] || [];
 
                             return (
                                 <article key={dish.name} className="card">
                                     <img
-                                        src={dishImg}
+                                        src={imgSrc}
                                         alt={dish.name}
                                         style={{
                                             width: "100%",
@@ -210,32 +379,93 @@ export default function RestaurantDetailPage() {
                                         <div>
                                             <h4 className="card-title">{dish.name}</h4>
                                             {dish.description && (
-                                                <div className="card-meta">{dish.description}</div>
+                                                <div className="card-meta">
+                                                    {dish.description}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
 
-                                    <p style={{ marginTop: "0.5rem", fontWeight: 500 }}>
-                                        {dish.price != null ? `${dish.price} €` : "Price N/A"}
+                                    <p
+                                        style={{
+                                            marginTop: "0.5rem",
+                                            fontWeight: 500,
+                                        }}
+                                    >
+                                        {dish.price != null
+                                            ? `${dish.price} €`
+                                            : "Price N/A"}
                                     </p>
 
-                                    {dish.categories && dish.categories.length > 0 && (
-                                        <div className="tag-list">
-                                            {dish.categories.map((c) => (
-                                                <span key={c} className="tag">
-                                                    {c}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
+                                    {/* categorie + tag-uri */}
+                                    <div className="tag-list">
+                                        {category && (
+                                            <span className="tag">{category}</span>
+                                        )}
+                                        {dietaryTags.map((t) => (
+                                            <span key={t} className="tag">
+                                                {t}
+                                            </span>
+                                        ))}
+                                    </div>
 
-                                    {dish.dietaryTags && dish.dietaryTags.length > 0 && (
-                                        <div className="tag-list">
-                                            {dish.dietaryTags.map((t) => (
-                                                <span key={t} className="tag">
-                                                    {t}
-                                                </span>
-                                            ))}
+                                    {/* EXTRA OPTIONS / TOPPINGS */}
+                                    {extras.length > 0 && (
+                                        <div
+                                            style={{
+                                                marginTop: "0.6rem",
+                                                paddingTop: "0.5rem",
+                                                borderTop: "1px solid #e5e7eb",
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: 500,
+                                                    marginBottom: "0.25rem",
+                                                }}
+                                            >
+                                                Extra options:
+                                            </div>
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    gap: "0.25rem",
+                                                }}
+                                            >
+                                                {extras.map((opt) => (
+                                                    <label
+                                                        key={opt.id}
+                                                        style={{
+                                                            fontSize: "0.85rem",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            gap: "0.4rem",
+                                                        }}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedForDish.includes(
+                                                                opt.id
+                                                            )}
+                                                            onChange={() =>
+                                                                toggleExtra(
+                                                                    dish.name,
+                                                                    opt.id
+                                                                )
+                                                            }
+                                                        />
+                                                        <span>
+                                                            {opt.label}{" "}
+                                                            {opt.price != null &&
+                                                                `(+${opt.price.toFixed(
+                                                                    1
+                                                                )} €)`}
+                                                        </span>
+                                                    </label>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
 

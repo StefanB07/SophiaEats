@@ -93,10 +93,40 @@ export default function PaymentAndConfirmationPage() {
                     <>
                         <h3>Order Summary</h3>
                         <ul>
-                            {items.map(i => (
-                                <li key={i.key}>{i.dish.name} × {i.quantity}</li>
-                            ))}
+                            {items.map((i) => {
+                                const extras =
+                                    (i.dish && i.dish.selectedExtras) ||
+                                    i.selectedExtras ||
+                                    i.extraOptions ||
+                                    [];
+
+                                return (
+                                    <li key={i.key}>
+                                        <div>
+                                            {i.dish.name} × {i.quantity}
+                                        </div>
+                                        {extras.length > 0 && (
+                                            <div
+                                                style={{
+                                                    fontSize: "0.8rem",
+                                                    color: "#6b7280",
+                                                }}
+                                            >
+                                                Extras:{" "}
+                                                {extras
+                                                    .map((e) =>
+                                                        e.price != null
+                                                            ? `${e.label} (+${e.price.toFixed(1)} €)`
+                                                            : e.label
+                                                    )
+                                                    .join(", ")}
+                                            </div>
+                                        )}
+                                    </li>
+                                );
+                            })}
                         </ul>
+
                         <p><strong>Delivery:</strong> {deliveryOptions.address || '(none)'} – {deliveryOptions.slot || '(none)'}</p>
 
                         <h3>Payment method</h3>

@@ -208,55 +208,45 @@ export default function CartAndDeliveryPage() {
                                 gap: "0.5rem",
                             }}
                         >
-                            {cartItems.map((item, index) => {
-                                const name =
-                                    item && item.dish ? item.dish.name : "Dish";
-                                const restaurant =
-                                    item && item.restaurantName
-                                        ? item.restaurantName
-                                        : "";
-                                const price =
-                                    item && item.dish && item.dish.price != null
-                                        ? item.dish.price
-                                        : null;
-                                const qty =
-                                    item && typeof item.quantity === "number"
-                                        ? item.quantity
-                                        : 0;
+                            {items.map((item) => {
+                                const extras =
+                                    (item.dish && item.dish.selectedExtras) ||
+                                    item.selectedExtras ||
+                                    item.extraOptions ||
+                                    [];
 
                                 return (
-                                    <li
-                                        key={`${restaurant}-${name}-${index}`}
-                                        style={{
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            fontSize: "0.95rem",
-                                        }}
-                                    >
-                                        <span>
-                                            <strong>{name}</strong>{" "}
-                                            {restaurant && (
-                                                <span
-                                                    style={{ color: "#6b7280" }}
-                                                >
-                                                    ({restaurant})
-                                                </span>
+                                    <li key={item.key} style={{ marginBottom: "0.4rem" }}>
+                                        <div>
+                                            <strong>{item.dish.name}</strong>{" "}
+                                            {item.restaurantName && (
+                                                <span style={{ color: "#6b7280", fontSize: "0.9rem" }}>
+                            ({item.restaurantName})
+                        </span>
                                             )}
-                                            {price != null && (
-                                                <>
-                                                    {" · "}
-                                                    <span>
-                                                        {qty} × {price} €
-                                                    </span>
-                                                </>
-                                            )}
-                                        </span>
-                                        <span>
-                                            {price != null
-                                                ? (price * qty).toFixed(2)
-                                                : "-"}{" "}
-                                            €
-                                        </span>
+                                        </div>
+                                        <div style={{ fontSize: "0.9rem" }}>
+                                            {item.quantity} ×{" "}
+                                            {item.dish.price != null ? `${item.dish.price} €` : "N/A"}
+                                        </div>
+                                        {extras.length > 0 && (
+                                            <div
+                                                style={{
+                                                    fontSize: "0.8rem",
+                                                    color: "#6b7280",
+                                                    marginTop: "0.15rem",
+                                                }}
+                                            >
+                                                Extras:{" "}
+                                                {extras
+                                                    .map((e) =>
+                                                        e.price != null
+                                                            ? `${e.label} (+${e.price.toFixed(1)} €)`
+                                                            : e.label
+                                                    )
+                                                    .join(", ")}
+                                            </div>
+                                        )}
                                     </li>
                                 );
                             })}

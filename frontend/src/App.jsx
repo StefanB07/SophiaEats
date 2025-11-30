@@ -18,39 +18,50 @@ import { useUser } from "./context/UserContext.jsx";
 function AppLayout({ children }) {
     const { role } = useUser();
     const location = useLocation();
-    const isHome = location.pathname === "/"; // pagina de Role Selection
+
+    const isHome = location.pathname === "/";
+
+    // ajută la highlight pentru link activ
+    const isActive = (path) => {
+        if (path === "/") return location.pathname === "/";
+        return location.pathname.startsWith(path);
+    };
 
     return (
         <div className="app">
             <div className="app-shell">
+
+                {/* HEADER */}
                 <header className="app-header">
-                    <div className="app-header-top">
-                        <div>
+                    <div className="header-container">
+
+                        {/* LEFT: LOGO + NAV */}
+                        <div className="header-left">
                             <div className="app-title">Sophia Tech Eats</div>
 
-                            {/* Pe home (role selection) nu arătăm nav-ul */}
                             {!isHome && (
                                 <nav className="app-nav">
-                                    <Link className="nav-link" to="/">
+
+                                    <Link
+                                        className={`nav-link ${isActive("/") ? "nav-link-active" : ""}`}
+                                        to="/"
+                                    >
                                         Home
                                     </Link>
 
                                     {role === "customer" && (
                                         <>
                                             <Link
-                                                className="nav-link"
+                                                className={`nav-link ${isActive("/restaurants") ? "nav-link-active" : ""}`}
                                                 to="/restaurants"
                                             >
                                                 Restaurants
                                             </Link>
+
                                             <Link
-                                                className="nav-link"
-                                                to="/cart"
+                                                className={`nav-link ${isActive("/orders") ? "nav-link-active" : ""}`}
+                                                to="/orders"
                                             >
-                                                Cart
-                                            </Link>
-                                            {/* NEW: My Orders link (customer-only) */}
-                                            <Link className="nav-link" to="/orders">
                                                 My Orders
                                             </Link>
                                         </>
@@ -58,7 +69,7 @@ function AppLayout({ children }) {
 
                                     {role === "manager" && (
                                         <Link
-                                            className="nav-link"
+                                            className={`nav-link ${isActive("/manager") ? "nav-link-active" : ""}`}
                                             to="/manager"
                                         >
                                             Manager
@@ -67,34 +78,43 @@ function AppLayout({ children }) {
                                 </nav>
                             )}
                         </div>
+
+                        {/* RIGHT: CART BUTTON */}
+                        {!isHome && role === "customer" && (
+                            <div className="header-right">
+                                <Link to="/cart" className="btn-cart-white">
+                                    <span className="cart-icon-black">🛒</span>
+                                    Cart
+                                </Link>
+                            </div>
+                        )}
                     </div>
                 </header>
 
+                {/* MAIN CONTENT */}
                 <main className="app-main">{children}</main>
 
+                {/* FOOTER */}
                 <footer className="app-footer">
                     <span>© 2025 – Sophia Tech Eats</span>
                 </footer>
+
             </div>
         </div>
     );
 }
 
-// Ruta protejată pentru CUSTOMER
+/* Protected routes */
+
 function CustomerRoute({ children }) {
     const { role } = useUser();
-    if (role !== "customer") {
-        return <Navigate to="/" replace />;
-    }
+    if (role !== "customer") return <Navigate to="/" replace />;
     return children;
 }
 
-// Ruta protejată pentru MANAGER
 function ManagerRoute({ children }) {
     const { role } = useUser();
-    if (role !== "manager") {
-        return <Navigate to="/" replace />;
-    }
+    if (role !== "manager") return <Navigate to="/" replace />;
     return children;
 }
 
@@ -102,10 +122,11 @@ export default function App() {
     return (
         <AppLayout>
             <Routes>
-                {/* Landing / Role selection */}
+
+                {/* Landing */}
                 <Route path="/" element={<RoleSelectionPage />} />
 
-                {/* CUSTOMER flow (doar pentru role === "customer") */}
+                {/* CUSTOMER ROUTES */}
                 <Route
                     path="/restaurants"
                     element={
@@ -114,6 +135,7 @@ export default function App() {
                         </CustomerRoute>
                     }
                 />
+
                 <Route
                     path="/restaurants/:name"
                     element={
@@ -122,6 +144,7 @@ export default function App() {
                         </CustomerRoute>
                     }
                 />
+
                 <Route
                     path="/cart"
                     element={
@@ -130,6 +153,7 @@ export default function App() {
                         </CustomerRoute>
                     }
                 />
+
                 <Route
                     path="/payment"
                     element={
@@ -138,6 +162,7 @@ export default function App() {
                         </CustomerRoute>
                     }
                 />
+
                 <Route
                     path="/order/confirmation/:orderId"
                     element={
@@ -146,7 +171,7 @@ export default function App() {
                         </CustomerRoute>
                     }
                 />
-                {/* NEW: Order history route (customer-only) */}
+
                 <Route
                     path="/orders"
                     element={
@@ -156,7 +181,7 @@ export default function App() {
                     }
                 />
 
-                {/* MANAGER flow (doar pentru role === "manager") */}
+                {/* MANAGER ROUTES */}
                 <Route
                     path="/manager"
                     element={
@@ -165,6 +190,7 @@ export default function App() {
                         </ManagerRoute>
                     }
                 />
+
             </Routes>
         </AppLayout>
     );

@@ -52,49 +52,62 @@ export function CartProvider({ children }) {
     }
 
     function addItem(dish, restaurantName) {
-        setCarts((prev) => {
-            const userCart = prev[currentUser] ?? [];
 
-            if (userCart.length > 0) {
-                const currentRestaurant = userCart[0].restaurantName;
-                if (currentRestaurant !== restaurantName) {
-                    console.warn(
-                        `Cannot add dish from "${restaurantName}" because cart already contains items from "${currentRestaurant}".`
-                    );
-                    alert(
-                        `Your cart already contains items from "${currentRestaurant}". ` +
-                        `Please clear the cart before ordering from another restaurant.`
-                    );
-                    return prev; // no change
-                }
+        const userCart = carts[currentUser] ?? [];
+
+        if (userCart.length > 0) {
+            const currentRestaurant = userCart[0].restaurantName;
+            if (currentRestaurant && currentRestaurant !== restaurantName) {
+                const err = new Error(
+                    `Your cart already contains items from "${currentRestaurant}". Please clear the cart before ordering from another restaurant.`
+                );
+                alert(err.message);
+                throw err;
             }
+        }
+
+        setCarts((prev) => {
+            const prevUserCart = prev[currentUser] ?? [];
 
             const key = `${restaurantName}::${dish.name}`;
-            const existing = userCart.find((i) => i.key === key);
+            const existing = prevUserCart.find((i) => i.key === key);
+
             let newUserCart;
             if (existing) {
-                newUserCart = userCart.map((i) =>
+                newUserCart = prevUserCart.map((i) =>
                     i.key === key ? { ...i, quantity: i.quantity + 1 } : i
                 );
             } else {
-                newUserCart = [...userCart, { key, restaurantName, dish, quantity: 1 }];
+                newUserCart = [
+                    ...prevUserCart,
+                    { key, restaurantName, dish, quantity: 1 },
+                ];
             }
 
             // Fire-and-forget backend sync (POST /cart)
             try {
-                fetch('/api/cart', {
-                    method: 'POST',
+                fetch("/api/cart", {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-User-Id': currentUser
+                        "Content-Type": "application/json",
+                        "X-User-Id": currentUser,
                     },
-                    body: JSON.stringify({ restaurant: restaurantName, dish: dish.name, qty: 1 })
-                }).catch(() => {/* ignore for now */});
-            } catch (e) { /* ignore */ }
+                    body: JSON.stringify({
+                        restaurant: restaurantName,
+                        dish: dish.name,
+                        qty: 1,
+                    }),
+                }).catch(() => {
+                    /* ignore for now */
+                });
+            } catch (e) {
+                /* ignore */
+            }
 
             return { ...prev, [currentUser]: newUserCart };
         });
     }
+
 
     function clearCart() {
         setCarts((prev) => ({ ...prev, [currentUser]: [] }));
