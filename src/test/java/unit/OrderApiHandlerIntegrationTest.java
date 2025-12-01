@@ -59,18 +59,39 @@ class OrderApiHandlerIntegrationTest {
         double user2Total = cartTotal("user-2");
         assertEquals(0.0, user2Total, 0.0001, "Expected user-2 cart to remain empty");
 
-        LocalDateTime delivery = LocalDateTime.now().plusMinutes(30).withSecond(0).withNano(0);
-        String orderBody = "Bât A|" + delivery.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        LocalDateTime delivery = nextHalfHourNow();
+        String deliveryTime = delivery.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        String orderBodyJson = """
+                {
+                  "deliveryPlace": "Bât A",
+                  "deliveryTime": "%s",
+                  "paymentMethod": "EXTERNAL"
+                }
+                """.formatted(deliveryTime);
+
         HttpRequest orderRequest = HttpRequest.newBuilder(TestServer.uri("/orders"))
                 .header("X-User-Id", "user-1")
-                .header("Content-Type", "text/plain")
-                .POST(BodyPublishers.ofString(orderBody))
+                .header("Content-Type", "application/json")
+                .POST(BodyPublishers.ofString(orderBodyJson))
                 .build();
         HttpResponse<String> orderResponse = client.send(orderRequest, HttpResponse.BodyHandlers.ofString());
         assertEquals(201, orderResponse.statusCode(), () -> "Order creation failed: " + orderResponse.body());
 
         double user1AfterOrder = cartTotal("user-1");
         assertEquals(0.0, user1AfterOrder, 0.0001, "Expected cart to be cleared after order");
+    }
+
+    private static LocalDateTime nextHalfHourNow() {
+        LocalDateTime now = LocalDateTime.now();
+        int minute = now.getMinute();
+        int addMinutes = (minute == 0 || minute == 30)
+                ? 0
+                : (minute < 30 ? (30 - minute) : (60 - minute));
+        LocalDateTime aligned = now.plusMinutes(addMinutes).withSecond(0).withNano(0);
+        if (!aligned.isAfter(now)) {
+            aligned = aligned.plusMinutes(30);
+        }
+        return aligned;
     }
 
     private double cartTotal(String userId) throws Exception {
@@ -94,4 +115,3 @@ class OrderApiHandlerIntegrationTest {
         return Double.parseDouble(json.substring(start, end));
     }
 }
-
