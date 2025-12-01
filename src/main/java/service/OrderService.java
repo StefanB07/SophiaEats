@@ -18,13 +18,20 @@ public class OrderService {
     private final DeliveryCatalogRepository delivery;     // validate delivery locations and slots
     private final RestaurantRepository restaurants;       // determine the source restaurant for each dish
 
+    private final PaymentProvider paymentProvider;
+
     // Strategy registry for payments
     private final Map<PaymentMethod, PaymentProcessor> paymentProcessors = new EnumMap<>(PaymentMethod.class);
 
     // Preferred constructor (with dependencies)
     public OrderService(DeliveryCatalogRepository delivery, RestaurantRepository restaurants) {
+        this(delivery, restaurants, PaymentProviders.defaultProvider());
+    }
+
+    public OrderService(DeliveryCatalogRepository delivery, RestaurantRepository restaurants, PaymentProvider paymentProvider) {
         this.delivery = Objects.requireNonNull(delivery);
         this.restaurants = Objects.requireNonNull(restaurants);
+        this.paymentProvider = Objects.requireNonNull(paymentProvider);
         initDefaultPaymentProcessors();
     }
 
@@ -32,12 +39,26 @@ public class OrderService {
     public OrderService() {
         this.delivery = null;
         this.restaurants = null;
+        this.paymentProvider = PaymentProviders.defaultProvider();
         initDefaultPaymentProcessors();
     }
 
     private void initDefaultPaymentProcessors() {
-        // External payment: simulate success
-        paymentProcessors.put(PaymentMethod.EXTERNAL, new ExternalPaymentProcessor());
+        // External payment: delegate to PaymentProvider
+        paymentProcessors.put(PaymentMethod.EXTERNAL, (order, user) -> {
+            Payment payment = paymentProvider.payExternal(order);
+            if (payment == null) {
+                throw new IllegalStateException("Payment provider returned null");
+            }
+            if (payment.isSuccess()) {
+                order.setPayment(payment);
+                order.setStatus(OrderStatus.PAID);
+                order.setPaidAt(LocalDateTime.now());
+            } else {
+                order.setPayment(payment);
+            }
+            return payment;
+        });
 
         // Student credit payment: validate and debit credit
         paymentProcessors.put(PaymentMethod.STUDENT_CREDIT, (order, user) -> {
@@ -235,18 +256,5 @@ public class OrderService {
     @FunctionalInterface
     public interface PaymentProcessor {
         Payment process(Order order, CampusUser user);
-    }
-
-    public static class ExternalPaymentProcessor implements PaymentProcessor {
-        @Override
-        public Payment process(Order order, CampusUser user) {
-            double amount = order.getTotal();
-            Payment payment = new Payment(PaymentMethod.EXTERNAL, amount);
-            payment.setSuccess(true);
-            order.setPayment(payment);
-            order.setStatus(OrderStatus.PAID);
-            order.setPaidAt(java.time.LocalDateTime.now());
-            return payment;
-        }
     }
 }
