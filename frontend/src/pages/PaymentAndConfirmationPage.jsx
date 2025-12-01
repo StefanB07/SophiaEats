@@ -56,7 +56,7 @@ export default function PaymentAndConfirmationPage() {
                 } else {
                     setError(`Failed to load order recap (HTTP ${resp.status})`);
                 }
-            } catch (e) {
+            } catch {
                 setError("Failed to load order recap");
             }
         }

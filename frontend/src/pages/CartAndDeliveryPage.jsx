@@ -133,6 +133,7 @@ export default function CartAndDeliveryPage() {
         return () => {
             cancelled = true;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentUser, hasItems]); // nu punem selectedAddress/Slot aici, altfel refacem fetch mereu
 
     const handleProceed = () => {

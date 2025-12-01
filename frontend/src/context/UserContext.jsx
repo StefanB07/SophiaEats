@@ -60,7 +60,9 @@ export function UserProvider({ children }) {
         if (!currentUser) return;
         try {
             localStorage.setItem("currentUserId", currentUser);
-        } catch {}
+        } catch (err) {
+            console.warn("Failed to persist currentUserId", err);
+        }
     }, [currentUser]);
 
     // NEW: persist role
@@ -68,7 +70,9 @@ export function UserProvider({ children }) {
         if (!role) return;
         try {
             localStorage.setItem("currentRole", role);
-        } catch {}
+        } catch (err) {
+            console.warn("Failed to persist currentRole", err);
+        }
     }, [role]);
 
     function setUserById(id) {
@@ -81,8 +85,10 @@ export function UserProvider({ children }) {
             value={{
                 currentUser,
                 setCurrentUser: setUserById,
-                users, loading,
-                role, setRole
+                users,
+                loading,
+                role,
+                setRole,
             }}
         >
             {children}
@@ -90,6 +96,7 @@ export function UserProvider({ children }) {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useUser() {
     const ctx = useContext(UserContext);
     if (!ctx) throw new Error("useUser must be used within a UserProvider");

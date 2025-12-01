@@ -21,6 +21,7 @@ export default function OrderHistory() {
         } catch {
             setOrders([]);
         }
+        // eslint-disable-next-line react-hooks/set-state-in-effect
     }, [currentUser]);
 
     function statusBadge(status) {

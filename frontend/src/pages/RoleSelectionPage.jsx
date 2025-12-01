@@ -104,6 +104,7 @@ export default function RoleSelectionPage() {
 
         const initial = currentUser || users[0].id;
         setSelectedUserId(initial);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
     }, [loading, users, currentUser]);
 
     const handleCustomerChange = (e) => {
