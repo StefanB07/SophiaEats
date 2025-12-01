@@ -149,7 +149,6 @@ export default function ManagerDashboardPage() {
         resetForm();
         void loadMenuForRestaurant(selectedRestaurant);
         void loadSlotsForRestaurant(selectedRestaurant);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedRestaurant]);
 
     function resetForm() {
@@ -1169,4 +1168,3 @@ export default function ManagerDashboardPage() {
         </div>
     );
 }
-

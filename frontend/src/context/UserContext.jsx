@@ -2,8 +2,6 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const UserContext = createContext(null);
 
-const API_BASE = import.meta.env.VITE_CATALOG_API_BASE || "http://localhost:8080";
-
 export function UserProvider({ children }) {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -18,11 +16,13 @@ export function UserProvider({ children }) {
         }
     });
 
+    const apiBase = import.meta.env.VITE_CATALOG_API_BASE || "http://localhost:8080";
+
     // 1. Fetch users from backend once
     useEffect(() => {
         async function loadUsers() {
             try {
-                const resp = await fetch(`${API_BASE}/users`, {
+                const resp = await fetch(`${apiBase}/users`, {
                     headers: { Accept: "application/json" },
                 });
                 if (!resp.ok) throw new Error("HTTP " + resp.status);
@@ -41,7 +41,7 @@ export function UserProvider({ children }) {
         }
 
         loadUsers();
-    }, []);
+    }, [apiBase]);
 
     // 2. Initialize currentUser after users are loaded
     useEffect(() => {

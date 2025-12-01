@@ -22,8 +22,6 @@ export default function ManagerSchedulePanel({ restaurantName }) {
 
     // Load initial schedule from backend in viitor (deocamdată gol)
     useEffect(() => {
-        // TODO: call backend to load existing schedule for this restaurant
-        // For now we just ensure there is a structure in state.
         setScheduleByRestaurant((prev) => {
             if (prev[restaurantName]) return prev;
             const empty = {};
@@ -31,6 +29,7 @@ export default function ManagerSchedulePanel({ restaurantName }) {
             return { ...prev, [restaurantName]: empty };
         });
         setStatusMessage("");
+        // eslint-disable-next-line react-hooks/set-state-in-effect
     }, [restaurantName]);
 
     const currentRestaurantSchedule =

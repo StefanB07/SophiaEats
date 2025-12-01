@@ -9,8 +9,8 @@ export function CartProvider({ children }) {
     const [carts, setCarts] = useState(() => {
         try {
             return JSON.parse(localStorage.getItem("carts") || "{}");
-        } catch (e) {
-            console.warn("Failed to parse carts from localStorage", e);
+        } catch {
+            console.warn("Failed to parse carts from localStorage");
             return {};
         }
     });
@@ -19,7 +19,7 @@ export function CartProvider({ children }) {
     const [deliveryInfo, setDeliveryInfo] = useState(() => {
         try {
             return JSON.parse(localStorage.getItem("deliveryInfo") || "{}");
-        } catch (e) {
+        } catch {
             return {};
         }
     });
@@ -32,8 +32,8 @@ export function CartProvider({ children }) {
     useEffect(() => {
         try {
             localStorage.setItem("carts", JSON.stringify(carts));
-        } catch (e) {
-            console.warn("Failed to persist carts to localStorage", e);
+        } catch {
+            console.warn("Failed to persist carts to localStorage");
         }
     }, [carts]);
 
@@ -41,8 +41,8 @@ export function CartProvider({ children }) {
     useEffect(() => {
         try {
             localStorage.setItem("deliveryInfo", JSON.stringify(deliveryInfo));
-        } catch (e) {
-            console.warn("Failed to persist delivery info", e);
+        } catch {
+            console.warn("Failed to persist delivery info");
         }
     }, [deliveryInfo]);
 
@@ -100,7 +100,7 @@ export function CartProvider({ children }) {
                 }).catch(() => {
                     /* ignore for now */
                 });
-            } catch (e) {
+            } catch {
                 /* ignore */
             }
 
@@ -117,7 +117,9 @@ export function CartProvider({ children }) {
                 method: 'DELETE',
                 headers: { 'X-User-Id': currentUser }
             }).catch(() => { /* ignore network error; local state cleared */ });
-        } catch (e) { /* ignore */ }
+        } catch {
+            /* ignore */
+        }
     }
 
     function resetDeliveryOptions() {
