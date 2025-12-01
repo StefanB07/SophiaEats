@@ -204,7 +204,7 @@ export default function RoleSelectionPage() {
                             ))}
                     </select>
 
-                    {/*  NOU: buton separat care chiar „pornește” aplicația ca și customer */}
+                    {/*   buton separat care chiar „pornește” aplicația ca și customer */}
                     <button
                         type="button"
                         onClick={handleCustomerContinue}
