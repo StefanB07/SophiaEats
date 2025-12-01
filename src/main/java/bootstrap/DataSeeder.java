@@ -14,6 +14,19 @@ public final class DataSeeder {
         public String restBId;
     }
 
+    private static LocalDateTime nextHalfHourNow() {
+        LocalDateTime now = LocalDateTime.now();
+        int minute = now.getMinute();
+        int addMinutes = minute == 0 || minute == 30
+                ? 0
+                : (minute < 30 ? (30 - minute) : (60 - minute));
+        LocalDateTime aligned = now.plusMinutes(addMinutes).withSecond(0).withNano(0);
+        if (!aligned.isAfter(now)) {
+            aligned = aligned.plusMinutes(30);
+        }
+        return aligned;
+    }
+
     public static Seed resetAndSeed(
             CampusUserRepository users,
             RestaurantRepository restaurants,
@@ -270,31 +283,31 @@ public final class DataSeeder {
         // DELIVERY SLOTS
         // ============================
 
-        LocalDateTime base = LocalDateTime.of(2025, 11, 30, 12, 30);
+        LocalDateTime base = nextHalfHourNow();
 
-        // Restaurant A – mai multe sloturi, capacitate mare
+// Restaurant A – large capacity slots
         delivery.setSlots(restA.getId(), List.of(
                 new DeliverySlot(base, 100),
                 new DeliverySlot(base.plusMinutes(30), 80),
                 new DeliverySlot(base.plusMinutes(60), 60)
         ));
 
-        // Second Place – sloturi puțin decalate
+// Second Place – slightly shifted
         delivery.setSlots(restB.getId(), List.of(
                 new DeliverySlot(base.plusMinutes(15), 60),
                 new DeliverySlot(base.plusMinutes(45), 40)
         ));
 
-        // Green Garden – prânz sănătos, puțin mai târziu
+// Green Garden – later lunch
         delivery.setSlots(restC.getId(), List.of(
                 new DeliverySlot(base.plusHours(1), 50),
                 new DeliverySlot(base.plusHours(1).plusMinutes(30), 50)
         ));
 
-        // Burger Hub – sloturi spre seară
+// Burger Hub – evening slots
         delivery.setSlots(restD.getId(), List.of(
-                new DeliverySlot(base.plusHours(10), 80),
-                new DeliverySlot(base.plusHours(10).plusMinutes(30), 80)
+                new DeliverySlot(base.plusHours(4).plusMinutes(15), 80),
+                new DeliverySlot(base.plusHours(4).plusMinutes(45), 80)
         ));
 
         // ============================
