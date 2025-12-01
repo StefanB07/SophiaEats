@@ -20,7 +20,7 @@ export default function ManagerSchedulePanel({ restaurantName }) {
     const [selectedDay, setSelectedDay] = useState("MONDAY");
     const [statusMessage, setStatusMessage] = useState("");
 
-    // Load initial schedule from backend in viitor (deocamdată gol)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         setScheduleByRestaurant((prev) => {
             if (prev[restaurantName]) return prev;
@@ -29,7 +29,6 @@ export default function ManagerSchedulePanel({ restaurantName }) {
             return { ...prev, [restaurantName]: empty };
         });
         setStatusMessage("");
-        // eslint-disable-next-line react-hooks/set-state-in-effect
     }, [restaurantName]);
 
     const currentRestaurantSchedule =

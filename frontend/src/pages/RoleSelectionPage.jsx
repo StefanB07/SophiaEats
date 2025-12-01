@@ -97,7 +97,7 @@ export default function RoleSelectionPage() {
 
     const [selectedUserId, setSelectedUserId] = useState("");
 
-    // după ce avem users, alegem implicit currentUser sau primul
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         if (loading) return;
         if (!Array.isArray(users) || users.length === 0) return;
@@ -105,6 +105,7 @@ export default function RoleSelectionPage() {
         const initial = currentUser || users[0].id;
         setSelectedUserId(initial);
         // eslint-disable-next-line react-hooks/set-state-in-effect
+
     }, [loading, users, currentUser]);
 
     const handleCustomerChange = (e) => {

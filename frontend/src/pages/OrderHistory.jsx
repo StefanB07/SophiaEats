@@ -13,6 +13,7 @@ export default function OrderHistory() {
     const { currentUser } = useUser();
     const [orders, setOrders] = useState([]);
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         const key = `${ORDERS_KEY_PREFIX}${currentUser}`;
         try {
@@ -21,7 +22,6 @@ export default function OrderHistory() {
         } catch {
             setOrders([]);
         }
-        // eslint-disable-next-line react-hooks/set-state-in-effect
     }, [currentUser]);
 
     function statusBadge(status) {
