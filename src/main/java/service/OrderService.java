@@ -18,13 +18,20 @@ public class OrderService {
     private final DeliveryCatalogRepository delivery;     // validate delivery locations and slots
     private final RestaurantRepository restaurants;       // determine the source restaurant for each dish
 
+    private final PaymentProvider paymentProvider;
+
     // Strategy registry for payments
     private final Map<PaymentMethod, PaymentProcessor> paymentProcessors = new EnumMap<>(PaymentMethod.class);
 
     // Preferred constructor (with dependencies)
     public OrderService(DeliveryCatalogRepository delivery, RestaurantRepository restaurants) {
+        this(delivery, restaurants, PaymentProviders.defaultProvider());
+    }
+
+    public OrderService(DeliveryCatalogRepository delivery, RestaurantRepository restaurants, PaymentProvider paymentProvider) {
         this.delivery = Objects.requireNonNull(delivery);
         this.restaurants = Objects.requireNonNull(restaurants);
+        this.paymentProvider = Objects.requireNonNull(paymentProvider);
         initDefaultPaymentProcessors();
     }
 
@@ -32,12 +39,26 @@ public class OrderService {
     public OrderService() {
         this.delivery = null;
         this.restaurants = null;
+        this.paymentProvider = PaymentProviders.defaultProvider();
         initDefaultPaymentProcessors();
     }
 
     private void initDefaultPaymentProcessors() {
-        // External payment: simulate success
-        paymentProcessors.put(PaymentMethod.EXTERNAL, new ExternalPaymentProcessor());
+        // External payment: delegate to PaymentProvider
+        paymentProcessors.put(PaymentMethod.EXTERNAL, (order, user) -> {
+            Payment payment = paymentProvider.payExternal(order);
+            if (payment == null) {
+                throw new IllegalStateException("Payment provider returned null");
+            }
+            if (payment.isSuccess()) {
+                order.setPayment(payment);
+                order.setStatus(OrderStatus.PAID);
+                order.setPaidAt(LocalDateTime.now());
+            } else {
+                order.setPayment(payment);
+            }
+            return payment;
+        });
 
         // Student credit payment: validate and debit credit
         paymentProcessors.put(PaymentMethod.STUDENT_CREDIT, (order, user) -> {
@@ -58,6 +79,56 @@ public class OrderService {
         });
     }
 
+//    public Order placeOrder(Cart cart, DeliveryLocation deliveryPlace, LocalDateTime deliveryTime) {
+//        if (cart == null || cart.getItems().isEmpty())
+//            throw new IllegalArgumentException("Cart is empty");
+//        if (deliveryPlace == null || deliveryPlace.getName().isBlank())
+//            throw new IllegalArgumentException("Delivery place required");
+//        if (deliveryTime == null || deliveryTime.isBefore(LocalDateTime.now()))
+//            throw new IllegalArgumentException("Delivery time must be in the future");
+//
+//        // Validate: delivery location must exist in catalog (if repo is injected)
+//        if (delivery != null && !delivery.isValidLocation(deliveryPlace.getName())) {
+//            throw new IllegalArgumentException("Invalid delivery location: " + deliveryPlace);
+//        }
+//
+//        // Validate: all items must come from a single restaurant (if repo is injected)
+//        Restaurant sourceRestaurant = null;
+//        if (restaurants != null) {
+//            ensureSingleRestaurant(cart.getItems());
+//            // Determine the source restaurant using the first dish
+//            sourceRestaurant = findRestaurantByDishOrThrow(cart.getItems().get(0).getDish());
+//        }
+//
+//        // Validate: the selected slot can accept the ordered quantity (minimal check)
+//        if (delivery != null && sourceRestaurant != null) {
+//            int totalQty = cart.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
+//            var slots = delivery.slotsFor(sourceRestaurant.getId());
+//            var selectedSlotOpt = slots.stream()
+//                    .filter(s -> deliveryTime.equals(s.getStart()))
+//                    .findFirst();
+//            if (selectedSlotOpt.isEmpty()) {
+//                throw new IllegalArgumentException("No delivery slot available at requested time");
+//            }
+//            var slot = selectedSlotOpt.get();
+//            if (!slot.canFit(totalQty)) {
+//                throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
+//            }
+//            // Reserve capacity for this order so later availability reflects it
+//            boolean reservedOk = slot.reserve(totalQty);
+//            if (!reservedOk) {
+//                // Edge case: capacity changed between check and reserve
+//                throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
+//            }
+//        }
+//
+//        // Copy the items from the cart to the order
+//        List<OrderItem> items = List.copyOf(cart.getItems());
+//        Order order = new Order(items, deliveryPlace, deliveryTime);
+//        cart.clear(); // empty the cart after placing the order
+//        return order;
+//
+//    }
     public Order placeOrder(Cart cart, DeliveryLocation deliveryPlace, LocalDateTime deliveryTime) {
         if (cart == null || cart.getItems().isEmpty())
             throw new IllegalArgumentException("Cart is empty");
@@ -66,49 +137,72 @@ public class OrderService {
         if (deliveryTime == null || deliveryTime.isBefore(LocalDateTime.now()))
             throw new IllegalArgumentException("Delivery time must be in the future");
 
-        // Validate: delivery location must exist in catalog (if repo is injected)
+        // 1) Validare: locația de livrare trebuie să existe în catalog (dacă avem repo injectat)
         if (delivery != null && !delivery.isValidLocation(deliveryPlace.getName())) {
             throw new IllegalArgumentException("Invalid delivery location: " + deliveryPlace);
         }
 
-        // Validate: all items must come from a single restaurant (if repo is injected)
+        // 2) Validare: toate item-ele trebuie să provină dintr-un singur restaurant
         Restaurant sourceRestaurant = null;
         if (restaurants != null) {
             ensureSingleRestaurant(cart.getItems());
-            // Determine the source restaurant using the first dish
+            // determinăm restaurantul sursă folosind primul dish
             sourceRestaurant = findRestaurantByDishOrThrow(cart.getItems().get(0).getDish());
         }
 
-        // Validate: the selected slot can accept the ordered quantity (minimal check)
+        // 3) Validare + consumare slot de livrare (R5)
         if (delivery != null && sourceRestaurant != null) {
-            int totalQty = cart.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
-            var slots = delivery.slotsFor(sourceRestaurant.getId());
-            var selectedSlotOpt = slots.stream()
-                    .filter(s -> deliveryTime.equals(s.getStart()))
+            int totalQty = cart.getItems().stream()
+                    .mapToInt(OrderItem::getQuantity)
+                    .sum();
+
+            // luăm lista de sloturi pentru restaurant (lista reală din repo)
+            List<DeliverySlot> slots = delivery.slotsFor(sourceRestaurant.getId());
+
+            // construim labelul așteptat pentru ora cerută (ex: "13:30-14:00")
+            var end = deliveryTime.plusMinutes(30);
+            String requestedLabel = String.format(
+                    "%02d:%02d-%02d:%02d",
+                    deliveryTime.getHour(), deliveryTime.getMinute(),
+                    end.getHour(), end.getMinute()
+            );
+
+            // căutăm slotul după label, nu după data exactă, ca să nu depindem de zi
+            Optional<DeliverySlot> selectedSlotOpt = slots.stream()
+                    .filter(s -> requestedLabel.equals(s.getLabel()))
                     .findFirst();
+
             if (selectedSlotOpt.isEmpty()) {
                 throw new IllegalArgumentException("No delivery slot available at requested time");
             }
-            var slot = selectedSlotOpt.get();
+
+            DeliverySlot slot = selectedSlotOpt.get();
+
+            // verificăm dacă încap toate comenzile în slot
             if (!slot.canFit(totalQty)) {
                 throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
             }
-            // Reserve capacity for this order so later availability reflects it
+
+            // rezervăm efectiv capacitatea
             boolean reservedOk = slot.reserve(totalQty);
             if (!reservedOk) {
-                // Edge case: capacity changed between check and reserve
                 throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
+            }
+
+            // dacă după rezervare capacitatea a ajuns la 0, scoatem slotul din listă
+            if (slot.getCapacity() <= 0) {
+                slots.remove(slot);
             }
         }
 
-        // Copy the items from the cart to the order
+
+        // 4) creăm efectiv comanda și golim coșul
         List<OrderItem> items = List.copyOf(cart.getItems());
         Order order = new Order(items, deliveryPlace, deliveryTime);
-        cart.clear(); // empty the cart after placing the order
+        cart.clear(); // curățăm coșul după plasare
+
         return order;
-
     }
-
 
     /**
      * Create and process a Payment for the given order using the given method.
@@ -162,18 +256,5 @@ public class OrderService {
     @FunctionalInterface
     public interface PaymentProcessor {
         Payment process(Order order, CampusUser user);
-    }
-
-    public static class ExternalPaymentProcessor implements PaymentProcessor {
-        @Override
-        public Payment process(Order order, CampusUser user) {
-            double amount = order.getTotal();
-            Payment payment = new Payment(PaymentMethod.EXTERNAL, amount);
-            payment.setSuccess(true);
-            order.setPayment(payment);
-            order.setStatus(OrderStatus.PAID);
-            order.setPaidAt(java.time.LocalDateTime.now());
-            return payment;
-        }
     }
 }

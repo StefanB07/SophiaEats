@@ -29,9 +29,14 @@ public class CartService {
         return carts.getOrCreateForUserId(user.getId());
     }
 
+    // New: per-user cart by userId (no CampusUser instance needed)
+    public Cart getOrCreateCartByUserId(String userId) {
+        return carts.getOrCreateForUserId(userId);
+    }
+
     public void addItem(Cart cart, Restaurant restaurant, Dish dish, int qty) {
         if (qty <= 0) throw new IllegalArgumentException("Quantity must be positive");
-        cart.addItem(new OrderItem(dish, qty));
+        cart.addItem(new OrderItem(dish, qty, restaurant.getName()));
         carts.save(cart);
         notifyItemAdded(cart, restaurant);
     }

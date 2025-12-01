@@ -62,6 +62,9 @@ public class DeliverySlot {
                 end.getHour(), end.getMinute());
     }
 
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
     @Override
     public String toString() {
         return "DeliverySlot{" +

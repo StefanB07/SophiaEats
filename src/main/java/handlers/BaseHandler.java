@@ -26,6 +26,15 @@ public abstract class BaseHandler implements HttpHandler {
         }
     }
 
+    // Unified error helper: {"error":"message","status":<code>}
+    protected void sendError(HttpExchange ex, int status, String message) throws IOException {
+        String json = "{" +
+                "\"error\":\"" + esc(message) + "\"," +
+                "\"status\":" + status +
+                "}";
+        sendJson(ex, status, json);
+    }
+
     protected String body(HttpExchange ex) throws IOException {
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(ex.getRequestBody(), StandardCharsets.UTF_8))) {

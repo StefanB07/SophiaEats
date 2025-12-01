@@ -44,7 +44,7 @@ class OrderServiceTest {
     @Test
     void placeOrder_reservesCapacity_andCreatesOrder() {
         Cart cart = new Cart();
-        cart.addItem(new OrderItem(pizza, 3));
+        cart.addItem(new OrderItem(pizza, 3, rest.getName()));
 
         var slot = delivery.slotsFor(rest.getId()).get(0);
         int before = slot.getRemainingCapacity();
@@ -69,7 +69,7 @@ class OrderServiceTest {
     @Test
     void placeOrder_rejectsWhenCapacityExceeded() {
         Cart cart = new Cart();
-        cart.addItem(new OrderItem(pizza, 10)); // exceeds capacity 5
+        cart.addItem(new OrderItem(pizza, 10, rest.getName())); // exceeds capacity 5
         var slot = delivery.slotsFor(rest.getId()).get(0);
 
         DeliveryLocation location = delivery.findLocation("Library")
@@ -82,7 +82,7 @@ class OrderServiceTest {
     @Test
     void pay_external_setsPaidStatus() {
         Cart cart = new Cart();
-        cart.addItem(new OrderItem(pizza, 2));
+        cart.addItem(new OrderItem(pizza, 2, rest.getName()));
         var slot = delivery.slotsFor(rest.getId()).get(0);
 
         DeliveryLocation location = delivery.findLocation("Library")
@@ -101,7 +101,7 @@ class OrderServiceTest {
     void pay_studentCredit_deductsBudget_andFailsWhenInsufficient() {
         // First order: total = 3 * 10 = 30
         Cart cart = new Cart();
-        cart.addItem(new OrderItem(pizza, 3));
+        cart.addItem(new OrderItem(pizza, 3, rest.getName()));
         var firstSlot = delivery.slotsFor(rest.getId()).get(0);
 
         DeliveryLocation location = delivery.findLocation("Library")
@@ -123,7 +123,7 @@ class OrderServiceTest {
 
         // Second order costs 30 again, but user has only 20 left -> should fail for INSUFFICIENT_CREDIT
         Cart cart2 = new Cart();
-        cart2.addItem(new OrderItem(pizza, 3));
+        cart2.addItem(new OrderItem(pizza, 3, rest.getName()));
 
         Order order2 = orderService.placeOrder(cart2, location, secondSlotStart);
         var ex = assertThrows(IllegalArgumentException.class, () ->
