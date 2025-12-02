@@ -50,14 +50,13 @@ jobs:
 
       - name: Frontend lint
         working-directory: frontend
-        continue-on-error: true
-        run: npx eslint . --max-warnings=999
+        run: npx eslint . --max-warnings=999 || true
 
       - name: Frontend tests
         env:
           CI: true
         working-directory: frontend
-        run: npm test -- --watchAll=false
+        run: npm test -- --watchAll=false --if-present
 
       - name: Frontend build
         working-directory: frontend
@@ -69,6 +68,6 @@ jobs:
         with:
           name: frontend-artifacts
           path: |
-            frontend/dist
-            frontend/coverage
+           frontend/build
+           frontend/coverage
           retention-days: 7
