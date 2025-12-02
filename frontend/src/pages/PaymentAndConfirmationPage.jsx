@@ -31,7 +31,7 @@ export default function PaymentAndConfirmationPage() {
         }
     }, [orderId]);
 
-    // Fetch recap din backend (pentru My Orders + consistență)
+    // Fetch recap din backend
     useEffect(() => {
         async function fetchOrder() {
             if (!orderId) return;
@@ -100,7 +100,7 @@ export default function PaymentAndConfirmationPage() {
             }
             const data = await resp.json();
 
-            //  Snapshot client-side
+            //  Snapshot client-side (exact cum ai văzut în coș)
             try {
                 const recapItems = items.map((i) => {
                     const extras =
@@ -158,7 +158,7 @@ export default function PaymentAndConfirmationPage() {
         }
     }
 
-    // Ramura fără orderId: pagina de Confirm & Pay
+    // === Ramura fără orderId: pagina de Confirm & Pay ===
     if (!orderId) {
         return (
             <div>
