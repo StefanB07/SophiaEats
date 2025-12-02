@@ -1,3 +1,149 @@
+# SopiaTech Eats – Team U (2025)
+
+This repository implements a small multi-service food ordering system with a simple API Gateway and a React frontend. The goal of TD4 is to expose the backend through clean REST APIs, wire an API gateway, and deliver a usable web UI.
+
+## Team members and roles
+- Product Owner (PO): BUCUR Stefan
+- Software Architect (SA): ILIESCU Miruna
+- QA : CRISTEA Ana
+- Ops: NEATA Mihnea
+
+---
+
+## How to install, run and test
+
+Prerequisites:
+- Java 17+
+- Maven 3.8+
+- Node.js 20+ and npm (for the frontend)
+
+### Backend and API Gateway (all-in-one run)
+We provide a single main that starts all servers:
+- Catalog service on http://localhost:8081
+- Order service on http://localhost:8082
+- API Gateway on http://localhost:8080
+
+Run from IDE:
+- Open `src/main/java/server/ApiGatewayMain.java`
+- Run the `main` method. You should see “Gateway listening on http://localhost:8080”.
+
+Run from terminal (project root):
+- mvn -q -DskipTests exec:java -Dexec.mainClass="server.ApiGatewayMain"
+
+Quick smoke checks (direct services):
+- GET http://localhost:8081/health → {"status":"UP"}
+- GET http://localhost:8082/health → {"status":"UP"}
+- Through gateway for catalog: GET http://localhost:8080/restaurants
+
+### Frontend (React + Vite)
+- cd frontend
+- npm install
+- npm run dev
+- Open http://localhost:5173
+
+### Running tests
+- All unit and cucumber tests: mvn -q test
+- Import Postman collection: `http/OrderService.postman_collection.json` and run the “Order Service” folder with header X-User-Id set (e.g., alice@campus).
+
+---
+
+## Project structure
+- pom.xml – Maven build (Java 17, JUnit5, Cucumber for tests)
+- src/main/java
+    - bootstrap/
+        - `DataSeeder.java` – resets repositories and seeds demo data for both services (users, restaurants, dishes, delivery locations and slots). Uses helper `nextHalfHourNow()` to align delivery slots to the next half-hour.
+    - domain/
+        - Core entities and value objects:
+            - `Restaurant`, `Dish`, `DishCategory`, `DietaryTag`
+            - `Cart`, `OrderItem`, `Order`, `OrderStatus`
+            - `DeliveryLocation`, `DeliverySlot`
+            - `CampusUser`, `StudentCredit`, `Payment`, `PaymentMethod`
+            - `FilterCriteria`, `RestaurantFilters`
+    - repository/ (in-memory stores)
+        - `RestaurantRepository` – CRUD by restaurant name (seeded with sample restaurants and dishes)
+        - `DeliveryCatalogRepository` – holds delivery locations and per-restaurant slots (capacity)
+        - `CartRepository` – manages carts; includes `getOrCreateForUserId(userId)` for per-user cart
+        - `OrderRepository` – persists created orders (lookup by id, optional list by user if implemented)
+        - `CampusUserRepository` – stores users and their student credit
+    - service/
+        - `CatalogService` – read operations for restaurants, menu, filters; reads from `RestaurantRepository` and `DeliveryCatalogRepository`
+        - `CartService` – per-user cart operations; uses `CartRepository` and `RestaurantRepository` (add/clear/notify listeners)
+        - `OrderService` – order creation & validation (delivery slot rules, payment via providers)
+        - `PaymentProvider` (interface), `PaymentProviders`, `DummyExternalPaymentProvider` – abstraction and demo provider implementations
+        - `OrderDraftService` – helper for draft flows (if used in tests)
+    - handlers/
+        - `CatalogApiHandler` – HTTP for Catalog service
+            - GET `/restaurants`, `/restaurants/{name}`, `/restaurants/filter`
+            - Delivery read: GET `/delivery/locations`, `/delivery/slots?restaurant=...`
+            - Manager (optional/TD scope): POST/PUT/DELETE dish; slot management endpoints
+        - `OrderApiHandler` – HTTP for Order service
+            - GET `/cart`, DELETE `/cart`
+            - POST `/cart/items` (add item)
+            - POST `/orders`, GET `/orders/{id}` (and optionally GET `/orders` if repo supports)
+            - Requires header `X-User-Id` on all endpoints; clears cart after successful order
+        - `GatewayHandler` – API Gateway: forwards `/restaurants` and `/delivery` to 8081; `/cart`, `/orders`, `/users` to 8082; passes through `X-User-Id`
+        - `UsersApiHandler` – simple user listing/lookup (useful for testing student credit)
+        - `BaseHandler` – shared HTTP utilities (error JSON, body read, escaping, CORS helpers)
+    - server/
+        - `CatalogServiceMain` (port 8081): seeds data and mounts `CatalogApiHandler` on `/restaurants` and `/delivery` + `/health`
+        - `OrderServiceMain` (port 8082): seeds data and mounts `OrderApiHandler` on `/cart`, `/orders` + `/health` (and `/users` via `UsersApiHandler`)
+        - `ApiGatewayMain` (port 8080): starts the two services in daemon threads and exposes `GatewayHandler` root `/`
+- frontend/ – React app (Vite)
+    - `src/` – UI pages and components
+        - `App.jsx` – main router/entry
+        - `pages/` – pages (restaurants list, details, cart/order if applicable)
+        - `context/` – shared state for frontend (if used)
+        - `data/` – mock data or API wrappers (if used)
+    - `vite.config.js`, `index.html`, `eslint.config.js`
+- http/ – REST client examples and Postman
+    - `restaurants.http` – quick GETs for catalog endpoints
+    - `order.http` – quick calls for order/cart endpoints (requires `X-User-Id`)
+    - `OrderService.postman_collection.json` – import into Postman for Order service tests
+- doc/
+    - `API.md` – endpoint documentation and JSON schemas (Cart, Order, Restaurant, Delivery)
+    - `Screenshots.md` – paste UI screenshots for the report
+    - `PointsDistribution.md` – team points breakdown
+
+See screenshots and UI notes: [doc/Screenshots.md](doc/Screenshots.md)
+
+---
+
+## Architecture overview
+- Three-layer approach kept simple for the module: Frontend (React) → API Gateway → Services (Catalog, Order).
+- API Gateway: single entry point, forwards requests to services, passes X-User-Id.
+- Services are separated by domain but share in-memory repositories/data seeding for the prototype.
+
+Routing summary:
+- Catalog service (8081):
+    - GET /restaurants, GET /restaurants/{name}, GET /restaurants/filter
+    - GET /delivery/locations (list delivery places)
+    - GET /delivery/slots?restaurant={name} (available delivery slots for a restaurant)
+- Order service (8082):
+    - GET /cart, DELETE /cart
+    - POST /cart/items (add), DELETE /cart/items?menuItemId=… (if supported)
+    - POST /orders, GET /orders (if supported), GET /orders/{id}
+    - All order endpoints require header `X-User-Id`.
+- API Gateway (8080): forwards catalog paths (including /restaurants and /delivery).
+
+Constraints respected:
+- No external web frameworks for backend (pure HttpServer + basic helpers).
+- Manual JSON parsing.
+- In-memory data with shared seeding to keep menu/price aligned between services.
+
+---
+
+## Troubleshooting
+- “Connection refused on 8082”: make sure `OrderServiceMain` is running (start `ApiGatewayMain`).
+- 400 on Order API: check `X-User-Id` header is present.
+- 409 on POST /orders: delivery slot constraints triggered (expected behavior from OrderService).
+- Frontend cannot load data: verify gateway logs and that Catalog service is up (8081).
+
+---
+
+## Previous README (kept for reference)
+
+// ...existing content from earlier README retained below ...
+
 # SopiaTech Eats-Team-U-25-26
 
 ## TEAM
@@ -8,11 +154,11 @@ QA : CRISTEA Ana
 Ops : NEATA Mihnea
 
 ## Usage & Installation
-As of the moment of the O1/D1, there's 3 ways to interact with the project. 
+As of the moment of the O1/D1, there's 3 ways to interact with the project.
 There is a order loop in main - just run the main. It will make the order process from start to end apparent.
 The cucumber (integration) tests can be run from src/test/java/RunCucumberTest.java (how we did it - straight from IntelliJ) or with maven separately (from command line for example).
 There are JUnit tests as well in src/test/java/unit. They can be run by right clicking the 'unit' package and selecting 'Run tests in unit' (how we did it) - or maven as well.
-Installation - just fork this repository and clone it locally. 
+Installation - just fork this repository and clone it locally.
 
 You need Java level 21 (so Java1.21) , openJDK 24 and maven installed on your machine. Java 1.17 might work as well (and a lower jdk, if you look in pom.xml, which is the one already given, I left it as java ver 17 for simplicity), but that's what we built on.
 
@@ -25,15 +171,15 @@ You need Java level 21 (so Java1.21) , openJDK 24 and maven installed on your ma
     - Cucumber runner: `src/test/java/RunCucumberTest.java`
 
 ## .github - Kanban
-   Here's the link: https://github.com/orgs/PNS-Conception/projects/95
-    You will find here the kanban board for the project. In short - each of us tried to pick a user story - work on the tests and implementation, then we merged branches together.
+Here's the link: https://github.com/orgs/PNS-Conception/projects/95
+You will find here the kanban board for the project. In short - each of us tried to pick a user story - work on the tests and implementation, then we merged branches together.
 
 
 ## Structure
- - pom.xml :  
-       - Cucumber 7 et JUnit 5  
-       - JDK 21
-       - Etc.  
+- pom.xml :  
+  - Cucumber 7 et JUnit 5  
+  - JDK 21
+  - Etc.
     - src/main/java has the main code for the project
     - > bootstrap/: contains a data seeder for initial data
     - > model/: domain contains the main classes/entities of the project
@@ -45,7 +191,6 @@ You need Java level 21 (so Java1.21) , openJDK 24 and maven installed on your ma
     - > features/: contains the gherkin syntax tests ( Cucumber 7)
     - > steps/: contains the step definitions for the cucumber tests
     - > RunCucumberTest.java : the class that runs the cucumber tests
-
 
 ## Overview
 
@@ -210,4 +355,3 @@ Recommended order for everyone:
 
     * `GET http://localhost:8080/restaurants`
     * `GET http://localhost:8080/restaurants/{name}`
-

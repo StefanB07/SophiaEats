@@ -4,7 +4,7 @@ import { useUser } from "../context/UserContext.jsx";
 import { useEffect, useState } from "react";
 
 const ORDERS_KEY_PREFIX = "orders:";
-const ORDER_CLIENT_RECAP_PREFIX = "orderClientRecap:";
+const CLIENT_RECAP_PREFIX = "order-client-recap:";
 
 export default function PaymentAndConfirmationPage() {
     const { orderId } = useParams();
@@ -16,23 +16,22 @@ export default function PaymentAndConfirmationPage() {
     const [error, setError] = useState(null);
     const [order, setOrder] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState("STUDENT_CREDIT");
-
-    // recap calculat pe client (cu extra options)
     const [clientRecap, setClientRecap] = useState(null);
 
-    // încărcăm recap-ul calculat pe client (dacă există) pentru orderId-ul curent
+    // Încarc recap-ul clientului
     useEffect(() => {
         if (!orderId) return;
         try {
-            const raw = localStorage.getItem(`${ORDER_CLIENT_RECAP_PREFIX}${orderId}`);
-            if (raw) {
-                setClientRecap(JSON.parse(raw));
+            const stored = localStorage.getItem(`${CLIENT_RECAP_PREFIX}${orderId}`);
+            if (stored) {
+                setClientRecap(JSON.parse(stored));
             }
         } catch {
-            // ignorăm; recap-ul client este opțional
+            // ignore
         }
     }, [orderId]);
 
+    // Fetch recap din backend
     useEffect(() => {
         async function fetchOrder() {
             if (!orderId) return;
@@ -44,19 +43,19 @@ export default function PaymentAndConfirmationPage() {
                     const data = await resp.json();
                     setOrder(data);
 
-                    // salvăm în "My Orders" varianta de la backend (nu stricăm logica existentă)
+                    // salvăm recap-ul pentru My Orders (OrderHistory)
                     try {
                         const key = `${ORDERS_KEY_PREFIX}${currentUser}`;
                         const existing = JSON.parse(localStorage.getItem(key) || "[]");
                         const deduped = [data, ...existing.filter((o) => o.id !== data.id)];
                         localStorage.setItem(key, JSON.stringify(deduped));
                     } catch {
-                        // ignore
+                        /* ignore */
                     }
                 } else {
                     setError(`Failed to load order recap (HTTP ${resp.status})`);
                 }
-            } catch {
+            } catch (e) {
                 setError("Failed to load order recap");
             }
         }
@@ -69,9 +68,8 @@ export default function PaymentAndConfirmationPage() {
         try {
             if (!currentUser) throw new Error("No user id");
             if (items.length === 0) throw new Error("Cart is empty");
-            if (!deliveryOptions.address || !deliveryOptions.slot) {
+            if (!deliveryOptions.address || !deliveryOptions.slot)
                 throw new Error("Missing delivery information");
-            }
 
             const firstPart = deliveryOptions.slot.split("-")[0]; // HH:mm
             const now = new Date();
@@ -100,58 +98,56 @@ export default function PaymentAndConfirmationPage() {
                 const text = await resp.text();
                 throw new Error(`Backend error (${resp.status}): ${text}`);
             }
-
             const data = await resp.json();
 
-            //  1) Construim un "client recap" cu prețurile care includ extra options
+            //  Snapshot client-side (exact cum ai văzut în coș)
             try {
-                const clientItems = items.map((i) => {
-                    const qty = i.quantity ?? 1;
+                const recapItems = items.map((i) => {
                     const extras =
                         (i.dish && i.dish.selectedExtras) ||
                         i.selectedExtras ||
                         i.extraOptions ||
                         [];
 
-                    const basePrice = i.dish?.price ?? 0;
-                    const extrasTotal = extras.reduce(
-                        (sum, e) => sum + (e.price || 0),
-                        0
-                    );
-                    const unitPriceWithExtras = basePrice + extrasTotal;
-                    const lineTotal = unitPriceWithExtras * qty;
+                    const unitPrice =
+                        typeof i.dish?.price === "number" ? i.dish.price : 0;
+                    const qty = typeof i.quantity === "number" ? i.quantity : 1;
+                    const lineTotal = Number((unitPrice * qty).toFixed(2));
 
                     return {
-                        key: i.key,
-                        name: i.dish?.name || "Unknown dish",
+                        name: i.dish?.name || "",
                         qty,
-                        basePrice,
-                        extras,
-                        unitPriceWithExtras,
                         lineTotal,
+                        extras: extras.map((e) => ({
+                            label: e.label,
+                            price: e.price,
+                        })),
                     };
                 });
 
-                const clientTotal = clientItems.reduce(
-                    (sum, it) => sum + it.lineTotal,
-                    0
+                const recapTotal = Number(
+                    recapItems
+                        .reduce((sum, it) => sum + (it.lineTotal || 0), 0)
+                        .toFixed(2)
                 );
 
-                const clientRecapToStore = {
-                    orderId: data.id,
-                    items: clientItems,
-                    total: clientTotal,
+                const recapPayload = {
+                    id: data.id,
+                    items: recapItems,
+                    total: recapTotal,
+                    deliveryPlace,
+                    deliveryTime: deliveryTimeStr,
                 };
 
                 localStorage.setItem(
-                    `${ORDER_CLIENT_RECAP_PREFIX}${data.id}`,
-                    JSON.stringify(clientRecapToStore)
+                    `${CLIENT_RECAP_PREFIX}${data.id}`,
+                    JSON.stringify(recapPayload)
                 );
+                setClientRecap(recapPayload);
             } catch {
-                // dacă nu reușește, nu stricăm flow-ul; doar recap-ul client nu va exista
+                // dacă ceva e în neregulă cu localStorage, nu blocăm fluxul
             }
 
-            // 2) Golește coșul și mergi la pagina de confirmare
             clearCart();
             navigate(`/order/confirmation/${data.id}`);
         } catch (e) {
@@ -162,9 +158,7 @@ export default function PaymentAndConfirmationPage() {
         }
     }
 
-    // ─────────────────────────────
-    // VARIANTA FĂRĂ orderId: ecranul Confirm & Payment (înainte de POST)
-    // ─────────────────────────────
+    // === Ramura fără orderId: pagina de Confirm & Pay ===
     if (!orderId) {
         return (
             <div>
@@ -184,7 +178,7 @@ export default function PaymentAndConfirmationPage() {
                                     [];
 
                                 return (
-                                    <li key={i.key} style={{ marginBottom: "0.5rem" }}>
+                                    <li key={i.key}>
                                         <div>
                                             {i.dish.name} × {i.quantity}
                                         </div>
@@ -225,7 +219,9 @@ export default function PaymentAndConfirmationPage() {
                                     type="radio"
                                     name="paymentMethod"
                                     value="STUDENT_CREDIT"
-                                    checked={paymentMethod === "STUDENT_CREDIT"}
+                                    checked={
+                                        paymentMethod === "STUDENT_CREDIT"
+                                    }
                                     onChange={() =>
                                         setPaymentMethod("STUDENT_CREDIT")
                                     }
@@ -266,81 +262,87 @@ export default function PaymentAndConfirmationPage() {
                         >
                             {placing ? "Placing..." : "Confirm & pay"}
                         </button>
-                        {error && <p style={{ color: "red" }}>{error}</p>}
+                        {error && (
+                            <p style={{ color: "red" }}>{error}</p>
+                        )}
                     </>
                 )}
             </div>
         );
     }
 
-    // ─────────────────────────────
-    // VARIANTA CU orderId: ecranul Order confirmation
-    // ─────────────────────────────
-    const recapItems =
-        clientRecap?.items ||
-        (order?.items || []).map((it) => ({
-            name: it.name,
-            qty: it.qty,
-            lineTotal: it.lineTotal,
-            extras: [],
-        }));
-
+    // === Ramura cu orderId: pagina Order confirmation ===
+    const recapSource = clientRecap || order;
+    const recapItems = (recapSource && recapSource.items) || [];
     const recapTotal =
-        clientRecap?.total != null
-            ? clientRecap.total
-            : order?.total != null
-                ? order.total
-                : 0;
+        recapSource && typeof recapSource.total === "number"
+            ? recapSource.total
+            : order?.total;
+    const recapPlace =
+        recapSource?.deliveryPlace || order?.deliveryPlace || "";
+    const recapTime =
+        (recapSource?.deliveryTime || order?.deliveryTime || "").replace(
+            "T",
+            " "
+        );
 
     return (
         <div>
             <h2>Order confirmation</h2>
             {error && <p style={{ color: "red" }}>{error}</p>}
-            {!error && !order && <p>Loading order details...</p>}
-            {order && (
+            {!error && !order && !clientRecap && (
+                <p>Loading order details.</p>
+            )}
+            {(order || clientRecap) && (
                 <>
                     <p>
-                        Your order <strong>{order.id}</strong> has been placed
-                        successfully.
+                        Your order{" "}
+                        <strong>
+                            {order?.id || clientRecap?.id || orderId}
+                        </strong>{" "}
+                        has been placed successfully.
                     </p>
                     <h3>Recap</h3>
                     <ul>
-                        {recapItems.map((it, idx) => (
-                            <li key={idx} style={{ marginBottom: "0.5rem" }}>
-                                <div>
-                                    {it.name} × {it.qty} –{" "}
-                                    {it.lineTotal.toFixed(2)} €
-                                </div>
-                                {it.extras && it.extras.length > 0 && (
-                                    <ul
-                                        style={{
-                                            marginTop: "0.25rem",
-                                            marginLeft: "1rem",
-                                            fontSize: "0.85rem",
-                                            color: "#6b7280",
-                                        }}
-                                    >
-                                        {it.extras.map((ex) => (
-                                            <li key={ex.id}>
-                                                + {ex.label} (
-                                                {ex.price.toFixed(2)} €)
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </li>
-                        ))}
+                        {recapItems.map((it, idx) => {
+                            const extras = it.extras || [];
+                            return (
+                                <li key={idx}>
+                                    <div>
+                                        {it.name} × {it.qty} –{" "}
+                                        {it.lineTotal} €
+                                    </div>
+                                    {extras.length > 0 && (
+                                        <div
+                                            style={{
+                                                fontSize: "0.8rem",
+                                                color: "#6b7280",
+                                            }}
+                                        >
+                                            Extras:{" "}
+                                            {extras
+                                                .map((e) =>
+                                                    e.price != null
+                                                        ? `${e.label} (+${e.price.toFixed(
+                                                            1
+                                                        )} €)`
+                                                        : e.label
+                                                )
+                                                .join(", ")}
+                                        </div>
+                                    )}
+                                </li>
+                            );
+                        })}
                     </ul>
                     <p>
-                        <strong>Total:</strong> {recapTotal.toFixed(2)} €
+                        <strong>Total:</strong> {recapTotal} €
                     </p>
                     <p>
-                        <strong>Delivery place:</strong>{" "}
-                        {order.deliveryPlace}
+                        <strong>Delivery place:</strong> {recapPlace}
                     </p>
                     <p>
-                        <strong>Delivery time:</strong>{" "}
-                        {(order.deliveryTime || "").replace("T", " ")}
+                        <strong>Delivery time:</strong> {recapTime}
                     </p>
                 </>
             )}
