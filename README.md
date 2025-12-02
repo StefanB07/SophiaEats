@@ -1,357 +1,583 @@
 # SopiaTech Eats – Team U (2025)
 
-This repository implements a small multi-service food ordering system with a simple API Gateway and a React frontend. The goal of TD4 is to expose the backend through clean REST APIs, wire an API gateway, and deliver a usable web UI.
-
-## Team members and roles
-- Product Owner (PO): BUCUR Stefan
-- Software Architect (SA): ILIESCU Miruna
-- QA : CRISTEA Ana
-- Ops: NEATA Mihnea
+This repository implements a small multi-service food ordering system with a simple API Gateway and a React frontend.
+The goal is to expose the backend through clean REST APIs, wire an API gateway, and deliver a usable web UI,
+in line with the official specification (multi-service backend, API gateway, web UI).
 
 ---
 
-## How to install, run and test
+## 1. Team members and roles
 
-Prerequisites:
-- Java 17+
-- Maven 3.8+
-- Node.js 20+ and npm (for the frontend)
+* **Product Owner (PO):** BUCUR Stefan
+* **Software Architect (SA):** ILIESCU Miruna
+* **QA:** CRISTEA Ana
+* **Ops:** NEATA Mihnea
 
-### Backend and API Gateway (all-in-one run)
+---
+
+## 2. Technology & constraints
+
+Backend (Java):
+
+* No external web framework (no Spring, no JAX-RS, etc.)
+* JSON handled manually
+* Services split into **Catalog** and **Order**, exposed via REST
+* Single **API Gateway** that acts as façade over the services
+
+Frontend (Web):
+
+* **React + Vite** for a simple web UI
+* Focus on clear user flows:
+
+    * browse restaurants
+    * see menus and dietary info
+    * build a cart and choose a delivery slot
+    * simulate payment
+
+---
+
+## 3. How to install, run and test
+
+### 3.1 Prerequisites
+
+* **Java 17+**
+* **Maven 3.8+**
+* **Node.js 20+** and **npm** (for the frontend)
+
+---
+
+### 3.2 Backend and API Gateway (all-in-one run)
+
 We provide a single main that starts all servers:
-- Catalog service on http://localhost:8081
-- Order service on http://localhost:8082
-- API Gateway on http://localhost:8080
 
-Run from IDE:
-- Open `src/main/java/server/ApiGatewayMain.java`
-- Run the `main` method. You should see “Gateway listening on http://localhost:8080”.
+* **Catalog Service** on `http://localhost:8081`
+* **Order Service** on `http://localhost:8082`
+* **API Gateway** on `http://localhost:8080`
 
-Run from terminal (project root):
-- mvn -q -DskipTests exec:java -Dexec.mainClass="server.ApiGatewayMain"
+#### From IDE (IntelliJ)
 
-Quick smoke checks (direct services):
-- GET http://localhost:8081/health → {"status":"UP"}
-- GET http://localhost:8082/health → {"status":"UP"}
-- Through gateway for catalog: GET http://localhost:8080/restaurants
-
-### Frontend (React + Vite)
-- cd frontend
-- npm install
-- npm run dev
-- Open http://localhost:5173
-
-### Running tests
-- All unit and cucumber tests: mvn -q test
-- Import Postman collection: `http/OrderService.postman_collection.json` and run the “Order Service” folder with header X-User-Id set (e.g., alice@campus).
-
----
-
-## Project structure
-- pom.xml – Maven build (Java 17, JUnit5, Cucumber for tests)
-- src/main/java
-    - bootstrap/
-        - `DataSeeder.java` – resets repositories and seeds demo data for both services (users, restaurants, dishes, delivery locations and slots). Uses helper `nextHalfHourNow()` to align delivery slots to the next half-hour.
-    - domain/
-        - Core entities and value objects:
-            - `Restaurant`, `Dish`, `DishCategory`, `DietaryTag`
-            - `Cart`, `OrderItem`, `Order`, `OrderStatus`
-            - `DeliveryLocation`, `DeliverySlot`
-            - `CampusUser`, `StudentCredit`, `Payment`, `PaymentMethod`
-            - `FilterCriteria`, `RestaurantFilters`
-    - repository/ (in-memory stores)
-        - `RestaurantRepository` – CRUD by restaurant name (seeded with sample restaurants and dishes)
-        - `DeliveryCatalogRepository` – holds delivery locations and per-restaurant slots (capacity)
-        - `CartRepository` – manages carts; includes `getOrCreateForUserId(userId)` for per-user cart
-        - `OrderRepository` – persists created orders (lookup by id, optional list by user if implemented)
-        - `CampusUserRepository` – stores users and their student credit
-    - service/
-        - `CatalogService` – read operations for restaurants, menu, filters; reads from `RestaurantRepository` and `DeliveryCatalogRepository`
-        - `CartService` – per-user cart operations; uses `CartRepository` and `RestaurantRepository` (add/clear/notify listeners)
-        - `OrderService` – order creation & validation (delivery slot rules, payment via providers)
-        - `PaymentProvider` (interface), `PaymentProviders`, `DummyExternalPaymentProvider` – abstraction and demo provider implementations
-        - `OrderDraftService` – helper for draft flows (if used in tests)
-    - handlers/
-        - `CatalogApiHandler` – HTTP for Catalog service
-            - GET `/restaurants`, `/restaurants/{name}`, `/restaurants/filter`
-            - Delivery read: GET `/delivery/locations`, `/delivery/slots?restaurant=...`
-            - Manager (optional/TD scope): POST/PUT/DELETE dish; slot management endpoints
-        - `OrderApiHandler` – HTTP for Order service
-            - GET `/cart`, DELETE `/cart`
-            - POST `/cart/items` (add item)
-            - POST `/orders`, GET `/orders/{id}` (and optionally GET `/orders` if repo supports)
-            - Requires header `X-User-Id` on all endpoints; clears cart after successful order
-        - `GatewayHandler` – API Gateway: forwards `/restaurants` and `/delivery` to 8081; `/cart`, `/orders`, `/users` to 8082; passes through `X-User-Id`
-        - `UsersApiHandler` – simple user listing/lookup (useful for testing student credit)
-        - `BaseHandler` – shared HTTP utilities (error JSON, body read, escaping, CORS helpers)
-    - server/
-        - `CatalogServiceMain` (port 8081): seeds data and mounts `CatalogApiHandler` on `/restaurants` and `/delivery` + `/health`
-        - `OrderServiceMain` (port 8082): seeds data and mounts `OrderApiHandler` on `/cart`, `/orders` + `/health` (and `/users` via `UsersApiHandler`)
-        - `ApiGatewayMain` (port 8080): starts the two services in daemon threads and exposes `GatewayHandler` root `/`
-- frontend/ – React app (Vite)
-    - `src/` – UI pages and components
-        - `App.jsx` – main router/entry
-        - `pages/` – pages (restaurants list, details, cart/order if applicable)
-        - `context/` – shared state for frontend (if used)
-        - `data/` – mock data or API wrappers (if used)
-    - `vite.config.js`, `index.html`, `eslint.config.js`
-- http/ – REST client examples and Postman
-    - `restaurants.http` – quick GETs for catalog endpoints
-    - `order.http` – quick calls for order/cart endpoints (requires `X-User-Id`)
-    - `OrderService.postman_collection.json` – import into Postman for Order service tests
-- doc/
-    - `API.md` – endpoint documentation and JSON schemas (Cart, Order, Restaurant, Delivery)
-    - `Screenshots.md` – paste UI screenshots for the report
-    - `PointsDistribution.md` – team points breakdown
-
-See screenshots and UI notes: [doc/Screenshots.md](doc/Screenshots.md)
-
----
-
-## Architecture overview
-- Three-layer approach kept simple for the module: Frontend (React) → API Gateway → Services (Catalog, Order).
-- API Gateway: single entry point, forwards requests to services, passes X-User-Id.
-- Services are separated by domain but share in-memory repositories/data seeding for the prototype.
-
-Routing summary:
-- Catalog service (8081):
-    - GET /restaurants, GET /restaurants/{name}, GET /restaurants/filter
-    - GET /delivery/locations (list delivery places)
-    - GET /delivery/slots?restaurant={name} (available delivery slots for a restaurant)
-- Order service (8082):
-    - GET /cart, DELETE /cart
-    - POST /cart/items (add), DELETE /cart/items?menuItemId=… (if supported)
-    - POST /orders, GET /orders (if supported), GET /orders/{id}
-    - All order endpoints require header `X-User-Id`.
-- API Gateway (8080): forwards catalog paths (including /restaurants and /delivery).
-
-Constraints respected:
-- No external web frameworks for backend (pure HttpServer + basic helpers).
-- Manual JSON parsing.
-- In-memory data with shared seeding to keep menu/price aligned between services.
-
----
-
-## Troubleshooting
-- “Connection refused on 8082”: make sure `OrderServiceMain` is running (start `ApiGatewayMain`).
-- 400 on Order API: check `X-User-Id` header is present.
-- 409 on POST /orders: delivery slot constraints triggered (expected behavior from OrderService).
-- Frontend cannot load data: verify gateway logs and that Catalog service is up (8081).
-
----
-
-## Previous README (kept for reference)
-
-// ...existing content from earlier README retained below ...
-
-# SopiaTech Eats-Team-U-25-26
-
-## TEAM
-
-PO : BUCUR Stefan
-SA : ILIESCU Miruna
-QA : CRISTEA Ana
-Ops : NEATA Mihnea
-
-## Usage & Installation
-As of the moment of the O1/D1, there's 3 ways to interact with the project.
-There is a order loop in main - just run the main. It will make the order process from start to end apparent.
-The cucumber (integration) tests can be run from src/test/java/RunCucumberTest.java (how we did it - straight from IntelliJ) or with maven separately (from command line for example).
-There are JUnit tests as well in src/test/java/unit. They can be run by right clicking the 'unit' package and selecting 'Run tests in unit' (how we did it) - or maven as well.
-Installation - just fork this repository and clone it locally.
-
-You need Java level 21 (so Java1.21) , openJDK 24 and maven installed on your machine. Java 1.17 might work as well (and a lower jdk, if you look in pom.xml, which is the one already given, I left it as java ver 17 for simplicity), but that's what we built on.
-
-## Installation & running short version:
-1. Clone the repository. 2
-2. Run the demo flow (order loop):
-    - From IDE: run the main class in `src/main/java/main` (the class that starts the order loop).
-3. Run tests from IDE:
-    - Unit tests in `src/test/java/unit`
-    - Cucumber runner: `src/test/java/RunCucumberTest.java`
-
-## .github - Kanban
-Here's the link: https://github.com/orgs/PNS-Conception/projects/95
-You will find here the kanban board for the project. In short - each of us tried to pick a user story - work on the tests and implementation, then we merged branches together.
-
-
-## Structure
-- pom.xml :  
-  - Cucumber 7 et JUnit 5  
-  - JDK 21
-  - Etc.
-    - src/main/java has the main code for the project
-    - > bootstrap/: contains a data seeder for initial data
-    - > model/: domain contains the main classes/entities of the project
-    - > service/: contains the business logic of the project ( they act as a sort of interface to interact and manage the cart and order)
-    - > repository/: contains the data access layer ( in memory for now) and it also links some of the classes in between so that they are decoupled.
-    - > main/: contains the main class that runs the order loop - used for testing as of now but will eventually contain the server code.
-    - src/test/java has the test code for the project
-    - > unit/: contains the unit tests for the project ( JUnit 5)
-    - > features/: contains the gherkin syntax tests ( Cucumber 7)
-    - > steps/: contains the step definitions for the cucumber tests
-    - > RunCucumberTest.java : the class that runs the cucumber tests
-
-## Overview
-
-The **Catalog Service** is a lightweight, read-only backend module that exposes restaurant and menu data.  
-It is responsible for listing all available restaurants, providing detailed menu information,  
-and supporting filtering by cuisine type, price range, or dietary tags.
-
-This service operates independently on port **8081** and uses in-memory seeding (no database)  
-via `DataSeeder.java` to populate sample data for testing and development.  
-It serves as the data source for the **Order Service** and is later integrated through the **API Gateway**.
-
-| Method | URL                       | Descriere                                 |
-| ------ | ------------------------- |-------------------------------------------|
-| GET    | `/restaurants`            | List all restaurants                      |
-| GET    | `/restaurants/{name}`     | Show details and menu for a restaurant    |
-| GET    | `/restaurants/filter?...` | Filter by criteria (cuisine, price, etc.) |
-| GET    | `/health`                 | Check service status ({"status":"UP"})    |
-
-
-
-# Local Development Setup
-## How to run the project locally (full stack)
-
-> ⚠️ Until everything is merged to `main`, please use the branch
-> `feature/integration-gateway-frontend` when you want to run the full stack (backend + gateway + frontend).
-
-### 0. Prerequisites
-
-* Java 17+
-* Maven
-* Node.js **>= 20** (Vite needs this)
-* npm
-
----
-
-## 1. Backend & API Gateway
-
-The backend and the gateway are all started from **one single Java main class**:
-
-**`server.ApiGatewayMain`**
-
-When this class starts, it automatically starts:
-
-* `CatalogServiceMain` (Catalog service, port 8081)
-* `OrderServiceMain` (Order service, port 8082)
-* the HTTP **API Gateway** on **port 8080**
-
-So you do **NOT** need to run the services separately.
-
-### Option A – Start from IntelliJ (recommended)
-
-1. Open the project in IntelliJ.
-2. Open `src/main/java/server/ApiGatewayMain.java`.
-3. Click the green ▶️ icon next to `public class ApiGatewayMain` and choose
-   **“Run 'ApiGatewayMain.main()'”**.
-4. In the Run console you should see something like:
+1. Open `src/main/java/server/ApiGatewayMain.java`
+2. Run the `main` method
+3. You should see in the console:
 
    ```text
    Gateway listening on http://localhost:8080
    ```
 
-   (and logs for CatalogService / OrderService).
-
-To **stop** the backend + gateway:
-→ click the red ⏹️ **Stop** button in IntelliJ.
-
-### Option B – Start from command line
-
-From the project root:
+#### From terminal (project root)
 
 ```bash
-mvn exec:java -Dexec.mainClass="server.ApiGatewayMain"
+mvn -q -DskipTests exec:java -Dexec.mainClass="server.ApiGatewayMain"
 ```
 
-To stop: press **Ctrl + C** in that terminal.
+#### Quick smoke checks (direct services)
 
-### Quick manual check
-
-Open in a browser or Postman:
-
-```text
-GET http://localhost:8080/restaurants
-```
-
-You should see the JSON list of restaurants (e.g. “Second Place”, “Restaurant A”).
+* `GET http://localhost:8081/health` → `{"status":"UP"}`
+* `GET http://localhost:8082/health` → `{"status":"UP"}`
+* Through gateway (Catalog):
+  `GET http://localhost:8080/restaurants`
 
 ---
 
-## 2. Frontend (React + Vite)
-
-Frontend code lives in the `frontend/` folder.
-
-### 2.1 Install dependencies (only first time)
-
-From the project root:
+### 3.3 Frontend (React + Vite)
 
 ```bash
 cd frontend
 npm install
-```
-
-### 2.2 Environment configuration
-
-In `frontend/.env` make sure you have:
-
-```env
-# Base URL for the Catalog API via the gateway
-VITE_CATALOG_API_BASE=http://localhost:8080
-```
-
-> Note: For now we call the gateway directly on `/restaurants`.
-> Later we can switch to `/api/catalog/...` just by changing `.env` and the gateway mapping.
-> The frontend code does **not** need to change.
-
-### 2.3 Start the frontend dev server
-
-From `frontend/`:
-
-```bash
 npm run dev
 ```
 
-Vite will start on **[http://localhost:5173](http://localhost:5173)**.
+Then open: **[http://localhost:5173](http://localhost:5173)**
 
-To **stop** the frontend dev server:
-→ press **Ctrl + C** in that terminal.
+Environment configuration (`frontend/.env`):
+
+```env
+VITE_CATALOG_API_BASE=http://localhost:8080
+```
 
 ---
 
-## 3. Startup order
+### 3.4 Running tests
 
-Recommended order for everyone:
+* **All unit and Cucumber tests**:
 
-1. **Git / branch**
+  ```bash
+  mvn -q test
+  ```
 
-   ```bash
-   git checkout feature/integration-gateway-frontend
-   git pull
-   ```
-2. **Start backend + gateway**
+* **Postman**:
 
-    * Either via IntelliJ → Run `ApiGatewayMain`
-    * Or via terminal: `mvn exec:java -Dexec.mainClass="server.ApiGatewayMain"`
-3. **Start frontend**
+    * Import `http/OrderService.postman_collection.json`
+    * Run the “Order Service” folder with header, for example:
+
+      ```http
+      X-User-Id: alice@campus
+      ```
+
+---
+
+### 3.5 Legacy usage: order loop (O1 / D1)
+
+From the first phase of the project (before exposing HTTP APIs), there is an **order loop main** that simulates the full order process in the console:
+
+* Main class in `src/main/java/main` (CLI flow)
+* Shows end-to-end process from restaurant selection to order confirmation
+* Still useful as a **demo of the core domain logic** without HTTP / frontend
+
+---
+
+## 4. Local development setup (full stack)
+
+Recommended workflow during development:
+
+1. **Backend + Gateway**
+
+    * From IDE: run `server.ApiGatewayMain`
+    * Or from terminal:
+
+      ```bash
+      mvn exec:java -Dexec.mainClass="server.ApiGatewayMain"
+      ```
+
+2. **Frontend**
 
    ```bash
    cd frontend
    npm run dev
    ```
-4. Open the app in the browser:
-   👉 `http://localhost:5173/`
+
+3. Open the app:
+
+   `http://localhost:5173/`
+
+### What to expect
+
+* On `/` → restaurant list (US2)
+* On `/restaurants/<name>` → restaurant details and menu (US3)
+* Cart, delivery, and order confirmation flows are wired to the Order service through the gateway.
+
+All the data used by the frontend comes **only through the API Gateway**:
+
+* `GET http://localhost:8080/restaurants`
+* `GET http://localhost:8080/restaurants/{name}`
+* `GET http://localhost:8080/delivery/...`
+* `GET/POST http://localhost:8080/cart` / `/orders`
 
 ---
 
-## 4. What to expect
+## 5. Detailed project structure
 
-* On `http://localhost:5173/`
-  → you should see the **restaurant list** (US2).
-* Clicking **“View menu →”** on a restaurant
-  → goes to `/restaurants/<name>` and shows the **menu page** with dishes (US3).
-* All data comes through the **gateway**:
+### 5.1 Root & build
 
-    * `GET http://localhost:8080/restaurants`
-    * `GET http://localhost:8080/restaurants/{name}`
+* **`pom.xml`**
+
+    * Java 17
+    * JUnit 5
+    * Cucumber 7
+    * Jackson (JSON)
+    * Maven plugins for compilation and test execution
+
+* **`.github` / GitHub Project**
+
+    * Kanban board:
+      [https://github.com/orgs/PNS-Conception/projects/95](https://github.com/orgs/PNS-Conception/projects/95)
+
+---
+
+### 5.2 Backend (src/main/java)
+
+#### 5.2.1 `bootstrap/`
+
+* **`DataSeeder.java`**
+
+    * Resets and seeds demo data for all repositories:
+
+        * Restaurants & dishes (with categories and tags)
+        * Delivery locations and delivery slots
+        * Campus users and student credits
+    * Uses helper:
+
+        * `nextHalfHourNow()` to align delivery slot times to the next half-hour for a more realistic schedule.
+
+---
+
+#### 5.2.2 `domain/` – Core entities and value objects
+
+Represents the **business model** shared by the services:
+
+* **Restaurant & Menu**
+
+    * `Restaurant`
+    * `Dish`
+    * `DishCategory`
+    * `DietaryTag` (vegetarian, vegan, etc.)
+
+* **Cart & Orders**
+
+    * `Cart`
+    * `OrderItem`
+    * `Order`
+    * `OrderStatus` (e.g., DRAFT / CONFIRMED / CANCELLED)
+
+* **Delivery**
+
+    * `DeliveryLocation`
+    * `DeliverySlot` (time window + capacity constraints)
+
+* **Users & Payments**
+
+    * `CampusUser`
+    * `StudentCredit`
+    * `Payment`
+    * `PaymentMethod` (e.g. student credit, card, etc.)
+
+* **Filtering**
+
+    * `FilterCriteria`
+    * `RestaurantFilters`
+      Used for filtering restaurants by availability, dietary tags, etc.
+
+These types are intentionally simple and reusable between Catalog and Order to keep the codebase coherent for a teaching project.
+
+---
+
+#### 5.2.3 `repository/` – In-memory data stores
+
+Implements simple, in-memory persistence for the prototype:
+
+* **`RestaurantRepository`**
+
+    * CRUD operations on restaurants
+    * Seeded with example restaurants and dishes
+    * Serves as data source for restaurant listing, menu retrieval and filtering
+
+* **`DeliveryCatalogRepository`**
+
+    * Stores delivery locations
+    * Stores per-restaurant **delivery slots** and their **capacity**
+    * Used to validate if a slot is still available when creating an order
+
+* **`CartRepository`**
+
+    * Manages per-user carts
+    * Key method: `getOrCreateForUserId(userId)`
+      → ensures each user has a single active cart
+
+* **`OrderRepository`**
+
+    * Persists created orders
+    * Look up by order id
+    * (Optionally) list by user, if needed
+
+* **`CampusUserRepository`**
+
+    * Stores campus users
+    * Keeps track of `StudentCredit` used in payment
+
+Repositories are injected into services and handlers, keeping logic separated
+from storage and allowing easy replacement (e.g., with a real database later).
+
+---
+
+#### 5.2.4 `service/` – Business logic
+
+Encapsulates the application logic of each service:
+
+* **`CatalogService`**
+
+    * Read-only operations for restaurants and menus:
+
+        * list restaurants
+        * get details for a restaurant
+        * filter restaurants by criteria (category, dietary tags, possibly time)
+    * Uses:
+
+        * `RestaurantRepository`
+        * `DeliveryCatalogRepository` (for delivery-related information)
+
+* **`CartService`**
+
+    * Per-user cart operations:
+
+        * get or create cart for `userId`
+        * add dish to cart (validating it belongs to the right restaurant)
+        * clear cart
+    * Uses:
+
+        * `CartRepository`
+        * `RestaurantRepository` (to validate dishes)
+    * Can notify listeners on cart changes (if extended).
+
+* **`OrderService`**
+
+    * Responsible for:
+
+        * validating cart content
+        * checking **delivery slot availability / capacity**
+        * applying payment rules (student credit, external provider, etc.)
+        * creating and storing orders
+    * Ensures that:
+
+        * a cart is associated to a single restaurant
+        * delivery slots are updated to reflect new orders
+        * cart is cleared after successful order creation.
+
+* **Payment abstraction**
+
+    * `PaymentProvider` (interface)
+    * `PaymentProviders` (factory / registry)
+    * `DummyExternalPaymentProvider` (simple mock implementation of an external payment system)
+    * This respects the spec requirement of possibly going through a proxy towards a payment service.
+
+* **`OrderDraftService`** (if used)
+
+    * Helper service to manage draft orders or intermediate steps in tests.
+
+---
+
+#### 5.2.5 `handlers/` – HTTP API layer
+
+Bridges between HTTP requests and services. All handlers extend **`BaseHandler`**, which provides:
+
+* JSON serialization/deserialization with Jackson
+* Request body reading helpers
+* Error handling helpers (JSON error responses)
+* CORS and header utilities
+
+Concrete handlers:
+
+* **`CatalogApiHandler`** – Catalog Service HTTP API
+
+    * `GET /restaurants` – list all restaurants
+    * `GET /restaurants/{name}` – details and menu for a single restaurant
+    * `GET /restaurants/filter?...` – filtering endpoint (e.g. by category/tags)
+    * **Delivery endpoints**:
+
+        * `GET /delivery/locations` – list all delivery places
+        * `GET /delivery/slots?restaurant=...` – available slots for a restaurant
+
+  (Optional / extended scope)
+
+    * POST/PUT/DELETE endpoints for dish and slot management (for a restaurant manager UI).
+
+* **`OrderApiHandler`** – Order Service HTTP API
+
+    * **Cart**
+
+        * `GET /cart` – get current user cart
+        * `DELETE /cart` – clear current cart
+        * `POST /cart/items` – add item to cart
+
+            * uses body JSON with dish and quantity
+    * **Orders**
+
+        * `POST /orders` – create new order:
+
+            * validates delivery slot
+            * validates payment
+            * clears cart on success
+        * `GET /orders/{id}` – fetch a specific order
+        * Optionally: `GET /orders` – list orders by user
+    * All endpoints **require** header:
+
+      ```http
+      X-User-Id: <user-email>
+      ```
+
+* **`UsersApiHandler`**
+
+    * Simple endpoints to:
+
+        * list users
+        * look up a user
+    * Used mainly for testing payments and student credit in the UI.
+
+* **`GatewayHandler`** – API Gateway
+
+    * Exposes a single entrypoint (port **8080**) and forwards to services:
+
+        * Forwards `/restaurants` and `/delivery` to **Catalog** (8081)
+        * Forwards `/cart`, `/orders`, `/users` to **Order** (8082)
+        * Preserves and passes through `X-User-Id`.
+    * Implements the façade / API gateway pattern requested in the spec.
+
+---
+
+#### 5.2.6 `server/` – Service launchers and gateway
+
+* **`CatalogServiceMain`** (port 8081)
+
+    * Seeds data with `DataSeeder`
+    * Mounts `CatalogApiHandler` on `/restaurants` and `/delivery`
+    * Exposes `/health`
+
+* **`OrderServiceMain`** (port 8082)
+
+    * Seeds data with `DataSeeder`
+    * Mounts:
+
+        * `OrderApiHandler` on `/cart` and `/orders`
+        * `UsersApiHandler` on `/users`
+        * `/health` endpoint
+
+* **`ApiGatewayMain`** (port 8080)
+
+    * Starts both services (Catalog + Order) in daemon threads
+    * Starts gateway server with `GatewayHandler` at root `/`
+    * Main entry point used in development and for the demo.
+
+---
+
+### 5.3 Frontend (React + Vite)
+
+Located in `frontend/`:
+
+* `src/`
+
+    * **`App.jsx`**
+
+        * Main entry point and routing.
+    * **`pages/`**
+
+        * Restaurant list page
+        * Restaurant details / menu page
+        * Cart & delivery page
+        * Order confirmation page (depending on final implementation)
+    * **`context/`**
+
+        * Shared state using React Context:
+
+            * Cart context (items, delivery options, etc.)
+            * User context (current user, list of users from `/users`)
+    * **`data/`**
+
+        * Mock data or small API wrappers, if needed.
+
+Other files:
+
+* `vite.config.js` – Vite configuration
+* `index.html` – base HTML
+* `eslint.config.js` – linting rules
+
+The frontend calls only the **Gateway** (not the services directly), via `VITE_CATALOG_API_BASE`.
+
+---
+
+### 5.4 HTTP tools & documentation
+
+* **`http/`**
+
+   * `OrderService.postman_collection.json` – Postman collection for Order service tests.
+
+* **`doc/`**
+
+    * `API.md` – endpoint documentation and JSON schemas for:
+
+        * Cart
+        * Order
+        * Restaurant
+        * Delivery
+    * `Screenshots.md` – screenshots of the UI to visually show the implemented flows.
+    * `PointsDistribution.md` – explains how the team decided to distribute points for grading.
+
+---
+
+### 5.5 Tests (src/test/java)
+
+* **`unit/`**
+
+    * JUnit 5 tests targeted at:
+
+        * services (CatalogService, CartService, OrderService)
+        * domain logic (e.g., delivery slot capacity, order total, etc.)
+
+* **Cucumber BDD tests**
+
+    * `features/` – Gherkin feature files, describing scenarios (e.g., placing an order, validating delivery slots)
+    * `steps/` – step definition classes linking Gherkin steps to Java code
+    * `RunCucumberTest.java` – Cucumber test runner
+
+You can run tests from IntelliJ directly or via Maven (`mvn test`).
+
+---
+
+## 6. Architecture overview
+
+We keep a simple **three-layer** architecture adapted to the module:
+
+1. **Frontend (React)**
+2. **API Gateway**
+3. **Backend services**: Catalog and Order
+
+Key points:
+
+* Gateway is the **only entrypoint** for the frontend.
+* Catalog and Order are **logically separate** services with dedicated routes and responsibilities.
+* Data is stored in **in-memory repositories** and seeded at startup for the purpose of the TD.
+
+Routing summary:
+
+* **Catalog service (8081)**:
+
+    * `GET /restaurants`
+    * `GET /restaurants/{name}`
+    * `GET /restaurants/filter`
+    * `GET /delivery/locations`
+    * `GET /delivery/slots?restaurant={name}`
+* **Order service (8082)**:
+
+    * `GET /cart`, `DELETE /cart`
+    * `POST /cart/items`
+    * `POST /orders`
+    * `GET /orders/{id}`
+    * (optional) `GET /orders`
+    * All require `X-User-Id` header.
+* **API Gateway (8080)**:
+
+    * Forwards all catalog-related paths to 8081.
+    * Forwards `/cart`, `/orders`, `/users` to 8082.
+
+---
+
+## 7. Functional coverage
+
+We implement the core **MUST** functionalities of the TD:
+
+1. **Order taking**
+
+    * Use dish categories for selection
+    * Support for dish extensions/add-ons
+    * Display possible delivery times (slots) that evolve according to:
+
+        * user’s cart
+        * existing orders / capacity
+    * Payment via a proxy-like payment provider abstraction
+    * Order validation and confirmation; cart cleanup on success
+
+2. **Navigation among restaurants and menus**
+
+    * Browse restaurants
+    * View menus
+    * Filter by availability, dish type, and dietary options
+
+3. **Add a dish**
+
+    * API-level capability to add / manage dishes (possibly mocked or protected for manager UI)
+
+---
+
+## 8. Troubleshooting
+
+* **“Connection refused on 8082”**
+
+    * Check that `ApiGatewayMain` is running (it starts OrderServiceMain).
+* **HTTP 400 on Order API**
+
+    * Most likely missing `X-User-Id` header.
+* **HTTP 409 on `POST /orders`**
+
+    * Check:
+
+        * Gateway logs
+        * Health of Catalog (`/health` on 8081)
+        * `VITE_CATALOG_API_BASE` in `.env`.
