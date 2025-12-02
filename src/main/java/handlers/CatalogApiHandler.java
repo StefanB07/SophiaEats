@@ -109,90 +109,33 @@ public class CatalogApiHandler extends BaseHandler {
         String rawPath = ex.getRequestURI().getPath();
 
         try {
-            // --- R2: ADD DISH  as a manager ---
-            // POST /restaurants/{name}/dishes
-            if (rawPath.startsWith("/restaurants/") &&
-                    rawPath.endsWith("/dishes") &&
-                    "POST".equalsIgnoreCase(method)) {
-                addDish(ex, rawPath);
-                return;
-            }
+            // Dish management
+            if (rawPath.startsWith("/restaurants/") && rawPath.endsWith("/dishes") && "POST".equalsIgnoreCase(method)) {
+                addDish(ex, rawPath); return; }
+            if (rawPath.startsWith("/restaurants/") && rawPath.contains("/dishes/") && "PUT".equalsIgnoreCase(method)) {
+                updateDish(ex, rawPath); return; }
+            if (rawPath.startsWith("/restaurants/") && rawPath.contains("/dishes/") && "DELETE".equalsIgnoreCase(method)) {
+                deleteDish(ex, rawPath); return; }
 
-            // --- R2: UPDATE DISH ---
-            // PUT /restaurants/{restaurant}/dishes/{dish}
-            if (rawPath.startsWith("/restaurants/") &&
-                    rawPath.contains("/dishes/") &&
-                    "PUT".equalsIgnoreCase(method)) {
-                updateDish(ex, rawPath);
-                return;
-            }
-
-            // --- R2: DELETE DISH ---
-            // DELETE /restaurants/{restaurant}/dishes/{dish}
-            if (rawPath.startsWith("/restaurants/") &&
-                    rawPath.contains("/dishes/") &&
-                    "DELETE".equalsIgnoreCase(method)) {
-                deleteDish(ex, rawPath);
-                return;
-            }
-
-            // --- R5: manager slot operations ---
-
-            // POST /restaurants/{name}/slots -> add slot
-            if (rawPath.startsWith("/restaurants/")
-                    && rawPath.endsWith("/slots")
-                    && "POST".equalsIgnoreCase(method)) {
-                addSlot(ex, rawPath);
-                return;
-            }
-
-            // PUT /restaurants/{name}/slots
-            if (rawPath.startsWith("/restaurants/")
-                    && rawPath.endsWith("/slots")
-                    && "PUT".equalsIgnoreCase(method)) {
-                updateSlots(ex, rawPath);
-                return;
-            }
-
-            // DELETE /restaurants/{name}/slots?label=... -> delete slot
-            if (rawPath.startsWith("/restaurants/")
-                    && rawPath.endsWith("/slots")
-                    && "DELETE".equalsIgnoreCase(method)) {
-                deleteSlot(ex, rawPath);
-                return;
-            }
+            // Slot management for managers
+            if (rawPath.startsWith("/restaurants/") && rawPath.endsWith("/slots") && "POST".equalsIgnoreCase(method)) {
+                addSlot(ex, rawPath); return; }
+            if (rawPath.startsWith("/restaurants/") && rawPath.endsWith("/slots") && "PUT".equalsIgnoreCase(method)) {
+                updateSlots(ex, rawPath); return; }
+            if (rawPath.startsWith("/restaurants/") && rawPath.endsWith("/slots") && "DELETE".equalsIgnoreCase(method)) {
+                deleteSlot(ex, rawPath); return; }
 
             if (!"GET".equalsIgnoreCase(method)) {
                 sendError(ex, 405, "Method Not Allowed");
                 return;
             }
 
-            // /restaurants
-            if (rawPath.matches("^/restaurants/?$")) {
-                listAll(ex);
-                return;
-            }
-            // /restaurants/filter
-            if (rawPath.matches("^/restaurants/filter/?$")) {
-                filter(ex);
-                return;
-            }
-            // /restaurants/{name}
-            if (rawPath.startsWith("/restaurants/")) {
-                one(ex, rawPath.substring("/restaurants/".length()));
-                return;
-            }
-
-            // /delivery/locations
-            if (rawPath.matches("^/delivery/locations/?$")) {
-                getLocations(ex);
-                return;
-            }
-            // /delivery/slots?restaurant=...
-            if (rawPath.matches("^/delivery/slots/?$")) {
-                getSlots(ex);
-                return;
-            }
+            // Read-only catalog endpoints
+            if (rawPath.matches("^/restaurants/?$")) { listAll(ex); return; }
+            if (rawPath.matches("^/restaurants/filter/?$")) { filter(ex); return; }
+            if (rawPath.startsWith("/restaurants/")) { one(ex, rawPath.substring("/restaurants/".length())); return; }
+            if (rawPath.matches("^/delivery/locations/?$")) { getLocations(ex); return; }
+            if (rawPath.matches("^/delivery/slots/?$")) { getSlots(ex); return; }
 
             sendError(ex, 404, "Not found");
         } catch (Exception e) {
@@ -217,7 +160,7 @@ public class CatalogApiHandler extends BaseHandler {
     }
 
 
-    // Centralized parsing + validation for JSON body containing a dish
+    // Parse dish body and resolve category
     private ParsedDish parseAndValidateDish(HttpExchange ex) throws IOException {
         String ct = ex.getRequestHeaders().getFirst("Content-Type");
         if (ct == null || !ct.contains("application/json")) {
@@ -418,6 +361,8 @@ public class CatalogApiHandler extends BaseHandler {
         }
     }
 
+    // POST /restaurants/{name}/slots
+    // Body JSON: {"start":"yyyy-MM-dd HH:mm","capacity":N}
     private void addSlot(HttpExchange ex, String path) throws IOException {
         String prefix = "/restaurants/";
         String suffix = "/slots";
@@ -637,7 +582,7 @@ public class CatalogApiHandler extends BaseHandler {
     private String slotToJson(domain.DeliverySlot s) {
         return "{"
                 + "\"label\":" + qs(s.getLabel()) + ","
-                + "\"capacity\":" + s.getCapacity()
+                + "\"capacity\":" + s.getRemainingCapacity()
                 + "}";
     }
 

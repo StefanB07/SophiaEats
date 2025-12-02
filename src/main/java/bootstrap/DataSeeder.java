@@ -288,7 +288,7 @@ public final class DataSeeder {
 // Restaurant A – large capacity slots
         delivery.setSlots(restA.getId(), List.of(
                 new DeliverySlot(base, 100),
-                new DeliverySlot(base.plusMinutes(30), 80),
+                new DeliverySlot(base.plusMinutes(30), 10),
                 new DeliverySlot(base.plusMinutes(60), 60)
         ));
 

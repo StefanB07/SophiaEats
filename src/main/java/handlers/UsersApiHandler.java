@@ -20,7 +20,6 @@ public class UsersApiHandler extends BaseHandler {
     public void handle(HttpExchange ex) throws IOException {
         String method = ex.getRequestMethod();
         String rawPath = ex.getRequestURI().getPath();
-        // Accept /users
         String path = rawPath.startsWith("/api/") ? rawPath.substring(4) : rawPath;
 
         try {
