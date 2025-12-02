@@ -103,11 +103,11 @@ VITE_CATALOG_API_BASE=http://localhost:8080
   ```bash
   mvn -q test
   ```
-  
+  Or from the IDE.
 * **Postman**:
-    * We provide a Postman collection: `http/OrderService.postman_collection.json`
+    * We provide a shortened Postman collection: `http/OrderService.postman_collection.json`
     * You can import it and manually trigger the requests you are interested in (with header, for example `X-User-Id: alice@campus`).
-
+    * Mostly a reference - a more complete one is separate.
 ---
 
 ### 3.5 Legacy usage: order loop (O1 / D1)
@@ -529,7 +529,7 @@ Routing summary:
 * **API Gateway (8080)**:
 
     * Forwards all catalog-related paths to 8081.
-    * Forwards `/cart`, `/orders`, `/users` to 8082.
+    * Forwards `/cart`, `/orders`, `/users` (order related paths) to 8082.
 
 ---
 
