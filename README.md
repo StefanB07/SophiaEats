@@ -10,8 +10,8 @@ in line with the official specification (multiservice backend, API gateway, web 
 
 * **Product Owner (PO):** BUCUR Stefan
 * **Software Architect (SA):** ILIESCU Miruna
-* **QA:** CRISTEA Ana
-* **Ops:** NEATA Mihnea
+* **Quality Assurance Engineer (QA):** CRISTEA Ana
+* **Continuous Integration and Repository Manager (Ops):** NEATA Mihnea
 
 ---
 
