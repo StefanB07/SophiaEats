@@ -26,7 +26,7 @@ public abstract class BaseHandler implements HttpHandler {
         }
     }
 
-    // Unified error helper: {"error":"message","status":<code>}
+    // Build a simple {"error":..., "status":...} JSON response
     protected void sendError(HttpExchange ex, int status, String message) throws IOException {
         String json = "{" +
                 "\"error\":\"" + esc(message) + "\"," +

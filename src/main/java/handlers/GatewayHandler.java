@@ -18,6 +18,7 @@ public class GatewayHandler extends BaseHandler {
     public void handle(HttpExchange ex) throws IOException {
         addCorsHeaders(ex);
 
+        // Preflight CORS
         if ("OPTIONS".equalsIgnoreCase(ex.getRequestMethod())) {
             ex.sendResponseHeaders(204, -1);
             ex.close();
@@ -48,7 +49,7 @@ public class GatewayHandler extends BaseHandler {
                         ? HttpRequest.BodyPublishers.ofByteArray(body)
                         : HttpRequest.BodyPublishers.noBody());
 
-        // Forward essential headers + Accept for JSON usage
+        // Forward key headers to backend
         copyHeader(ex, b, "Content-Type");
         copyHeader(ex, b, "Authorization");
         copyHeader(ex, b, "X-User-Id");

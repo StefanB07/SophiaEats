@@ -41,15 +41,15 @@ public class OrderApiHandler extends BaseHandler {
     public void handle(HttpExchange ex) throws IOException {
         String method = ex.getRequestMethod();
         String rawPath = ex.getRequestURI().getPath();
-        // Allow optional /api prefix to avoid SPA route collisions
+        // Allow optional /api prefix so SPA routes (/app) don't clash with API paths
         String path = rawPath.startsWith("/api/") ? rawPath.substring(4) : rawPath;
         try {
-            // Cart endpoints (with or without /api prefix)
+            // Cart endpoints
             if (path.matches("^/cart/?$") && method.equals("GET")) { getCart(ex); return; }
             if (path.matches("^/cart/?$") && method.equals("POST")) { addToCart(ex); return; }
             if (path.matches("^/cart/?$") && method.equals("DELETE")) { clearCart(ex); return; }
             if (path.matches("^/cart/delivery-options/?$") && method.equals("GET")) { getDeliveryOptions(ex); return; }
-            // Backward compatibility: old endpoint /cart/items for adding items
+            // Legacy: old endpoint for adding items
             if (path.matches("^/cart/items/?$") && method.equals("POST")) { addToCart(ex); return; }
 
             // Order endpoints
@@ -76,9 +76,8 @@ public class OrderApiHandler extends BaseHandler {
         sendJson(ex, 200, json);
     }
 
-    // POST /cart
-    // JSON: {"restaurant":"..","dish":"..","qty":N}
-    // Legacy (fallback): dish|qty|restaurant
+    // Request body (JSON): {"restaurant":"..","dish":"..","qty":N}
+    // Legacy text body:    dish|qty|restaurant
     private void addToCart(HttpExchange ex) throws IOException {
         String userId = requireUserId(ex);
         if (userId == null) return;
@@ -112,9 +111,8 @@ public class OrderApiHandler extends BaseHandler {
         sendJson(ex, 201, "{\"userId\":\""+esc(userId)+"\",\"added\":\""+esc(dish.get().getName())+"\",\"qty\":"+qty+"}");
     }
 
-    // POST /orders
-    // JSON: {"deliveryPlace":"..","deliveryTime":"ISO or yyyy-MM-dd HH:mm","paymentMethod":"STUDENT_CREDIT|EXTERNAL"}
-    // Legacy fallback: deliveryPlace|deliveryTime
+    // Request body (JSON): {"deliveryPlace":"..","deliveryTime":"..","paymentMethod":"STUDENT_CREDIT|EXTERNAL"}
+    // Legacy text body:    deliveryPlace|deliveryTime
     private void createOrder(HttpExchange ex) throws IOException {
         String userId = requireUserId(ex);
         if (userId == null) return;
@@ -224,7 +222,7 @@ public class OrderApiHandler extends BaseHandler {
                 .collect(Collectors.joining(","));
 
         String slotsJson = slots.stream()
-                .map(s -> "{\"label\":\"" + esc(s.getLabel()) + "\"}")
+                .map(s -> "{\"label\":\"" + esc(s.getLabel()) + "\",\"capacity\":" + s.getRemainingCapacity() + "}")
                 .collect(Collectors.joining(","));
 
         String json = String.format("{\"locations\":[%s], \"slots\":[%s]}", locationsJson, slotsJson);
@@ -268,7 +266,7 @@ public class OrderApiHandler extends BaseHandler {
         return id.trim();
     }
 
-    // --- Minimal JSON extraction ---
+    // Minimal JSON extraction
     private record AddItemPayload(String restaurant, String dish, int qty) {}
     private static final Pattern P_REST = Pattern.compile("\"restaurant\"\\s*:\\s*\"([^\"]+)\"");
     private static final Pattern P_DISH = Pattern.compile("\"dish\"\\s*:\\s*\"([^\"]+)\"");
@@ -286,7 +284,7 @@ public class OrderApiHandler extends BaseHandler {
         return new AddItemPayload(rest, dish, qty);
     }
 
-    // order payload for JSON createOrder
+    // JSON payload for createOrder
     private record OrderPayload(String deliveryPlace, String deliveryTime, String paymentMethod) {}
 
     private static final Pattern P_PLACE = Pattern.compile("\"deliveryPlace\"\\s*:\\s*\"([^\"]+)\"");
@@ -305,7 +303,7 @@ public class OrderApiHandler extends BaseHandler {
         return new OrderPayload(place, time, method);
     }
 
-    // [NEW] DELETE /cart -> clears current user's cart
+    // DELETE /cart -> clear current user's cart
     private void clearCart(HttpExchange ex) throws IOException {
         String userId = requireUserId(ex);
         if (userId == null) return;

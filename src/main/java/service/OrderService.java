@@ -190,7 +190,8 @@ public class OrderService {
             }
 
             // dacă după rezervare capacitatea a ajuns la 0, scoatem slotul din listă
-            if (slot.getCapacity() <= 0) {
+            // folosim capacitatea rămasă (capacity - reserved) pentru a decide dacă dispare slotul
+            if (slot.getRemainingCapacity() <= 0) {
                 slots.remove(slot);
             }
         }
