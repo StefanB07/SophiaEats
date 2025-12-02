@@ -1,8 +1,8 @@
 # SopiaTech Eats – Team U (2025)
 
-This repository implements a small multi-service food ordering system with a simple API Gateway and a React frontend.
+This repository implements a small multiservice food ordering system with a simple API Gateway and a React frontend.
 The goal is to expose the backend through clean REST APIs, wire an API gateway, and deliver a usable web UI,
-in line with the official specification (multi-service backend, API gateway, web UI).
+in line with the official specification (multiservice backend, API gateway, web UI).
 
 ---
 
@@ -19,10 +19,9 @@ in line with the official specification (multi-service backend, API gateway, web
 
 Backend (Java):
 
-* No external web framework (no Spring, no JAX-RS, etc.)
-* JSON handled manually
+* JSON is handled manually using the Jackson library.
 * Services split into **Catalog** and **Order**, exposed via REST
-* Single **API Gateway** that acts as façade over the services
+* Single **API Gateway** that acts over the services
 
 Frontend (Web):
 
@@ -104,15 +103,10 @@ VITE_CATALOG_API_BASE=http://localhost:8080
   ```bash
   mvn -q test
   ```
-
+  
 * **Postman**:
-
-    * Import `http/OrderService.postman_collection.json`
-    * Run the “Order Service” folder with header, for example:
-
-      ```http
-      X-User-Id: alice@campus
-      ```
+    * We provide a Postman collection: `http/OrderService.postman_collection.json`
+    * You can import it and manually trigger the requests you are interested in (with header, for example `X-User-Id: alice@campus`).
 
 ---
 
@@ -566,7 +560,20 @@ We implement the core **MUST** functionalities of the TD:
 
 ---
 
-## 8. Troubleshooting
+## 8. Additional documentation
+
+For visual illustration of the implemented user flows, please see:
+
+ [Screenshots.md – UI screenshots](./doc/Screenshots.md)
+
+For the team effort breakdown as required in the project specification, see:
+
+ [PointsDistribution.md – Team points distribution](./doc/PointsDistribution.md)
+
+
+---
+
+## 9. Troubleshooting
 
 * **“Connection refused on 8082”**
 
@@ -581,3 +588,5 @@ We implement the core **MUST** functionalities of the TD:
         * Gateway logs
         * Health of Catalog (`/health` on 8081)
         * `VITE_CATALOG_API_BASE` in `.env`.
+
+---

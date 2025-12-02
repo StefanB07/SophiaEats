@@ -47,10 +47,11 @@ public final class DataSeeder {
         // ============================
         // USERS
         // ============================
-        CampusUser user1 = new CampusUser("Alice", "alice@campus", "Dorm A");
-        CampusUser user2 = new CampusUser("Bob", "bob@campus", "Dorm B");
-        CampusUser user3 = new CampusUser("Miruna Iliescu", "miruna@iliescu.com", "Romania");
-        CampusUser user4 = new CampusUser("Stefan", "stefan@campus", "Romania");
+        CampusUser user1 = new CampusUser("Alice", "alice@campus", "France");
+        CampusUser user2 = new CampusUser("Mihnea", "mihnea@campus.fr", "Romania");
+        CampusUser user3 = new CampusUser("Miruna", "miruna@iliescu.com", "Romania");
+        CampusUser user4 = new CampusUser("Stefan", "stefan@campus.fr", "Romania");
+        CampusUser user5 = new CampusUser("Ana", "ana@cristea.com", "France");
 
         user1.assignStudentCredit(new StudentCredit(50.0));
         user2.assignStudentCredit(new StudentCredit(30.0));
@@ -61,6 +62,7 @@ public final class DataSeeder {
         users.save(user2);
         users.save(user3);
         users.save(user4);
+        users.save(user5);
 
         System.out.println(user1);
         System.out.println(user2);
@@ -83,7 +85,6 @@ public final class DataSeeder {
         pizzaMargherita.addDietaryTag(DietaryTag.VEGETARIAN);
         restA.addDishToMenu(pizzaMargherita);
 
-        // IMPORTANT pentru teste → numele EXACT: "Pasta"
         Dish pasta = new Dish(
                 "Pasta",
                 "Fresh pasta with bolognese sauce.",
@@ -190,7 +191,6 @@ public final class DataSeeder {
         buddhaBowl.addDietaryTag(DietaryTag.GLUTEN_FREE);
         restC.addDishToMenu(buddhaBowl);
 
-        // IMPORTANT pentru teste → numele EXACT: "Veggie Burger"
         Dish veggieBurger = new Dish(
                 "Veggie Burger",
                 "Grilled veggie patty with salad & fries.",
@@ -285,33 +285,33 @@ public final class DataSeeder {
 
         LocalDateTime base = nextHalfHourNow();
 
-// Restaurant A – large capacity slots
+        // Restaurant A
         delivery.setSlots(restA.getId(), List.of(
-                new DeliverySlot(base, 100),
+                new DeliverySlot(base, 8),
                 new DeliverySlot(base.plusMinutes(30), 10),
-                new DeliverySlot(base.plusMinutes(60), 60)
+                new DeliverySlot(base.plusMinutes(60), 6)
         ));
 
-// Second Place – slightly shifted
+        // Second Place
         delivery.setSlots(restB.getId(), List.of(
-                new DeliverySlot(base.plusMinutes(15), 60),
-                new DeliverySlot(base.plusMinutes(45), 40)
+                new DeliverySlot(base.plusMinutes(15), 6),
+                new DeliverySlot(base.plusMinutes(45), 4)
         ));
 
-// Green Garden – later lunch
+        // Green Garden
         delivery.setSlots(restC.getId(), List.of(
-                new DeliverySlot(base.plusHours(1), 50),
-                new DeliverySlot(base.plusHours(1).plusMinutes(30), 50)
+                new DeliverySlot(base.plusHours(1), 5),
+                new DeliverySlot(base.plusHours(1).plusMinutes(30), 5)
         ));
 
-// Burger Hub – evening slots
+        // Burger Hub
         delivery.setSlots(restD.getId(), List.of(
-                new DeliverySlot(base.plusHours(4).plusMinutes(15), 80),
-                new DeliverySlot(base.plusHours(4).plusMinutes(45), 80)
+                new DeliverySlot(base.plusHours(4).plusMinutes(15), 8),
+                new DeliverySlot(base.plusHours(4).plusMinutes(45), 8)
         ));
 
         // ============================
-        // RETURN SEED IDS (cele folosite de teste)
+        // RETURN SEED IDS (used in tests)
         // ============================
 
         Seed s = new Seed();
