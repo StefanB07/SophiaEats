@@ -498,9 +498,6 @@ export default function ManagerDashboardPage() {
             <div className="section-header">
                 <div>
                     <h2 className="page-title">Manager dashboard</h2>
-                    <p className="page-subtitle">
-                        Manage restaurant dishes (requirement R4* – add / update menu).
-                    </p>
                 </div>
             </div>
 
@@ -712,7 +709,7 @@ export default function ManagerDashboardPage() {
                         >
                             Use this form to create or update dishes with{" "}
                             <strong>name, description, category, type</strong> and{" "}
-                            <strong>dietary info</strong> (requirement R4*).
+                            <strong>dietary info</strong> .
                         </p>
 
                         <form
