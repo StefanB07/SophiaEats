@@ -56,7 +56,7 @@ jobs:
         env:
           CI: true
         working-directory: frontend
-        run: npm test -- --watchAll=false --if-present
+        run: npm run test --if-present
 
       - name: Frontend build
         working-directory: frontend
@@ -68,6 +68,6 @@ jobs:
         with:
           name: frontend-artifacts
           path: |
-           frontend/build
-           frontend/coverage
+            frontend/dist
+            frontend/coverage
           retention-days: 7
