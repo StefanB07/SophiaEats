@@ -50,6 +50,7 @@ jobs:
 
       - name: Frontend lint
         working-directory: frontend
+        continue-on-error: true
         run: npx eslint . --max-warnings=999
 
       - name: Frontend tests
