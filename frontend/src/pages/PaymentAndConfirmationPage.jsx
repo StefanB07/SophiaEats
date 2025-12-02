@@ -18,7 +18,7 @@ export default function PaymentAndConfirmationPage() {
     const [paymentMethod, setPaymentMethod] = useState("STUDENT_CREDIT");
     const [clientRecap, setClientRecap] = useState(null);
 
-    // Încarc recap-ul clientului (snapshot din momentul plasării comenzii)
+    // Încarc recap-ul clientului
     useEffect(() => {
         if (!orderId) return;
         try {
@@ -100,7 +100,7 @@ export default function PaymentAndConfirmationPage() {
             }
             const data = await resp.json();
 
-            // 🔴 Snapshot client-side (exact cum ai văzut în coș)
+            //  Snapshot client-side
             try {
                 const recapItems = items.map((i) => {
                     const extras =
@@ -158,7 +158,7 @@ export default function PaymentAndConfirmationPage() {
         }
     }
 
-    // === Ramura fără orderId: pagina de Confirm & Pay ===
+    // Ramura fără orderId: pagina de Confirm & Pay
     if (!orderId) {
         return (
             <div>
