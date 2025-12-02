@@ -1,9 +1,9 @@
 # Points distribution (Team U)
 
-- BUCUR Stefan (PO): ../100 
-- ILIESCU Miruna (SA):  ../100
-- CRISTEA Ana (QA): ../100
-- NEATA Mihnea (Ops): ../100
+- BUCUR Stefan (PO): 100/100 
+- ILIESCU Miruna (SA):  100/100
+- CRISTEA Ana (QA): 100/100
+- NEATA Mihnea (Ops): 100/100
 
 A split per service was used during TD4:
 - ILIESCU Miruna  (Catalog): read-only Catalog API (/restaurants, /restaurants/{name}, /restaurants/filter)
