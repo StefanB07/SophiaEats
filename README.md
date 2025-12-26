@@ -8,8 +8,7 @@ in line with the official specification (multiservice backend, API gateway, web 
 
 ## 1. Team members and roles
 
-* **Product Owner (PO):** BUCUR Stefan
-* **Software Architect (SA):** ILIESCU Miruna
+* **Product Owner (PO&SA):** BUCUR Stefan
 * **Quality Assurance Engineer (QA):** CRISTEA Ana
 * **Continuous Integration and Repository Manager (Ops):** NEATA Mihnea
 
@@ -472,7 +471,6 @@ The frontend calls only the **Gateway** (not the services directly), via `VITE_C
         * Restaurant
         * Delivery
     * `Screenshots.md` – screenshots of the UI to visually show the implemented flows.
-    * `PointsDistribution.md` – explains how the team decided to distribute points for grading.
 
 ---
 
@@ -566,9 +564,6 @@ For visual illustration of the implemented user flows, please see:
 
  [Screenshots.md – UI screenshots](./doc/Screenshots.md)
 
-For the team effort breakdown as required in the project specification, see:
-
- [PointsDistribution.md – Team points distribution](./doc/PointsDistribution.md)
 
 
 ---
