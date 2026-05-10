@@ -1,6 +1,4 @@
 package service;
-import repository.interfaces.RestaurantRepository;
-import repository.interfaces.CartRepository;
 
 import domain.order.Cart;
 import domain.catalog.Dish;

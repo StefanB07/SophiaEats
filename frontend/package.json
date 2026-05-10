@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 {
   "name": "frontend",
   "private": true,
@@ -29,6 +30,8 @@
   }
 }
 =======
+=======
+>>>>>>> origin/db_mare_fail
 {
   "name": "frontend",
   "private": true,
@@ -62,4 +65,7 @@
     "vite": "^7.2.2"
   }
 }
+<<<<<<< HEAD
 >>>>>>> 973a4b5ee0724c8af2a79148676bd95c2cbe45ed
+=======
+>>>>>>> origin/db_mare_fail

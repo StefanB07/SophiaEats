@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useEffect, useState } from "react";
 
 const DAYS = [
@@ -251,6 +252,8 @@ export default function ManagerSchedulePanel({ restaurantName }) {
     );
 }
 =======
+=======
+>>>>>>> origin/db_mare_fail
 import { useEffect, useState } from "react";
 import Card from "../components/Card.jsx";
 import Button from "../components/Button.jsx";
@@ -397,4 +400,7 @@ export default function ManagerSchedulePanel({ restaurantName }) {
         </div>
     );
 }
+<<<<<<< HEAD
 >>>>>>> 973a4b5ee0724c8af2a79148676bd95c2cbe45ed
+=======
+>>>>>>> origin/db_mare_fail

@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
@@ -422,6 +423,8 @@ export default function CartAndDeliveryPage() {
     );
 }
 =======
+=======
+>>>>>>> origin/db_mare_fail
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
@@ -700,4 +703,7 @@ export default function CartAndDeliveryPage() {
         </div>
     );
 }
+<<<<<<< HEAD
 >>>>>>> 973a4b5ee0724c8af2a79148676bd95c2cbe45ed
+=======
+>>>>>>> origin/db_mare_fail

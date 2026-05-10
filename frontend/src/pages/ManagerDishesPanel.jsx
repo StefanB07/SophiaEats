@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useEffect, useState } from "react";
 
 const CATALOG_API_BASE = import.meta.env.VITE_CATALOG_API_BASE;
@@ -499,6 +500,8 @@ export default function ManagerDishesPanel({ restaurantName }) {
     );
 }
 =======
+=======
+>>>>>>> origin/db_mare_fail
 import { useEffect, useState } from "react";
 import Button from "../components/Button.jsx";
 import Card from "../components/Card.jsx";
@@ -797,4 +800,7 @@ export default function ManagerDishesPanel({ restaurantName }) {
         </div>
     );
 }
+<<<<<<< HEAD
 >>>>>>> 973a4b5ee0724c8af2a79148676bd95c2cbe45ed
+=======
+>>>>>>> origin/db_mare_fail

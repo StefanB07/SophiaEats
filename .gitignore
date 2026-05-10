@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Compiled class file
 *.class
 
@@ -73,6 +74,8 @@ coverage/
 ehthumbs.db
 Thumbs.db
 =======
+=======
+>>>>>>> origin/db_mare_fail
 # Compiled class file
 *.class
 
@@ -125,5 +128,9 @@ pom.xml.next
 release.properties
 dependency-reduced-pom.xml
 
+<<<<<<< HEAD
 /frontend/node_modules
 >>>>>>> 973a4b5ee0724c8af2a79148676bd95c2cbe45ed
+=======
+/frontend/node_modules
+>>>>>>> origin/db_mare_fail

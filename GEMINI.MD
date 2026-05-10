@@ -25,45 +25,44 @@ Our goal is to apply modern web design principles (vibrant colors, glassmorphism
 
 ## 3. Color Pallete
 
-### UI Color Palette: Coastal Crave
+### UI Color Palette: Midnight Coastal (Dark Theme)
 
-This color palette was designed specifically for **SopiaTech Eats**. It blends a trustworthy coastal navy with warm, appetite-stimulating accents, balanced by clean neutrals to ensure the React interface remains accessible and easy to navigate.
+This color palette is designed for the **SopiaTech Eats** React frontend, utilizing a deep navy background with subtle, lighter line accents. The warm, appetite-stimulating accents have been brightened slightly to ensure they stand out against the dark canvas, maintaining accessibility and a premium feel.
 
-### 1. Brand & Primary Colors
-Used for the core structure of the application, providing a premium and reliable feel.
+### 1. Backgrounds & Surfaces
+The foundation of the app. A dark navy base creates depth, while slightly lighter navy tones are used to elevate cards (like menus) off the background.
 
 | Color Name | Hex Code | Usage |
 | :--- | :--- | :--- |
-| **Deep Sea Navy** | `#1A365D` | Primary brand color (Navbar, footer, primary outlines) |
-| **Ocean Blue** | `#2B6CB0` | Primary hover state and secondary links |
+| **Midnight Navy** | `#0B132B` | Main application background |
+| **Luminescent Line**| `#1C2B54` | The lighter navy blue used for background line accents/grids and structural dividers |
+| **Deep Sea Surface**| `#152243` | Elevated surface color for Restaurant Cards, Menus, and the Cart container |
 
 ### 2. Accent Colors
-Warm, vibrant colors used to stimulate appetite and draw the eye to critical user flows.
+Warm, vibrant colors used to stimulate appetite and guide the user to critical actions. These have been optimized to "pop" on dark backgrounds.
 
 | Color Name | Hex Code | Usage |
 | :--- | :--- | :--- |
 | **Sunset Coral** | `#FF6B6B` | Primary Call-to-Action (Add to Cart, Checkout, Pay) |
-| **Sandstone Gold** | `#F6AD55` | Secondary highlights (Star ratings, delivery slot selection) |
+| **Neon Gold** | `#FBD38D` | Secondary highlights (Star ratings, selected delivery slots, active states) |
+| **Wave Crest Blue** | `#38BDF8` | Secondary interactive elements (Text links, hover states, secondary buttons) |
 
-### 3. Neutrals
-High-contrast backgrounds and typography colors to make menus and cart details highly legible.
+### 3. Typography
+High-contrast text colors to ensure menus, dietary tags, and cart details are highly legible against the dark navy.
 
 | Color Name | Hex Code | Usage |
 | :--- | :--- | :--- |
-| **Seabreeze White**| `#F8FAFC` | Main application background |
-| **Pure White** | `#FFFFFF` | Surface color for Restaurant Cards, Menus, and the Cart |
-| **Slate Dark** | `#0F172A` | Primary text (Headings, restaurant names, dish titles, totals) |
-| **Slate Light** | `#475569` | Secondary text (Descriptions, categories, instructions) |
-| **Border Gray** | `#E2E8F0` | Structural dividers and subtle card borders |
+| **Starlight White** | `#F8FAFC` | Primary text (Headings, restaurant names, dish titles, totals) |
+| **Fog Gray** | `#94A3B8` | Secondary text (Descriptions, categories, subtle instructions) |
 
 ### 4. Semantic Colors
-Colors explicitly mapped to the backend domain objects to visually communicate state.
+Colors explicitly mapped to the backend domain objects to visually communicate state. Adjusted for dark mode visibility.
 
 | Color Name | Hex Code | Associated Backend State |
 | :--- | :--- | :--- |
-| **Mint Green** | `#10B981` | `OrderStatus.CONFIRMED`, Vegetarian/Vegan `DietaryTag` |
-| **Warning Yellow** | `#F59E0B` | `OrderStatus.DRAFT`, low-capacity `DeliverySlot` |
-| **Crimson Alert** | `#EF4444` | `OrderStatus.CANCELLED`, Remove from cart action |
+| **Mint Glow** | `#34D399` | `OrderStatus.CONFIRMED`, Vegetarian/Vegan `DietaryTag` |
+| **Amber Warning** | `#FBBF24` | `OrderStatus.DRAFT`, low-capacity `DeliverySlot` |
+| **Crimson Alert** | `#F87171` | `OrderStatus.CANCELLED`, Remove from cart action |
 
 ---
 

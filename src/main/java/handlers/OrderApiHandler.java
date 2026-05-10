@@ -1,6 +1,5 @@
 package handlers;
-import repository.interfaces.OrderRepository;
-import repository.interfaces.CampusUserRepository;
+
 
 import com.sun.net.httpserver.HttpExchange;
 import domain.order.CampusUser;
@@ -217,7 +216,7 @@ public class OrderApiHandler extends BaseHandler {
         }
 
         var locations = catalog.getAllLocations();
-        java.util.List<domain.DeliverySlot> slots = restaurantName != null ? catalog.getSlotsForRestaurant(restaurantName) : java.util.Collections.emptyList();
+        java.util.List<domain.catalog.DeliverySlot> slots = restaurantName != null ? catalog.getSlotsForRestaurant(restaurantName) : java.util.Collections.emptyList();
 
         String locationsJson = locations.stream()
                 .map(l -> "{\"name\":\"" + esc(l.getName()) + "\"}")
@@ -233,7 +232,24 @@ public class OrderApiHandler extends BaseHandler {
 
     private String orderToJson(Order o, Payment payment) {
         String items = o.getItems().stream()
-                .map(it -> "{\"name\":\""+esc(it.getDish().getName())+"\",\"qty\":"+it.getQuantity()+",\"lineTotal\":"+it.getTotalPrice()+"}")
+                .map(it -> {
+                    // Collect extras into a JSON array of strings or objects, depending on what the frontend expects.
+                    // Assuming frontend might just expect a list of extra names
+                    StringBuilder extrasJson = new StringBuilder("[");
+                    try {
+                        java.lang.reflect.Field extrasField = domain.order.OrderItem.class.getDeclaredField("extraOptions");
+                        extrasField.setAccessible(true);
+                        java.util.List<domain.catalog.ExtraOption> extras = (java.util.List<domain.catalog.ExtraOption>) extrasField.get(it);
+                        if (extras != null) {
+                            extrasJson.append(extras.stream()
+                                    .map(e -> "\"" + esc(e.getName()) + "\"")
+                                    .collect(Collectors.joining(",")));
+                        }
+                    } catch (Exception ignored) {}
+                    extrasJson.append("]");
+
+                    return "{\"name\":\"" + esc(it.getDish().getName()) + "\",\"qty\":" + it.getQuantity() + ",\"lineTotal\":" + it.getTotalPrice() + ",\"extras\":" + extrasJson.toString() + "}";
+                })
                 .collect(Collectors.joining(","));
 
         String paymentJson = payment == null ? "null" :

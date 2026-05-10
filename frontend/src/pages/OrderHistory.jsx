@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext.jsx";
 
@@ -81,6 +82,8 @@ export default function OrderHistory() {
     );
 }
 =======
+=======
+>>>>>>> origin/db_mare_fail
 import { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext.jsx";
 import Card from "../components/Card.jsx";
@@ -180,4 +183,7 @@ export default function OrderHistory() {
         </div>
     );
 }
+<<<<<<< HEAD
 >>>>>>> 973a4b5ee0724c8af2a79148676bd95c2cbe45ed
+=======
+>>>>>>> origin/db_mare_fail

@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
@@ -490,6 +491,8 @@ export default function RestaurantDetailPage() {
     );
 }
 =======
+=======
+>>>>>>> origin/db_mare_fail
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
@@ -657,8 +660,8 @@ export default function RestaurantDetailPage() {
     if (loading) {
         return (
             <div className="py-8">
-                <h2 className="text-3xl font-heading font-bold text-deep-sea-navy mb-2">Restaurant menu</h2>
-                <p className="text-slate-light animate-pulse">Loading restaurant details…</p>
+                <h2 className="text-3xl font-heading font-bold text-starlight-white mb-2">Restaurant menu</h2>
+                <p className="text-fog-gray animate-pulse">Loading restaurant details…</p>
             </div>
         );
     }
@@ -666,11 +669,11 @@ export default function RestaurantDetailPage() {
     if (error || !restaurant) {
         return (
             <div className="py-8 space-y-4">
-                <h2 className="text-3xl font-heading font-bold text-deep-sea-navy mb-2">Restaurant menu</h2>
-                <p className="text-crimson-alert font-medium bg-red-50 p-4 rounded-lg border border-red-200 shadow-sm">
+                <h2 className="text-3xl font-heading font-bold text-starlight-white mb-2">Restaurant menu</h2>
+                <p className="text-crimson-alert font-medium bg-deep-sea-surface p-4 rounded-lg border border-luminescent-line shadow-sm">
                     {error || "No data found for this restaurant."}
                 </p>
-                <Link to="/restaurants" className="inline-flex text-ocean-blue hover:text-deep-sea-navy font-semibold transition-colors">
+                <Link to="/restaurants" className="inline-flex text-wave-crest-blue hover:text-starlight-white font-semibold transition-colors">
                     ← Back to restaurants
                 </Link>
             </div>
@@ -696,68 +699,66 @@ export default function RestaurantDetailPage() {
         <div className="py-8 space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h2 className="text-4xl md:text-5xl font-heading font-bold text-deep-sea-navy mb-3">{restaurant.name}</h2>
-                    <div className="flex items-center gap-3 text-slate-light text-lg font-medium">
-                        <span className="bg-seabreeze-white px-3 py-1 rounded-md border border-border-gray">{restaurant.cuisineType || "N/A"}</span>
-                        <span>·</span>
-                        <span className="text-sandstone-gold">{restaurant.priceRange || "N/A"}</span>
+                    <h2 className="text-4xl md:text-5xl font-heading font-bold text-starlight-white mb-3">{restaurant.name}</h2>
+                    <div className="flex items-center gap-3 text-starlight-white text-lg font-medium">
+                        <span className="bg-midnight-navy px-3 py-1 rounded-md border border-luminescent-line">{restaurant.cuisineType || "N/A"}</span>
+                        <span className="text-fog-gray">·</span>
+                        <span className="text-neon-gold">{restaurant.priceRange || "N/A"}</span>
                     </div>
                 </div>
-                <Link to="/restaurants" className="inline-flex items-center gap-2 text-ocean-blue hover:text-deep-sea-navy font-semibold transition-colors bg-ocean-blue/10 px-4 py-2 rounded-lg hover:bg-ocean-blue/20">
+                <Link to="/restaurants" className="inline-flex items-center gap-2 text-wave-crest-blue hover:text-starlight-white font-semibold transition-colors bg-wave-crest-blue/10 px-4 py-2 rounded-lg hover:bg-wave-crest-blue/20">
                     ← Back to restaurants
                 </Link>
             </div>
 
-            <Card className="flex flex-col gap-6 bg-pure-white/80 backdrop-blur-md border-none ring-1 ring-border-gray/50 shadow-lg">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex-1">
-                        <span className="text-sm font-semibold text-slate-dark uppercase tracking-wider mb-3 block">Filter by category</span>
-                        <div className="flex flex-wrap gap-2">
-                            {availableCategories.map((c) => (
-                                <button
-                                    key={c}
-                                    type="button"
-                                    onClick={() => setActiveCategory(c)}
-                                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                                        activeCategory === c
-                                            ? "bg-deep-sea-navy text-pure-white shadow-md scale-105"
-                                            : "bg-seabreeze-white text-slate-dark hover:bg-border-gray border border-border-gray/50"
+            <Card className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex-1">
+                    <span className="text-sm font-semibold text-fog-gray uppercase tracking-wider mb-3 block">Filter by category</span>
+                    <div className="flex flex-wrap gap-2">
+                        {availableCategories.map((c) => (
+                            <button
+                                key={c}
+                                type="button"
+                                onClick={() => setActiveCategory(c)}
+                                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${activeCategory === c
+                                    ? "bg-wave-crest-blue/20 text-wave-crest-blue border border-wave-crest-blue/30 shadow-md scale-105"
+                                    : "bg-midnight-navy text-starlight-white hover:bg-luminescent-line border border-luminescent-line"
                                     }`}
-                                >
-                                    {c === "ALL" ? "All" : c.replace("_", " ")}
-                                </button>
-                            ))}
-                        </div>
+                            >
+                                {c === "ALL" ? "All" : c.replace("_", " ")}
+                            </button>
+                        ))}
                     </div>
-                    <label className="flex items-center gap-3 cursor-pointer group shrink-0">
-                        <div className="relative flex items-center justify-center">
-                            <input
-                                type="checkbox"
-                                checked={onlyVegetarian}
-                                onChange={(e) => setOnlyVegetarian(e.target.checked)}
-                                className="peer appearance-none w-6 h-6 border-2 border-border-gray rounded-md checked:bg-mint-green checked:border-mint-green transition-colors cursor-pointer"
-                            />
-                            <svg className="absolute w-4 h-4 text-pure-white opacity-0 peer-checked:opacity-100 pointer-events-none" viewBox="0 0 14 10" fill="none">
-                                <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                        </div>
-                        <span className="text-slate-dark font-medium group-hover:text-mint-green transition-colors">Vegetarian only</span>
-                    </label>
                 </div>
-                {addError && (
-                    <div className="bg-crimson-alert/10 text-crimson-alert p-3 rounded-lg border border-crimson-alert/20 font-medium text-sm">
-                        {addError}
+                <label className="flex items-center gap-3 cursor-pointer group shrink-0">
+                    <div className="relative flex items-center justify-center">
+                        <input
+                            type="checkbox"
+                            checked={onlyVegetarian}
+                            onChange={(e) => setOnlyVegetarian(e.target.checked)}
+                            className="peer appearance-none w-6 h-6 border-2 border-luminescent-line bg-midnight-navy rounded-md checked:bg-mint-glow checked:border-mint-glow transition-colors cursor-pointer"
+                        />
+                        <svg className="absolute w-4 h-4 text-midnight-navy opacity-0 peer-checked:opacity-100 pointer-events-none" viewBox="0 0 14 10" fill="none">
+                            <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                     </div>
-                )}
+                    <span className="text-starlight-white font-medium group-hover:text-mint-glow transition-colors">Vegetarian only</span>
+                </label>
             </Card>
 
+            {addError && (
+                <div className="bg-crimson-alert/10 text-crimson-alert p-3 rounded-lg border border-crimson-alert/20 font-medium text-sm">
+                    {addError}
+                </div>
+            )}
+
             <div>
-                <h3 className="text-2xl font-heading font-bold text-deep-sea-navy mb-2">Menu</h3>
-                <p className="text-slate-light mb-6">Choose your dishes and add them to the cart. You can also select extra toppings.</p>
-                
+                <h3 className="text-2xl font-heading font-bold text-starlight-white mb-2">Menu</h3>
+                <p className="text-fog-gray mb-6">Choose your dishes and add them to the cart. You can also select extra toppings.</p>
+
                 {filteredMenu.length === 0 ? (
-                    <div className="text-center py-16 bg-pure-white rounded-2xl border-2 border-dashed border-border-gray shadow-sm">
-                        <p className="text-lg text-slate-light font-medium">No dishes match the selected filters.</p>
+                    <div className="text-center py-16 bg-deep-sea-surface rounded-2xl border-2 border-dashed border-luminescent-line shadow-sm">
+                        <p className="text-lg text-fog-gray font-medium">No dishes match the selected filters.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -770,14 +771,14 @@ export default function RestaurantDetailPage() {
                             const selectedForDish = selectedExtras[dish.name] || [];
 
                             return (
-                                <Card key={dish.name} className="flex flex-col p-0 overflow-hidden hover:shadow-xl transition-shadow duration-300 border-border-gray/60">
-                                    <div className="h-48 overflow-hidden bg-seabreeze-white relative">
+                                <Card key={dish.name} className="flex flex-col p-0 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                                    <div className="h-48 overflow-hidden bg-midnight-navy relative border-b border-luminescent-line">
                                         <img
                                             src={imgSrc}
                                             alt={dish.name}
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
-                                                e.target.src = 'https://placehold.co/600x400/E2E8F0/475569?text=Dish';
+                                                e.target.src = 'https://placehold.co/600x400/0B132B/F8FAFC?text=Dish';
                                             }}
                                         />
                                         <div className="absolute top-3 left-3 flex flex-wrap gap-1">
@@ -789,22 +790,22 @@ export default function RestaurantDetailPage() {
                                             ))}
                                         </div>
                                     </div>
-                                    
+
                                     <div className="p-5 flex flex-col flex-1">
                                         <div className="flex justify-between items-start gap-4 mb-2">
-                                            <h4 className="text-xl font-heading font-bold text-deep-sea-navy leading-tight">{dish.name}</h4>
-                                            <span className="text-lg font-bold text-ocean-blue whitespace-nowrap">
+                                            <h4 className="text-xl font-heading font-bold text-starlight-white leading-tight">{dish.name}</h4>
+                                            <span className="text-lg font-bold text-wave-crest-blue whitespace-nowrap">
                                                 {dish.price != null ? `${dish.price} €` : "N/A"}
                                             </span>
                                         </div>
-                                        
+
                                         {dish.description && (
-                                            <p className="text-sm text-slate-light mb-4 line-clamp-2">{dish.description}</p>
+                                            <p className="text-sm text-fog-gray mb-4 line-clamp-2">{dish.description}</p>
                                         )}
 
                                         {extras.length > 0 && (
-                                            <div className="mt-auto mb-4 bg-seabreeze-white p-3 rounded-lg border border-border-gray/50">
-                                                <div className="text-xs font-semibold text-slate-dark uppercase tracking-wider mb-2">Extra Options</div>
+                                            <div className="mt-auto mb-4 bg-midnight-navy p-3 rounded-lg border border-luminescent-line">
+                                                <div className="text-xs font-semibold text-starlight-white uppercase tracking-wider mb-2">Extra Options</div>
                                                 <div className="flex flex-col gap-2">
                                                     {extras.map((opt) => (
                                                         <label key={opt.id} className="flex items-center justify-between text-sm cursor-pointer group">
@@ -813,25 +814,27 @@ export default function RestaurantDetailPage() {
                                                                     type="checkbox"
                                                                     checked={selectedForDish.includes(opt.id)}
                                                                     onChange={() => toggleExtra(dish.name, opt.id)}
-                                                                    className="w-4 h-4 rounded border-border-gray text-ocean-blue focus:ring-ocean-blue cursor-pointer"
+                                                                    className="w-4 h-4 rounded border-luminescent-line bg-deep-sea-surface text-wave-crest-blue focus:ring-wave-crest-blue cursor-pointer"
                                                                 />
-                                                                <span className="text-slate-dark group-hover:text-ocean-blue transition-colors">{opt.label}</span>
+                                                                <span className="text-starlight-white group-hover:text-wave-crest-blue transition-colors">{opt.label}</span>
                                                             </div>
-                                                            {opt.price != null && <span className="text-slate-light font-medium">+{opt.price.toFixed(1)} €</span>}
+                                                            {opt.price != null && <span className="text-fog-gray font-medium">+{opt.price.toFixed(1)} €</span>}
                                                         </label>
                                                     ))}
                                                 </div>
                                             </div>
                                         )}
 
-                                        <Button
-                                            type="button"
-                                            onClick={() => handleAddToCart(dish)}
-                                            variant={isJustAdded ? "secondary" : "primary"}
-                                            className={`w-full mt-auto ${!extras.length ? 'mt-4' : ''} ${isJustAdded ? 'bg-mint-green text-pure-white hover:bg-mint-green' : ''}`}
-                                        >
-                                            {isJustAdded ? "Added to Cart ✓" : "Add to Cart"}
-                                        </Button>
+                                        <div className="mt-auto pt-4">
+                                            <Button
+                                                type="button"
+                                                onClick={() => handleAddToCart(dish)}
+                                                variant={isJustAdded ? "secondary" : "primary"}
+                                                className={`w-full font-bold transition-all ${isJustAdded ? 'bg-mint-glow text-midnight-navy hover:bg-mint-glow/90 border-none' : 'bg-sunset-coral text-midnight-navy hover:bg-sunset-coral/90 border-none'}`}
+                                            >
+                                                {isJustAdded ? "Added to Cart ✓" : "Add to Cart"}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </Card>
                             );
@@ -842,4 +845,7 @@ export default function RestaurantDetailPage() {
         </div>
     );
 }
+<<<<<<< HEAD
 >>>>>>> 973a4b5ee0724c8af2a79148676bd95c2cbe45ed
+=======
+>>>>>>> origin/db_mare_fail

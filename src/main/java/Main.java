@@ -1,5 +1,6 @@
 import bootstrap.DataSeeder;
-import domain.catalog.*;`nimport domain.order.*;
+import domain.catalog.*;
+import domain.order.*;
 import repository.*;
 import repository.interfaces.*;
 import service.CartService;
@@ -16,11 +17,11 @@ public class Main {
 
     public static void main(String[] args) {
         // Wiring repositories
-        CampusUserRepository users = new repository.InMemoryCampusUserRepository();
-        RestaurantRepository restaurants = new repository.InMemoryRestaurantRepository();
-        CartRepository carts = new repository.InMemoryCartRepository();
-        OrderRepository orders = new repository.InMemoryOrderRepository();
-        DeliveryCatalogRepository delivery = new repository.InMemoryDeliveryCatalogRepository();
+        CampusUserRepository users = new repository.jdbc.JdbcCampusUserRepository();
+        RestaurantRepository restaurants = new repository.jdbc.JdbcRestaurantRepository();
+        CartRepository carts = new repository.jdbc.JdbcCartRepository();
+        OrderRepository orders = new repository.jdbc.JdbcOrderRepository();
+        DeliveryCatalogRepository delivery = new repository.jdbc.JdbcDeliveryCatalogRepository();
 
         // Seed demo data
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
