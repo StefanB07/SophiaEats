@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 :root {
     --bg: #f3f4f6;
     --surface: #ffffff;
@@ -230,3 +231,7 @@ body {
     border-color: var(--primary);
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
+=======
+@import "tailwindcss";
+@config "../tailwind.config.js";
+>>>>>>> 973a4b5ee0724c8af2a79148676bd95c2cbe45ed
