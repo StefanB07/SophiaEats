@@ -1,0 +1,36 @@
+@startuml
+title Activity Diagram - Place Order (Validate Order)
+
+' Aceasta diagrama detaliaza cazul de utilizare "Validate Order"
+' si operatia OrderService.placeOrder()
+'
+' Conform cerintelor (Punctul 9 din rubrica), acest scenariu este validat de 
+' urmatoarele teste JUnit:
+' - OrderServiceTest.placeOrder_reservesCapacity_andCreatesOrder()
+' - OrderServiceTest.placeOrder_rejectsWhenCapacityExceeded()
+
+start
+
+:Receive Cart, Delivery Location, and Delivery Slot;
+
+:Check Delivery Slot Capacity;
+if (Is remainingCapacity >= cart item count?) then (No)
+  :Throw IllegalStateException (Capacity Exceeded);
+  stop
+else (Yes)
+  :Reserve Capacity\n(slot.release());
+  :Create new Order Entity;
+  
+  :Convert CartItems to OrderItems;
+  :Add OrderItems to Order;
+  
+  :Calculate Total Price;
+  :Set OrderStatus to CREATED;
+  
+  :Clear Cart items;
+  
+  :Return Order;
+endif
+
+stop
+@enduml

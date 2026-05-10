@@ -1,8 +1,8 @@
 package unit;
 
-import domain.DietaryTag;
-import domain.Dish;
-import domain.DishCategory;
+import domain.catalog.DietaryTag;
+import domain.catalog.Dish;
+import domain.catalog.DishCategory;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

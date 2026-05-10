@@ -1,8 +1,9 @@
 package service;
 
-import domain.*;
-import repository.DeliveryCatalogRepository;
-import repository.RestaurantRepository;
+import domain.catalog.*;
+import domain.order.*;
+import repository.interfaces.DeliveryCatalogRepository;
+import repository.interfaces.RestaurantRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -64,7 +65,7 @@ public class CatalogService {
 
 
     /**
-     * R2 – Add a new dish to an existing restaurant.
+     * R2 â€“ Add a new dish to an existing restaurant.
      * In-memory only (uses RestaurantRepository).
      */
     public Dish addDishToRestaurant(
@@ -83,25 +84,25 @@ public class CatalogService {
 
         Restaurant r = opt.get();
 
-        // În modelul vostru, ultimul parametru din constructorul Dish este info / composition.
-        // Eu folosesc dietaryInfo dacă e dat, altfel type.
+        // ÃŽn modelul vostru, ultimul parametru din constructorul Dish este info / composition.
+        // Eu folosesc dietaryInfo dacÄƒ e dat, altfel type.
         String info = (dietaryInfo != null && !dietaryInfo.isBlank())
                 ? dietaryInfo
                 : (type != null ? type : "");
 
         Dish dish = new Dish(name, description, price, category, info);
 
-        // În viitor poți să adaugi și tags / toppings aici.
+        // ÃŽn viitor poÈ›i sÄƒ adaugi È™i tags / toppings aici.
         // de exemplu: tags.forEach(dish::addDietaryTag);
 
         r.addDishToMenu(dish);
-        restaurants.save(r); // persistă modificarea în repo-ul in-memory
+        restaurants.save(r); // persistÄƒ modificarea Ã®n repo-ul in-memory
 
         return dish;
     }
 
     /**
-     * R2 – Update an existing dish for a restaurant.
+     * R2 â€“ Update an existing dish for a restaurant.
      * Uses dish name as identifier (unique per restaurant).
      */
     public Dish updateDishForRestaurant(
@@ -133,7 +134,7 @@ public class CatalogService {
                         type != null ? type : d.getType()
                 );
 
-                // TODO: dacă ai tag-uri / toppings pe dish vechi, aici le poți copia pe cel nou.
+                // TODO: dacÄƒ ai tag-uri / toppings pe dish vechi, aici le poÈ›i copia pe cel nou.
 
                 menu.set(i, updated);
                 restaurants.save(r);
@@ -166,7 +167,7 @@ public class CatalogService {
         }
         var restaurant = restOpt.get();
 
-        // Mapăm label -> capacity pentru update rapid
+        // MapÄƒm label -> capacity pentru update rapid
         java.util.Map<String, Integer> newCaps = updates.stream()
                 .collect(java.util.stream.Collectors.toMap(
                         SlotUpdate::label,
@@ -194,4 +195,5 @@ public class CatalogService {
 
 
 }
+
 

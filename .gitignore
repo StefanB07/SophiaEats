@@ -1,3 +1,81 @@
+<<<<<<< HEAD
+<<<<<<< HEAD
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+hs_err_pid*
+
+# Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
+# Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
+.idea/*
+*.iml
+
+# IntelliJ
+out/
+target/
+
+# mpeltonen/sbt-idea plugin
+.idea_modules/
+
+# SonarLint plugin
+.idea/sonarlint/
+
+
+**/*~
+.idea
+**/*.class
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+
+# Frontend (Node.js/Vite)
+node_modules/
+dist/
+build/
+.env
+.env.*
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+=======
+=======
+>>>>>>> origin/db_mare_fail
 # Compiled class file
 *.class
 
@@ -50,4 +128,9 @@ pom.xml.next
 release.properties
 dependency-reduced-pom.xml
 
+<<<<<<< HEAD
 /frontend/node_modules
+>>>>>>> 973a4b5ee0724c8af2a79148676bd95c2cbe45ed
+=======
+/frontend/node_modules
+>>>>>>> origin/db_mare_fail

@@ -1,11 +1,13 @@
 package steps;
 
-import domain.*;
+import domain.catalog.*;
+import domain.order.*;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import repository.*;
+import repository.interfaces.*;
 import service.CartService;
 import service.OrderService;
 import bootstrap.DataSeeder;
@@ -52,11 +54,11 @@ public class OrderBackendSteps {
 
     @Before
     public void setup() {
-        users = new CampusUserRepository();
-        restaurants = new RestaurantRepository();
-        carts = new CartRepository();
-        orders = new OrderRepository();
-        delivery = new DeliveryCatalogRepository();
+        users = new repository.InMemoryCampusUserRepository();
+        restaurants = new repository.InMemoryRestaurantRepository();
+        carts = new repository.InMemoryCartRepository();
+        orders = new repository.InMemoryOrderRepository();
+        delivery = new repository.InMemoryDeliveryCatalogRepository();
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
 
         cartService = new CartService(carts, restaurants);
@@ -535,7 +537,7 @@ public class OrderBackendSteps {
             view.put("orderId", o.getId());
             view.put("status", o.getStatus().name());
             view.put("total", o.getTotal());
-            // IMPORTANT: nu punem payment / method în view-ul de restaurant
+            // IMPORTANT: nu punem payment / method ÃƒÂ®n view-ul de restaurant
             restaurantViewOrders.add(view);
         }
         assertFalse(restaurantViewOrders.isEmpty(), "Restaurant order view is empty");

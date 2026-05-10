@@ -1,10 +1,15 @@
 package service;
+import repository.interfaces.RestaurantRepository;
+import repository.interfaces.OrderRepository;
+import repository.interfaces.DeliveryCatalogRepository;
+import repository.interfaces.CampusUserRepository;
 
-import domain.*;
-import repository.CampusUserRepository;
-import repository.DeliveryCatalogRepository;
-import repository.OrderRepository;
-import repository.RestaurantRepository;
+import domain.catalog.*;
+import domain.order.*;
+import repository.interfaces.CampusUserRepository;
+import repository.interfaces.DeliveryCatalogRepository;
+import repository.interfaces.OrderRepository;
+import repository.interfaces.RestaurantRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -56,3 +61,4 @@ public class OrderDraftService {
         return draft;
     }
 }
+

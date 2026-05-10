@@ -1,9 +1,9 @@
 package unit;
 
-import domain.Dish;
-import domain.DishCategory;
-import domain.ExtraOption;
-import domain.OrderItem;
+import domain.catalog.Dish;
+import domain.catalog.DishCategory;
+import domain.catalog.ExtraOption;
+import domain.order.OrderItem;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

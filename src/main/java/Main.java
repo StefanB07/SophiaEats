@@ -1,6 +1,8 @@
 import bootstrap.DataSeeder;
-import domain.*;
+import domain.catalog.*;
+import domain.order.*;
 import repository.*;
+import repository.interfaces.*;
 import service.CartService;
 import service.OrderService;
 
@@ -15,11 +17,11 @@ public class Main {
 
     public static void main(String[] args) {
         // Wiring repositories
-        CampusUserRepository users = new CampusUserRepository();
-        RestaurantRepository restaurants = new RestaurantRepository();
-        CartRepository carts = new CartRepository();
-        OrderRepository orders = new OrderRepository();
-        DeliveryCatalogRepository delivery = new DeliveryCatalogRepository();
+        CampusUserRepository users = new repository.jdbc.JdbcCampusUserRepository();
+        RestaurantRepository restaurants = new repository.jdbc.JdbcRestaurantRepository();
+        CartRepository carts = new repository.jdbc.JdbcCartRepository();
+        OrderRepository orders = new repository.jdbc.JdbcOrderRepository();
+        DeliveryCatalogRepository delivery = new repository.jdbc.JdbcDeliveryCatalogRepository();
 
         // Seed demo data
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
@@ -366,7 +368,7 @@ public class Main {
         System.out.println("\nRestaurants:");
         int i = 1;
         for (Restaurant r : list) {
-            System.out.printf("%d) %s — %s — %s — %d dishes%n",
+            System.out.printf("%d) %s â€” %s â€” %s â€” %d dishes%n",
                     i++, r.getName(), r.getCuisineType(), r.getPriceRange(), r.getMenu().size());
         }
     }
@@ -407,7 +409,7 @@ public class Main {
         }
         System.out.println("\nCart:");
         for (OrderItem it : cart.getItems()) {
-            System.out.printf("- %dx %s — total %.2f%n", it.getQuantity(), it.getDish().getName(), it.getTotalPrice());
+            System.out.printf("- %dx %s â€” total %.2f%n", it.getQuantity(), it.getDish().getName(), it.getTotalPrice());
         }
         System.out.printf("Total: %.2f%n", cart.calculateTotal());
     }
@@ -530,7 +532,7 @@ public class Main {
     private static void printCartSummary(Order order) {
         System.out.println("Items:");
         for (OrderItem it : order.getItems()) {
-            System.out.printf("- %dx %s — total %.2f%n", it.getQuantity(), it.getDish().getName(), it.getTotalPrice());
+            System.out.printf("- %dx %s â€” total %.2f%n", it.getQuantity(), it.getDish().getName(), it.getTotalPrice());
         }
         System.out.printf("Total: %.2f%n", order.getTotal());
     }
@@ -646,3 +648,4 @@ public class Main {
         return null;
     }
 }
+

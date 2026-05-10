@@ -2,16 +2,16 @@ package support;
 
 import com.sun.net.httpserver.HttpServer;
 import bootstrap.DataSeeder;
-import domain.Dish;
-import domain.DishCategory;
-import domain.Restaurant;
+import domain.catalog.Dish;
+import domain.catalog.DishCategory;
+import domain.catalog.Restaurant;
 import handlers.CatalogApiHandler;
 import handlers.OrderApiHandler;
-import repository.CampusUserRepository;
-import repository.CartRepository;
-import repository.DeliveryCatalogRepository;
-import repository.OrderRepository;
-import repository.RestaurantRepository;
+import repository.interfaces.CampusUserRepository;
+import repository.interfaces.CartRepository;
+import repository.interfaces.DeliveryCatalogRepository;
+import repository.interfaces.OrderRepository;
+import repository.interfaces.RestaurantRepository;
 import service.CartService;
 import service.CatalogService;
 import service.OrderService;
@@ -27,11 +27,11 @@ public final class TestServer {
         if (server != null) return;
         server = HttpServer.create(new InetSocketAddress(0), 0);
 
-        RestaurantRepository restaurantRepo = new RestaurantRepository();
-        CampusUserRepository userRepo = new CampusUserRepository();
-        CartRepository cartRepo = new CartRepository();
-        OrderRepository orderRepo = new OrderRepository();
-        DeliveryCatalogRepository deliveryRepo = new DeliveryCatalogRepository();
+        RestaurantRepository restaurantRepo = new repository.InMemoryRestaurantRepository();
+        CampusUserRepository userRepo = new repository.InMemoryCampusUserRepository();
+        CartRepository cartRepo = new repository.InMemoryCartRepository();
+        OrderRepository orderRepo = new repository.InMemoryOrderRepository();
+        DeliveryCatalogRepository deliveryRepo = new repository.InMemoryDeliveryCatalogRepository();
 
         DataSeeder.resetAndSeed(userRepo, restaurantRepo, cartRepo, orderRepo, deliveryRepo);
 

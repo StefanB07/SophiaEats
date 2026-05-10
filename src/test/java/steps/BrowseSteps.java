@@ -2,18 +2,18 @@
 package steps;
 
 import bootstrap.DataSeeder;
-import domain.DeliveryLocation;
-import domain.Dish;
-import domain.Restaurant;
+import domain.order.DeliveryLocation;
+import domain.catalog.Dish;
+import domain.catalog.Restaurant;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import repository.CampusUserRepository;
-import repository.CartRepository;
-import repository.DeliveryCatalogRepository;
-import repository.OrderRepository;
-import repository.RestaurantRepository;
+import repository.interfaces.CampusUserRepository;
+import repository.interfaces.CartRepository;
+import repository.interfaces.DeliveryCatalogRepository;
+import repository.interfaces.OrderRepository;
+import repository.interfaces.RestaurantRepository;
 import service.OrderService;
 
 import java.time.LocalDateTime;
@@ -23,7 +23,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BrowseSteps {
-    // Minimal backend context for browsing + the “cannot order” check
+    // Minimal backend context for browsing + the Ã¢â‚¬Å“cannot orderÃ¢â‚¬Â check
     private RestaurantRepository restaurants;
     private CartRepository carts;
     private DeliveryCatalogRepository delivery;
@@ -36,11 +36,11 @@ public class BrowseSteps {
     @Before
     public void setup() {
         // Repos needed to seed demo data
-        var users = new CampusUserRepository();
-        restaurants = new RestaurantRepository();
-        carts = new CartRepository();
-        var orders = new OrderRepository();
-        delivery = new DeliveryCatalogRepository();
+        var users = new repository.InMemoryCampusUserRepository();
+        restaurants = new repository.InMemoryRestaurantRepository();
+        carts = new repository.InMemoryCartRepository();
+        var orders = new repository.InMemoryOrderRepository();
+        delivery = new repository.InMemoryDeliveryCatalogRepository();
 
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
 

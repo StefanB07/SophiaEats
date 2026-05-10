@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { handleApiError } from "../utils/apiUtils.js";
 
 const UserContext = createContext(null);
 
@@ -7,7 +8,6 @@ export function UserProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
 
-    // NEW: role state (customer | manager)
     const [role, setRole] = useState(() => {
         try {
             return localStorage.getItem("currentRole") || null;
@@ -18,19 +18,17 @@ export function UserProvider({ children }) {
 
     const apiBase = import.meta.env.VITE_CATALOG_API_BASE || "http://localhost:8080";
 
-    // 1. Fetch users from backend once
     useEffect(() => {
         async function loadUsers() {
             try {
                 const resp = await fetch(`${apiBase}/users`, {
                     headers: { Accept: "application/json" },
                 });
-                if (!resp.ok) throw new Error("HTTP " + resp.status);
+                if (!resp.ok) await handleApiError(resp);
                 const data = await resp.json();
                 setUsers(data);
             } catch (e) {
                 console.error("Failed to load users, falling back to defaults", e);
-                // fallback
                 setUsers([
                     { id: "alice", name: "Alice" },
                     { id: "bob", name: "Bob" },
@@ -43,7 +41,6 @@ export function UserProvider({ children }) {
         loadUsers();
     }, [apiBase]);
 
-    // 2. Initialize currentUser after users are loaded
     useEffect(() => {
         if (loading || users.length === 0) return;
         try {
@@ -55,7 +52,6 @@ export function UserProvider({ children }) {
         }
     }, [loading, users]);
 
-    // 3. Persist currentUser
     useEffect(() => {
         if (!currentUser) return;
         try {
@@ -65,7 +61,6 @@ export function UserProvider({ children }) {
         }
     }, [currentUser]);
 
-    // NEW: persist role
     useEffect(() => {
         if (!role) return;
         try {
@@ -96,7 +91,6 @@ export function UserProvider({ children }) {
     );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useUser() {
     const ctx = useContext(UserContext);
     if (!ctx) throw new Error("useUser must be used within a UserProvider");

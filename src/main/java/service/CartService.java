@@ -1,12 +1,12 @@
 package service;
 
-import domain.Cart;
-import domain.Dish;
-import domain.OrderItem;
-import domain.Restaurant;
-import domain.CampusUser;
-import repository.CartRepository;
-import repository.RestaurantRepository;
+import domain.order.Cart;
+import domain.catalog.Dish;
+import domain.order.OrderItem;
+import domain.catalog.Restaurant;
+import domain.order.CampusUser;
+import repository.interfaces.CartRepository;
+import repository.interfaces.RestaurantRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,3 +71,4 @@ public class CartService {
     }
 
 }
+

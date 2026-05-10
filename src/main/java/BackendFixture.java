@@ -1,13 +1,14 @@
 import repository.*;
+import repository.interfaces.*;
 import service.OrderDraftService;
 import bootstrap.DataSeeder; // added import
 
 public class BackendFixture {
-    public final RestaurantRepository restaurants = new RestaurantRepository();
-    public final CampusUserRepository users = new CampusUserRepository();
-    public final CartRepository carts = new CartRepository();
-    public final OrderRepository orders = new OrderRepository();
-    public final DeliveryCatalogRepository delivery = new DeliveryCatalogRepository();
+    public final RestaurantRepository restaurants = new repository.jdbc.JdbcRestaurantRepository();
+    public final CampusUserRepository users = new repository.jdbc.JdbcCampusUserRepository();
+    public final CartRepository carts = new repository.jdbc.JdbcCartRepository();
+    public final OrderRepository orders = new repository.jdbc.JdbcOrderRepository();
+    public final DeliveryCatalogRepository delivery = new repository.jdbc.JdbcDeliveryCatalogRepository();
 
     public final OrderDraftService orderDraftService =
             new OrderDraftService(restaurants, users, delivery, orders);

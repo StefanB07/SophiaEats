@@ -1,0 +1,47 @@
+@startuml
+title Activity Diagram - Process Payment
+
+' Aceasta diagrama detaliaza cazul de utilizare "Pay for Order"
+' (care include "Pay with Student Credit" si "Pay via External Service")
+' si operatia OrderService.pay()
+'
+' Conform cerintelor (Punctul 9 din rubrica), acest scenariu este validat de 
+' urmatoarele teste JUnit:
+' - OrderServiceTest.pay_studentCredit_deductsBudget_andFailsWhenInsufficient()
+' - OrderServiceTest.pay_external_setsPaidStatus()
+
+start
+
+:Receive Order, Payment Method, and Campus User;
+
+if (Method Type) then (EXTERNAL)
+  :Send request to External Provider;
+  if (External Provider Response?) then (Success)
+    :Set Payment Success = True;
+  else (Failure)
+    :Set Payment Success = False;
+  endif
+
+else (STUDENT_CREDIT)
+  :Check Campus User Student Credit Budget;
+  if (Budget >= Order Total?) then (Yes)
+    :Deduct Total from Budget;
+    :Set Payment Success = True;
+  else (No)
+    :Throw IllegalArgumentException\n(INSUFFICIENT_CREDIT);
+    stop
+  endif
+endif
+
+if (Payment Success == True?) then (Yes)
+  :Link Payment to Order;
+  :Set OrderStatus to PAID;
+  :Set PaidAt Timestamp;
+else (No)
+  :Keep OrderStatus as CREATED;
+endif
+
+:Return Payment object;
+
+stop
+@enduml

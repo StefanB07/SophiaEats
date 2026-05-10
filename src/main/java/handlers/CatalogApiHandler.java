@@ -1,11 +1,11 @@
 package handlers;
 
 import com.sun.net.httpserver.HttpExchange;
-import domain.DeliverySlot;
-import domain.FilterCriteria;
+import domain.catalog.DeliverySlot;
+import domain.catalog.FilterCriteria;
 import service.CatalogService;
-import domain.Dish;
-import domain.DishCategory;
+import domain.catalog.Dish;
+import domain.catalog.DishCategory;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -312,7 +312,7 @@ public class CatalogApiHandler extends BaseHandler {
 
         try {
             catalog.deleteDishForRestaurant(restaurantName, dishName);
-            // 204 No Content ar fi ok, dar dăm 200 cu un mic JSON pt debugging
+            // 204 No Content ar fi ok, dar dÄƒm 200 cu un mic JSON pt debugging
             sendJson(ex, 200, "{\"deleted\":true}");
         } catch (IllegalArgumentException e) {
             sendError(ex, 404, e.getMessage());
@@ -424,7 +424,7 @@ public class CatalogApiHandler extends BaseHandler {
             return;
         }
 
-        // luăm label-ul din query: /restaurants/{name}/slots?label=...
+        // luÄƒm label-ul din query: /restaurants/{name}/slots?label=...
         URI uri = ex.getRequestURI();
         Map<String, String> params = queryToMap(uri.getRawQuery());
 
@@ -528,7 +528,7 @@ public class CatalogApiHandler extends BaseHandler {
     }
 
     // New helper methods to avoid duplicated JSON building
-    private String dishToJson(domain.Dish d) {
+    private String dishToJson(domain.catalog.Dish d) {
         // Build dietaryTags JSON array
         String tagsJson = "[]";
         if (d.getDietaryTags() != null && !d.getDietaryTags().isEmpty()) {
@@ -551,7 +551,7 @@ public class CatalogApiHandler extends BaseHandler {
     }
 
 
-    private String restaurantSummaryJson(domain.Restaurant r) {
+    private String restaurantSummaryJson(domain.catalog.Restaurant r) {
         return "{"
                 + "\"name\":"        + qs(r.getName())        + ","
                 + "\"cuisineType\":" + qs(r.getCuisineType()) + ","
@@ -559,7 +559,7 @@ public class CatalogApiHandler extends BaseHandler {
                 + "}";
     }
 
-    private String restaurantFullJson(domain.Restaurant r) {
+    private String restaurantFullJson(domain.catalog.Restaurant r) {
         var menu = r.getMenu().stream()
                 .map(this::dishToJson)
                 .collect(Collectors.joining(","));
@@ -572,19 +572,20 @@ public class CatalogApiHandler extends BaseHandler {
                 + "}";
     }
 
-    private String locationToJson(domain.DeliveryLocation l) {
+    private String locationToJson(domain.order.DeliveryLocation l) {
         return "{"
                 + "\"name\":" + qs(l.getName()) + ","
                 + "\"description\":" + qs(l.getDescription())
                 + "}";
     }
 
-    private String slotToJson(domain.DeliverySlot s) {
+    private String slotToJson(domain.catalog.DeliverySlot s) {
         return "{"
                 + "\"label\":" + qs(s.getLabel()) + ","
                 + "\"capacity\":" + s.getRemainingCapacity()
                 + "}";
     }
+
 
     private void getLocations(HttpExchange ex) throws IOException {
         var json = "[" + catalog.getAllLocations().stream()
@@ -610,3 +611,4 @@ public class CatalogApiHandler extends BaseHandler {
         sendJson(ex, 200, json);
     }
 }
+

@@ -1,7 +1,7 @@
 package unit;
 
-import domain.Payment;
-import domain.PaymentMethod;
+import domain.order.Payment;
+import domain.order.PaymentMethod;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -1,9 +1,10 @@
 package unit;
 
-import domain.*;
+import domain.catalog.*;
+import domain.order.*;
 import org.junit.jupiter.api.Test;
-import repository.CartRepository;
-import repository.RestaurantRepository;
+import repository.interfaces.CartRepository;
+import repository.interfaces.RestaurantRepository;
 import service.CartService;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,8 +16,8 @@ class CartServiceTest {
 
     @Test
     void listenerCalledOnAddAndClear() {
-        CartRepository cartRepo = new CartRepository();
-        RestaurantRepository restRepo = new RestaurantRepository();
+        CartRepository cartRepo = new repository.InMemoryCartRepository();
+        RestaurantRepository restRepo = new repository.InMemoryRestaurantRepository();
         restRepo.clear();
         Restaurant r = new Restaurant("R", "Italian", "$$");
         Dish d = new Dish("Pizza", "", 10.0, DishCategory.MAIN_COURSE, "");

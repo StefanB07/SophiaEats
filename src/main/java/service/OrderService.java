@@ -1,8 +1,9 @@
 package service;
 
-import domain.*;
-import repository.DeliveryCatalogRepository;
-import repository.RestaurantRepository;
+import domain.catalog.*;
+import domain.order.*;
+import repository.interfaces.DeliveryCatalogRepository;
+import repository.interfaces.RestaurantRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -10,7 +11,7 @@ import java.util.stream.Collectors;
 
 /*
   Service class responsible for handling the business logic related to orders.
-  The OrderService acts as an intermediary between the application’s domain (Cart, Order)
+  The OrderService acts as an intermediary between the applicationâ€™s domain (Cart, Order)
   and the infrastructure layer (HTTP handlers, repositories).
 */
 public class OrderService {
@@ -137,16 +138,16 @@ public class OrderService {
         if (deliveryTime == null || deliveryTime.isBefore(LocalDateTime.now()))
             throw new IllegalArgumentException("Delivery time must be in the future");
 
-        // 1) Validare: locația de livrare trebuie să existe în catalog (dacă avem repo injectat)
+        // 1) Validare: locaÈ›ia de livrare trebuie sÄƒ existe Ã®n catalog (dacÄƒ avem repo injectat)
         if (delivery != null && !delivery.isValidLocation(deliveryPlace.getName())) {
             throw new IllegalArgumentException("Invalid delivery location: " + deliveryPlace);
         }
 
-        // 2) Validare: toate item-ele trebuie să provină dintr-un singur restaurant
+        // 2) Validare: toate item-ele trebuie sÄƒ provinÄƒ dintr-un singur restaurant
         Restaurant sourceRestaurant = null;
         if (restaurants != null) {
             ensureSingleRestaurant(cart.getItems());
-            // determinăm restaurantul sursă folosind primul dish
+            // determinÄƒm restaurantul sursÄƒ folosind primul dish
             sourceRestaurant = findRestaurantByDishOrThrow(cart.getItems().get(0).getDish());
         }
 
@@ -156,10 +157,10 @@ public class OrderService {
                     .mapToInt(OrderItem::getQuantity)
                     .sum();
 
-            // luăm lista de sloturi pentru restaurant (lista reală din repo)
+            // luÄƒm lista de sloturi pentru restaurant (lista realÄƒ din repo)
             List<DeliverySlot> slots = delivery.slotsFor(sourceRestaurant.getId());
 
-            // construim labelul așteptat pentru ora cerută (ex: "13:30-14:00")
+            // construim labelul aÈ™teptat pentru ora cerutÄƒ (ex: "13:30-14:00")
             var end = deliveryTime.plusMinutes(30);
             String requestedLabel = String.format(
                     "%02d:%02d-%02d:%02d",
@@ -167,7 +168,7 @@ public class OrderService {
                     end.getHour(), end.getMinute()
             );
 
-            // căutăm slotul după label, nu după data exactă, ca să nu depindem de zi
+            // cÄƒutÄƒm slotul dupÄƒ label, nu dupÄƒ data exactÄƒ, ca sÄƒ nu depindem de zi
             Optional<DeliverySlot> selectedSlotOpt = slots.stream()
                     .filter(s -> requestedLabel.equals(s.getLabel()))
                     .findFirst();
@@ -178,29 +179,29 @@ public class OrderService {
 
             DeliverySlot slot = selectedSlotOpt.get();
 
-            // verificăm dacă încap toate comenzile în slot
+            // verificÄƒm dacÄƒ Ã®ncap toate comenzile Ã®n slot
             if (!slot.canFit(totalQty)) {
                 throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
             }
 
-            // rezervăm efectiv capacitatea
+            // rezervÄƒm efectiv capacitatea
             boolean reservedOk = slot.reserve(totalQty);
             if (!reservedOk) {
                 throw new IllegalStateException("DELIVERY_SLOT_CAPACITY_EXCEEDED");
             }
 
-            // dacă după rezervare capacitatea a ajuns la 0, scoatem slotul din listă
-            // folosim capacitatea rămasă (capacity - reserved) pentru a decide dacă dispare slotul
+            // dacÄƒ dupÄƒ rezervare capacitatea a ajuns la 0, scoatem slotul din listÄƒ
+            // folosim capacitatea rÄƒmasÄƒ (capacity - reserved) pentru a decide dacÄƒ dispare slotul
             if (slot.getRemainingCapacity() <= 0) {
                 slots.remove(slot);
             }
         }
 
 
-        // 4) creăm efectiv comanda și golim coșul
+        // 4) creÄƒm efectiv comanda È™i golim coÈ™ul
         List<OrderItem> items = List.copyOf(cart.getItems());
         Order order = new Order(items, deliveryPlace, deliveryTime);
-        cart.clear(); // curățăm coșul după plasare
+        cart.clear(); // curÄƒÈ›Äƒm coÈ™ul dupÄƒ plasare
 
         return order;
     }
@@ -259,3 +260,4 @@ public class OrderService {
         Payment process(Order order, CampusUser user);
     }
 }
+

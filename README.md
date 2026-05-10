@@ -1,16 +1,6 @@
-# SopiaTech Eats – Team U (2025)
+## 1. The APP
 
-This repository implements a small multiservice food ordering system with a simple API Gateway and a React frontend.
-The goal is to expose the backend through clean REST APIs, wire an API gateway, and deliver a usable web UI,
-in line with the official specification (multiservice backend, API gateway, web UI).
-
----
-
-## 1. Team members and roles
-
-* **Product Owner (PO&SA):** BUCUR Stefan
-* **Quality Assurance Engineer (QA):** CRISTEA Ana
-* **Continuous Integration and Repository Manager (Ops):** NEATA Mihnea
+The application is a simple food ordering system for a campus environment, allowing users to browse restaurants, view menus, build a cart, and place orders with delivery options. It consists of:
 
 ---
 
@@ -561,7 +551,7 @@ We implement the core **MUST** functionalities of the TD:
 ## 8. Additional documentation
 
 For visual illustration of the implemented user flows, please see:
-
+! THIS IS FROM AN OLDER FRONTEND VERSION
  [Screenshots.md – UI screenshots](./doc/Screenshots.md)
 
 

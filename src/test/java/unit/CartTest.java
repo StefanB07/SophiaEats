@@ -1,6 +1,7 @@
 package unit;
 
-import domain.*;
+import domain.catalog.*;
+import domain.order.*;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

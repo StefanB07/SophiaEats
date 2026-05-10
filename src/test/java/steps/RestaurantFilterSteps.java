@@ -1,10 +1,11 @@
 package steps;
 
-import domain.*;
+import domain.catalog.*;
+import domain.order.*;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import repository.RestaurantRepository;
+import repository.interfaces.RestaurantRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +18,7 @@ public class RestaurantFilterSteps {
 
     @Given("a fresh restaurant repository")
     public void a_fresh_restaurant_repository() {
-        repo = new RestaurantRepository();
+        repo = new repository.InMemoryRestaurantRepository();
         results = null;
     }
 

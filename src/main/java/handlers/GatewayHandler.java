@@ -87,3 +87,4 @@ public class GatewayHandler extends BaseHandler {
         h.set("Access-Control-Max-Age", "3600");
     }
 }
+

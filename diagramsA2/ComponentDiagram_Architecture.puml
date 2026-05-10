@@ -1,0 +1,50 @@
+@startuml
+title Component Diagram - System Architecture
+
+' Aceasta diagrama arata arhitectura de componente a sistemului SophiaTech Eats.
+
+package "Presentation Layer" {
+  [HTTP Handlers (API)] as handlers
+  note right of handlers : OrderApiHandler\nCatalogApiHandler
+}
+
+package "Business Logic Layer" {
+  [OrderService] as orderSvc
+  [CatalogService] as catalogSvc
+  [CartService] as cartSvc
+}
+
+package "Data Access Layer (Repository)" {
+  [OrderRepository] as orderRepo
+  [RestaurantRepository] as restRepo
+  [DeliveryCatalogRepository] as deliveryRepo
+  note bottom of orderRepo : Includes In-Memory\nand JDBC implementations
+}
+
+package "Domain Layer" {
+  [Core Entities] as domain
+  note bottom of domain : Order, Cart, Restaurant,\nCampusUser, DeliverySlot
+}
+
+' Relationships
+handlers --> orderSvc : uses
+handlers --> catalogSvc : uses
+handlers --> cartSvc : uses
+
+orderSvc --> orderRepo : reads/writes
+orderSvc --> deliveryRepo : reads/writes
+orderSvc --> restRepo : reads
+
+catalogSvc --> restRepo : reads/writes
+catalogSvc --> deliveryRepo : reads/writes
+
+cartSvc --> domain : manipulates
+
+orderRepo ..> domain : stores
+restRepo ..> domain : stores
+deliveryRepo ..> domain : stores
+
+orderSvc ..> domain : business rules
+catalogSvc ..> domain : business rules
+
+@enduml

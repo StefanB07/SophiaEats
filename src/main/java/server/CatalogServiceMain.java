@@ -1,12 +1,17 @@
 package server;
+import repository.interfaces.RestaurantRepository;
+import repository.interfaces.OrderRepository;
+import repository.interfaces.DeliveryCatalogRepository;
+import repository.interfaces.CartRepository;
+import repository.interfaces.CampusUserRepository;
 
 import com.sun.net.httpserver.HttpServer;
 import handlers.CatalogApiHandler;
-import repository.RestaurantRepository;
-import repository.CartRepository;
-import repository.OrderRepository;
-import repository.DeliveryCatalogRepository;
-import repository.CampusUserRepository;
+import repository.interfaces.RestaurantRepository;
+import repository.interfaces.CartRepository;
+import repository.interfaces.OrderRepository;
+import repository.interfaces.DeliveryCatalogRepository;
+import repository.interfaces.CampusUserRepository;
 import service.CatalogService;
 import bootstrap.DataSeeder;
 
@@ -18,11 +23,11 @@ public class CatalogServiceMain {
         int port = 8081;
 
         // Repos locale (in-memory)
-        RestaurantRepository restaurantRepository = new RestaurantRepository();
-        CampusUserRepository users = new CampusUserRepository();
-        CartRepository carts = new CartRepository();
-        OrderRepository orders = new OrderRepository();
-        DeliveryCatalogRepository delivery = new DeliveryCatalogRepository();
+        RestaurantRepository restaurantRepository = new repository.InMemoryRestaurantRepository();
+        CampusUserRepository users = new repository.InMemoryCampusUserRepository();
+        CartRepository carts = new repository.InMemoryCartRepository();
+        OrderRepository orders = new repository.InMemoryOrderRepository();
+        DeliveryCatalogRepository delivery = new repository.InMemoryDeliveryCatalogRepository();
 
         // Common data seeding for all services (avoiding divergence)
         DataSeeder.resetAndSeed(users, restaurantRepository, carts, orders, delivery);
@@ -61,4 +66,5 @@ public class CatalogServiceMain {
         server.start();
     }
 }
+
 

@@ -1,0 +1,61 @@
+@startuml
+title Sequence Diagram - Place Order (Clean Focus)
+
+' Aceasta diagrama detaliaza strict scenariul de plasare a unei comenzi (placeOrder)
+' si interactiunea cu entitatile Domain (Cart, DeliverySlot, Order).
+
+actor CampusUser as User
+participant "ui: UI/Handler" as UI
+participant "cart: Cart" as Cart
+participant "orderService: OrderService" as OrderSvc
+participant "deliveryRepo: DeliveryCatalogRepository" as DeliveryRepo
+participant "slot: DeliverySlot" as Slot
+participant "newOrder: Order" as Order
+
+User -> UI: placeOrder(cart, locationName, deliveryTime)
+activate UI
+
+UI -> OrderSvc: placeOrder(cart, locationName, deliveryTime)
+activate OrderSvc
+
+OrderSvc -> DeliveryRepo: findLocation(locationName)
+activate DeliveryRepo
+DeliveryRepo --> OrderSvc: DeliveryLocation
+deactivate DeliveryRepo
+
+OrderSvc -> DeliveryRepo: slotsFor(restaurantId)
+activate DeliveryRepo
+DeliveryRepo --> OrderSvc: List<DeliverySlot>
+deactivate DeliveryRepo
+
+OrderSvc -> Slot: getRemainingCapacity()
+activate Slot
+Slot --> OrderSvc: capacity
+deactivate Slot
+
+alt remainingCapacity >= cart.totalQuantity
+    OrderSvc -> Slot: release(cart.totalQuantity)
+    activate Slot
+    Slot --> OrderSvc: capacity reserved
+    deactivate Slot
+    
+    OrderSvc -> Order ** : new Order(cart, location, time)
+    activate Order
+    Order --> OrderSvc: initialized (status=CREATED)
+    deactivate Order
+    
+    OrderSvc -> Cart: clear()
+    activate Cart
+    Cart --> OrderSvc: items cleared
+    deactivate Cart
+    
+    OrderSvc --> UI: newOrder
+else capacity exceeded
+    OrderSvc --> UI: throws IllegalStateException
+end
+
+deactivate OrderSvc
+UI --> User: display result
+
+deactivate UI
+@enduml

@@ -1,4 +1,9 @@
 package server;
+import repository.interfaces.RestaurantRepository;
+import repository.interfaces.OrderRepository;
+import repository.interfaces.DeliveryCatalogRepository;
+import repository.interfaces.CartRepository;
+import repository.interfaces.CampusUserRepository;
 
 import com.sun.net.httpserver.HttpServer;
 import handlers.OrderApiHandler;
@@ -17,11 +22,11 @@ public class OrderServiceMain {
         int port = 8082;
 
         // Repositories
-        RestaurantRepository restaurants = new RestaurantRepository();
-        CampusUserRepository users = new CampusUserRepository();
-        CartRepository carts = new CartRepository();
-        OrderRepository orders = new OrderRepository();
-        DeliveryCatalogRepository delivery = new DeliveryCatalogRepository();
+        RestaurantRepository restaurants = new repository.InMemoryRestaurantRepository();
+        CampusUserRepository users = new repository.InMemoryCampusUserRepository();
+        CartRepository carts = new repository.InMemoryCartRepository();
+        OrderRepository orders = new repository.InMemoryOrderRepository();
+        DeliveryCatalogRepository delivery = new repository.InMemoryDeliveryCatalogRepository();
 
         // Seed shared demo data
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
