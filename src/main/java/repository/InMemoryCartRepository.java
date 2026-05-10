@@ -24,7 +24,6 @@ public class InMemoryCartRepository implements CartRepository {
         return Optional.ofNullable(carts.get(id));
     }
 
-    // ReturneazÄƒ toate coÈ™urile
     public Collection<Cart> findAll() {
         return carts.values();
     }

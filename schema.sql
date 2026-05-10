@@ -28,6 +28,18 @@ CREATE TABLE dish_extras (
     price DECIMAL(10, 2) NOT NULL
 );
 
+CREATE TABLE carts (
+    id VARCHAR(255) PRIMARY KEY,
+    user_id VARCHAR(255) REFERENCES users(id)
+);
+
+CREATE TABLE cart_items (
+    id VARCHAR(255) PRIMARY KEY,
+    cart_id VARCHAR(255) NOT NULL REFERENCES carts(id),
+    dish_id VARCHAR(255) NOT NULL REFERENCES dishes(id),
+    quantity INT NOT NULL
+);
+
 CREATE TABLE locations (
     id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255) NOT NULL
@@ -66,4 +78,3 @@ CREATE TABLE payments (
     amount DECIMAL(10, 2) NOT NULL,
     is_success BOOLEAN NOT NULL
 );
-

@@ -69,7 +69,6 @@ public class InMemoryDeliveryCatalogRepository implements DeliveryCatalogReposit
         DeliverySlot slot = new DeliverySlot(start, capacity);
         list.add(slot);
 
-        // opÈ›ional: le sortÄƒm dupÄƒ label ca sÄƒ aparÄƒ Ã®ntr-o ordine stabilÄƒ
         list.sort(Comparator.comparing(DeliverySlot::getLabel));
 
         return slot;
