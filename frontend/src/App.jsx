@@ -1,4 +1,4 @@
-import { Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import RestaurantListPage from "./pages/RestaurantListPage.jsx";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage.jsx";
 import CartAndDeliveryPage from "./pages/CartAndDeliveryPage.jsx";
@@ -7,73 +7,17 @@ import OrderHistory from "./pages/OrderHistory.jsx";
 import RoleSelectionPage from "./pages/RoleSelectionPage.jsx";
 import ManagerDashboardPage from "./pages/ManagerDashboardPage.jsx";
 import { useUser } from "./context/UserContext.jsx";
+import Header from "./components/Header.jsx";
+import Footer from "./components/Footer.jsx";
 
 function AppLayout({ children }) {
-    const { role } = useUser();
-    const location = useLocation();
-    const isHome = location.pathname === "/";
-    const isActive = (path) => {
-        if (path === "/") return location.pathname === "/";
-        return location.pathname.startsWith(path);
-    };
-
     return (
-        <div className="min-h-screen bg-seabreeze-white text-slate-dark font-sans flex flex-col">
-            <header className="w-full max-w-7xl mx-auto px-4 py-6">
-                <div className="bg-gradient-to-r from-deep-sea-navy to-ocean-blue text-pure-white rounded-2xl p-4 flex items-center justify-between shadow-xl">
-                    <div className="flex items-center gap-8">
-                        <div className="text-2xl font-heading font-bold tracking-wide">SophiaTech Eats</div>
-                        {!isHome && (
-                            <nav className="flex gap-2">
-                                <Link
-                                    className={`px-4 py-2 rounded-full font-medium transition-all ${isActive("/") ? "bg-pure-white/20 text-pure-white" : "text-pure-white/80 hover:bg-pure-white/10"}`}
-                                    to="/"
-                                >
-                                    Home
-                                </Link>
-                                {role === "customer" && (
-                                    <>
-                                        <Link
-                                            className={`px-4 py-2 rounded-full font-medium transition-all ${isActive("/restaurants") ? "bg-pure-white/20 text-pure-white" : "text-pure-white/80 hover:bg-pure-white/10"}`}
-                                            to="/restaurants"
-                                        >
-                                            Restaurants
-                                        </Link>
-                                        <Link
-                                            className={`px-4 py-2 rounded-full font-medium transition-all ${isActive("/orders") ? "bg-pure-white/20 text-pure-white" : "text-pure-white/80 hover:bg-pure-white/10"}`}
-                                            to="/orders"
-                                        >
-                                            My Orders
-                                        </Link>
-                                    </>
-                                )}
-                                {role === "manager" && (
-                                    <Link
-                                        className={`px-4 py-2 rounded-full font-medium transition-all ${isActive("/manager") ? "bg-pure-white/20 text-pure-white" : "text-pure-white/80 hover:bg-pure-white/10"}`}
-                                        to="/manager"
-                                    >
-                                        Manager
-                                    </Link>
-                                )}
-                            </nav>
-                        )}
-                    </div>
-                    {!isHome && role === "customer" && (
-                        <div className="flex items-center">
-                            <Link to="/cart" className="inline-flex items-center gap-2 bg-pure-white text-slate-dark px-5 py-2.5 rounded-full font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
-                                <span className="text-lg">🛒</span>
-                                Cart
-                            </Link>
-                        </div>
-                    )}
-                </div>
-            </header>
-            <main className="flex-1 w-full max-w-7xl mx-auto px-4 pb-12">
+        <div className="min-h-screen bg-midnight-navy bg-waves text-starlight-white font-sans flex flex-col">
+            <Header />
+            <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
                 {children}
             </main>
-            <footer className="text-center py-6 text-slate-light font-medium">
-                <span>© 2025 – SophiaTech Eats</span>
-            </footer>
+            <Footer />
         </div>
     );
 }
