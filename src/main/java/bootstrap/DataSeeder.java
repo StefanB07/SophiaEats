@@ -76,7 +76,7 @@ public final class DataSeeder {
         System.out.println(user4);
 
         // ============================
-        // RESTAURANT A â€” Italian
+        // RESTAURANT A  Italian
         // ============================
 
         Restaurant restA = new Restaurant("Restaurant A", "Italian", "$$");
@@ -280,7 +280,7 @@ public final class DataSeeder {
         // DELIVERY LOCATIONS
         // ============================
 
-        delivery.addLocation(new DeliveryLocation("BÃ¢t A", "Main entrance"));
+        delivery.addLocation(new DeliveryLocation("Bât A", "Main entrance"));
         delivery.addLocation(new DeliveryLocation("Library", "Front desk"));
         delivery.addLocation(new DeliveryLocation("Cafeteria", "Pickup zone"));
         delivery.addLocation(new DeliveryLocation("Sports Hall", "Side entrance"));

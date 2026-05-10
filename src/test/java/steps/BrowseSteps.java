@@ -9,11 +9,11 @@ import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import repository.CampusUserRepository;
-import repository.CartRepository;
-import repository.DeliveryCatalogRepository;
-import repository.OrderRepository;
-import repository.RestaurantRepository;
+import repository.interfaces.CampusUserRepository;
+import repository.interfaces.CartRepository;
+import repository.interfaces.DeliveryCatalogRepository;
+import repository.interfaces.OrderRepository;
+import repository.interfaces.RestaurantRepository;
 import service.OrderService;
 
 import java.time.LocalDateTime;
@@ -101,10 +101,10 @@ public class BrowseSteps {
         var cart = carts.createCart();
         
 //        Exception ex = assertThrows(IllegalArgumentException.class,
-//                () -> orderService.placeOrder(cart, "BÃƒÂ¢t A", LocalDateTime.now().plusMinutes(30)));
+//                () -> orderService.placeOrder(cart, "Bât A", LocalDateTime.now().plusMinutes(30)));
 //        assertTrue(ex.getMessage().toLowerCase().contains("cart"));
-        DeliveryLocation location = delivery.findLocation("BÃƒÂ¢t A")
-                .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: BÃƒÂ¢t A"));
+        DeliveryLocation location = delivery.findLocation("Bât A")
+                .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: Bât A"));
 
         Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> orderService.placeOrder(cart, location, LocalDateTime.now().plusMinutes(30)));

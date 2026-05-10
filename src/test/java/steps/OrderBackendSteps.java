@@ -1,11 +1,13 @@
 package steps;
 
-import domain.catalog.*;`nimport domain.order.*;
+import domain.catalog.*;
+import domain.order.*;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import repository.*;
+import repository.interfaces.*;
 import service.CartService;
 import service.OrderService;
 import bootstrap.DataSeeder;
@@ -188,7 +190,7 @@ public class OrderBackendSteps {
         assertFalse(slots.isEmpty(), "No delivery slots available for restaurant");
         var when = slots.get(0).getStart();
         // Use a valid seeded location
-        String place = "BÃƒÂ¢t A";
+        String place = "Bât A";
         DeliveryLocation location = delivery.findLocation(place)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: " + place));
         order = orderService.placeOrder(cart, location, when);
@@ -350,7 +352,7 @@ public class OrderBackendSteps {
         var slots = delivery.slotsFor(selectedRestaurant.getId());
         assertFalse(slots.isEmpty(), "No delivery slots available for restaurant");
         var when = slots.get(0).getStart();
-        String place = "BÃƒÂ¢t A";
+        String place = "Bât A";
 
         DeliveryLocation location = delivery.findLocation(place)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: " + place));

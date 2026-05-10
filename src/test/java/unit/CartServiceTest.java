@@ -1,9 +1,10 @@
 package unit;
 
-import domain.catalog.*;`nimport domain.order.*;
+import domain.catalog.*;
+import domain.order.*;
 import org.junit.jupiter.api.Test;
-import repository.CartRepository;
-import repository.RestaurantRepository;
+import repository.interfaces.CartRepository;
+import repository.interfaces.RestaurantRepository;
 import service.CartService;
 
 import java.util.concurrent.atomic.AtomicBoolean;

@@ -41,7 +41,7 @@ target/
 # SonarLint plugin
 .idea/sonarlint/
 
-## From Philippe :-)
+
 **/*~
 .idea
 **/*.class
