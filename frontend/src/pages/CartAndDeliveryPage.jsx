@@ -4,6 +4,7 @@ import { useUser } from "../context/UserContext.jsx";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import Card from "../components/Card.jsx";
+import { handleApiError } from "../utils/apiUtils.js";
 
 export default function CartAndDeliveryPage() {
     const { items, clearCart, deliveryOptions, updateDeliveryOptions } = useCart();
@@ -55,7 +56,7 @@ export default function CartAndDeliveryPage() {
                 });
 
                 if (!resp.ok) {
-                    throw new Error("HTTP " + resp.status);
+                    await handleApiError(resp);
                 }
 
                 const data = await resp.json();
@@ -109,12 +110,12 @@ export default function CartAndDeliveryPage() {
         <div className="py-8 space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h2 className="text-4xl font-heading font-bold text-deep-sea-navy mb-2">Cart & Delivery</h2>
-                    <p className="text-slate-light text-lg">Review your order and choose when and where you want it delivered.</p>
+                    <h2 className="text-4xl font-heading font-bold text-starlight-white mb-2">Cart & Delivery</h2>
+                    <p className="text-fog-gray text-lg">Review your order and choose when and where you want it delivered.</p>
                 </div>
                 <button
                     type="button"
-                    className="inline-flex items-center gap-2 text-ocean-blue hover:text-deep-sea-navy font-semibold transition-colors bg-ocean-blue/10 px-4 py-2 rounded-lg hover:bg-ocean-blue/20"
+                    className="inline-flex items-center gap-2 text-wave-crest-blue hover:text-starlight-white font-semibold transition-colors bg-wave-crest-blue/10 px-4 py-2 rounded-lg hover:bg-wave-crest-blue/20"
                     onClick={() => navigate("/restaurants")}
                 >
                     ← Back to restaurants
@@ -122,9 +123,9 @@ export default function CartAndDeliveryPage() {
             </div>
 
             {!hasItems ? (
-                <Card className="max-w-xl mx-auto text-center py-16 mt-8 border-dashed border-2">
+                <Card className="max-w-xl mx-auto text-center py-16 mt-8 border-dashed border-2 border-luminescent-line bg-deep-sea-surface shadow-md">
                     <div className="text-5xl mb-4">🛒</div>
-                    <p className="text-xl font-heading font-bold text-slate-dark mb-6">Your cart is empty.</p>
+                    <p className="text-xl font-heading font-bold text-starlight-white mb-6">Your cart is empty.</p>
                     <Button
                         type="button"
                         variant="primary"
@@ -135,12 +136,12 @@ export default function CartAndDeliveryPage() {
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    <Card className="lg:col-span-7 flex flex-col gap-6 shadow-lg border-border-gray/50">
-                        <div className="flex items-center justify-between border-b border-border-gray pb-4">
-                            <h3 className="text-2xl font-heading font-bold text-deep-sea-navy">Your Order</h3>
+                    <Card className="lg:col-span-7 flex flex-col gap-6 shadow-lg border-transparent">
+                        <div className="flex items-center justify-between border-b border-luminescent-line pb-4">
+                            <h3 className="text-2xl font-heading font-bold text-starlight-white">Your Order</h3>
                             <button
                                 type="button"
-                                className="text-sm font-medium text-crimson-alert hover:text-red-700 transition-colors bg-crimson-alert/10 px-3 py-1.5 rounded-md hover:bg-crimson-alert/20"
+                                className="text-sm font-medium text-crimson-alert hover:text-starlight-white transition-colors bg-crimson-alert/10 px-3 py-1.5 rounded-md hover:bg-crimson-alert/80"
                                 onClick={clearCart}
                             >
                                 Clear cart
@@ -152,20 +153,20 @@ export default function CartAndDeliveryPage() {
                                 const extras = (item.dish && item.dish.selectedExtras) || item.selectedExtras || item.extraOptions || [];
 
                                 return (
-                                    <li key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border-gray bg-seabreeze-white/50">
+                                    <li key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-luminescent-line bg-midnight-navy">
                                         <div className="flex-1">
                                             <div className="flex items-baseline gap-2">
-                                                <strong className="text-lg font-heading text-slate-dark">{item.dish.name}</strong>
+                                                <strong className="text-lg font-heading text-starlight-white">{item.dish.name}</strong>
                                                 {item.restaurantName && (
-                                                    <span className="text-sm font-medium text-slate-light bg-border-gray/50 px-2 py-0.5 rounded-md">
+                                                    <span className="text-sm font-medium text-fog-gray bg-luminescent-line/50 px-2 py-0.5 rounded-md">
                                                         {item.restaurantName}
                                                     </span>
                                                 )}
                                             </div>
                                             {extras.length > 0 && (
-                                                <div className="text-sm text-slate-light mt-2 flex flex-wrap gap-1">
+                                                <div className="text-sm text-fog-gray mt-2 flex flex-wrap gap-1">
                                                     {extras.map((e, idx) => (
-                                                        <span key={idx} className="bg-pure-white border border-border-gray px-2 py-1 rounded text-xs">
+                                                        <span key={idx} className="bg-deep-sea-surface border border-luminescent-line px-2 py-1 rounded text-xs text-starlight-white">
                                                             {e.label} {e.price != null ? `(+${e.price.toFixed(1)} €)` : ""}
                                                         </span>
                                                     ))}
@@ -173,10 +174,10 @@ export default function CartAndDeliveryPage() {
                                             )}
                                         </div>
                                         <div className="flex items-center gap-4 text-right">
-                                            <div className="text-slate-light font-medium bg-pure-white px-3 py-1 rounded-lg border border-border-gray">
+                                            <div className="text-fog-gray font-medium bg-deep-sea-surface px-3 py-1 rounded-lg border border-luminescent-line">
                                                 Qty: {item.quantity}
                                             </div>
-                                            <div className="text-lg font-bold text-ocean-blue w-20">
+                                            <div className="text-lg font-bold text-wave-crest-blue w-20">
                                                 {item.dish.price != null ? `${(item.dish.price * item.quantity).toFixed(2)} €` : "N/A"}
                                             </div>
                                         </div>
@@ -185,23 +186,23 @@ export default function CartAndDeliveryPage() {
                             })}
                         </ul>
 
-                        <div className="flex items-center justify-between border-t border-border-gray pt-6 mt-2">
-                            <span className="text-xl font-heading font-medium text-slate-dark">Total</span>
+                        <div className="flex items-center justify-between border-t border-luminescent-line pt-6 mt-2">
+                            <span className="text-xl font-heading font-medium text-starlight-white">Total</span>
                             <span className="text-3xl font-heading font-bold text-sunset-coral">
                                 {totalPrice.toFixed(2)} €
                             </span>
                         </div>
                     </Card>
 
-                    <Card className="lg:col-span-5 flex flex-col gap-6 shadow-lg border-border-gray/50 bg-ocean-blue/5">
-                        <div className="border-b border-border-gray/50 pb-4">
-                            <h3 className="text-2xl font-heading font-bold text-deep-sea-navy">Delivery Details</h3>
+                    <Card className="lg:col-span-5 flex flex-col gap-6 shadow-lg border-transparent">
+                        <div className="border-b border-luminescent-line pb-4">
+                            <h3 className="text-2xl font-heading font-bold text-starlight-white">Delivery Details</h3>
                         </div>
 
                         {loading && (
                             <div className="py-8 flex flex-col items-center justify-center gap-4">
-                                <div className="w-8 h-8 border-4 border-ocean-blue border-t-transparent rounded-full animate-spin"></div>
-                                <p className="text-slate-light font-medium animate-pulse">Loading delivery options…</p>
+                                <div className="w-8 h-8 border-4 border-wave-crest-blue border-t-transparent rounded-full animate-spin"></div>
+                                <p className="text-fog-gray font-medium animate-pulse">Loading delivery options…</p>
                             </div>
                         )}
                         
@@ -215,20 +216,26 @@ export default function CartAndDeliveryPage() {
                             <>
                                 {availableLocations.length === 0 || availableSlots.length === 0 ? (
                                     <div className="text-center py-8">
-                                        <p className="text-slate-light font-medium bg-pure-white p-4 rounded-xl border border-border-gray">
+                                        <p className="text-fog-gray font-medium bg-midnight-navy p-4 rounded-xl border border-luminescent-line">
                                             No delivery options available yet for this cart. Try changing the restaurant or dishes.
                                         </p>
                                     </div>
                                 ) : (
                                     <div className="flex flex-col gap-5">
                                         <div className="space-y-2">
-                                            <label className="block text-sm font-semibold text-slate-dark uppercase tracking-wide">
+                                            <label className="block text-sm font-semibold text-starlight-white uppercase tracking-wide">
                                                 Delivery Location
                                             </label>
                                             <select
                                                 value={selectedAddress}
                                                 onChange={(e) => setSelectedAddress(e.target.value)}
-                                                className="w-full px-4 py-3 rounded-xl border-2 border-border-gray bg-pure-white text-slate-dark font-medium focus:border-ocean-blue focus:ring-0 outline-none transition-colors shadow-sm"
+                                                className="appearance-none w-full px-4 pr-12 py-3 rounded-xl border-2 border-luminescent-line bg-midnight-navy text-starlight-white font-medium focus:border-wave-crest-blue focus:ring-0 outline-none transition-colors shadow-sm cursor-pointer"
+                                                style={{
+                                                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23F8FAFC' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                                                    backgroundPosition: 'right 1.25rem center',
+                                                    backgroundRepeat: 'no-repeat',
+                                                    backgroundSize: '1.5em 1.5em'
+                                                }}
                                             >
                                                 <option value="" disabled>-- Select location --</option>
                                                 {availableLocations.map((loc, idx) => (
@@ -238,21 +245,27 @@ export default function CartAndDeliveryPage() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="block text-sm font-semibold text-slate-dark uppercase tracking-wide">
+                                            <label className="block text-sm font-semibold text-starlight-white uppercase tracking-wide">
                                                 Delivery Time Slot
                                             </label>
                                             <select
                                                 value={selectedSlot}
                                                 onChange={(e) => setSelectedSlot(e.target.value)}
-                                                className="w-full px-4 py-3 rounded-xl border-2 border-border-gray bg-pure-white text-slate-dark font-medium focus:border-ocean-blue focus:ring-0 outline-none transition-colors shadow-sm"
+                                                className="appearance-none w-full px-4 pr-12 py-3 rounded-xl border-2 border-luminescent-line bg-midnight-navy text-starlight-white font-medium focus:border-wave-crest-blue focus:ring-0 outline-none transition-colors shadow-sm cursor-pointer"
+                                                style={{
+                                                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23F8FAFC' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                                                    backgroundPosition: 'right 1.25rem center',
+                                                    backgroundRepeat: 'no-repeat',
+                                                    backgroundSize: '1.5em 1.5em'
+                                                }}
                                             >
                                                 <option value="" disabled>-- Select time --</option>
                                                 {availableSlots.map((slot, idx) => (
                                                     <option key={`${slot}-${idx}`} value={slot}>{slot}</option>
                                                 ))}
                                             </select>
-                                            <p className="text-xs text-slate-light font-medium flex items-start gap-1.5 mt-2">
-                                                <span className="text-ocean-blue">ℹ️</span> 
+                                            <p className="text-xs text-fog-gray font-medium flex items-start gap-1.5 mt-2">
+                                                <span className="text-wave-crest-blue">ℹ️</span> 
                                                 Time slots are calculated based on restaurant opening hours and existing order volumes.
                                             </p>
                                         </div>

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { handleApiError } from "../utils/apiUtils.js";
 
 const UserContext = createContext(null);
 
@@ -25,7 +26,7 @@ export function UserProvider({ children }) {
                 const resp = await fetch(`${apiBase}/users`, {
                     headers: { Accept: "application/json" },
                 });
-                if (!resp.ok) throw new Error("HTTP " + resp.status);
+                if (!resp.ok) await handleApiError(resp);
                 const data = await resp.json();
                 setUsers(data);
             } catch (e) {
