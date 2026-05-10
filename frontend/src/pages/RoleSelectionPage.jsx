@@ -55,11 +55,11 @@ export default function RoleSelectionPage() {
     return (
         <div className="min-h-[60vh] flex flex-col items-center justify-center gap-8 py-12 px-4">
             <div className="text-center space-y-4">
-                <h2 className="text-4xl md:text-5xl font-heading font-bold text-starlight-white">
-                    Welcome to SophiaTech Eats{" "}
+                <h2 className="text-4xl md:text-5xl font-heading font-bold text-starlight-white flex flex-col md:flex-row items-center justify-center gap-2 md:gap-3 leading-tight">
+                    <span>Welcome to SophiaTech Eats</span>
                     <span 
                         key={emojiIndex} 
-                        className="inline-block animate-bounce ml-2"
+                        className="inline-block animate-bounce"
                         style={{ animationDuration: '1s' }}
                     >
                         {FOOD_EMOJIS[emojiIndex]}

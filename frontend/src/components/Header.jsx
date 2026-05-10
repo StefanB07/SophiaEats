@@ -23,7 +23,7 @@ export default function Header() {
                     SophiaTech Eats
                 </Link>
 
-                {!isHome && (
+                {!isHome && role === "customer" && (
                     <button 
                         onClick={toggleMenu} 
                         className="md:hidden text-starlight-white p-2 z-50 relative focus:outline-none"
@@ -39,6 +39,13 @@ export default function Header() {
                     </button>
                 )}
 
+                {!isHome && role === "manager" && (
+                    <span className="px-2 py-0.5 text-xs md:text-base md:px-4 md:py-1.5 rounded-full font-medium bg-amber-warning/20 text-amber-warning border border-amber-warning/30 flex items-center gap-1.5 md:gap-2 ml-auto z-50 relative whitespace-nowrap">
+                        <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-amber-warning animate-pulse flex-shrink-0"></span>
+                        Manager Mode
+                    </span>
+                )}
+
                 {!isHome && (
                     <nav className="hidden md:flex items-center gap-4">
                         {role === "customer" && (
@@ -49,48 +56,28 @@ export default function Header() {
                                 <Link className={`px-4 py-2 rounded-full font-medium transition-all ${isActive("/orders") ? "bg-wave-crest-blue/20 text-wave-crest-blue" : "text-starlight-white/80 hover:bg-wave-crest-blue/10 hover:text-wave-crest-blue"}`} to="/orders">
                                     My Orders
                                 </Link>
+                                <Link to="/cart" className="ml-2 inline-flex items-center gap-2 bg-starlight-white text-midnight-navy px-5 py-2.5 rounded-full font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                                    <span className="text-lg">🛒</span>
+                                    Cart
+                                </Link>
                             </>
-                        )}
-                        {role === "manager" && (
-                            <span className="px-4 py-1.5 rounded-full font-medium bg-amber-warning/20 text-amber-warning border border-amber-warning/30 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-amber-warning animate-pulse"></span>
-                                Manager Mode
-                            </span>
-                        )}
-                        {role === "customer" && (
-                            <Link to="/cart" className="ml-2 inline-flex items-center gap-2 bg-starlight-white text-midnight-navy px-5 py-2.5 rounded-full font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
-                                <span className="text-lg">🛒</span>
-                                Cart
-                            </Link>
                         )}
                     </nav>
                 )}
 
-                {!isHome && (
+                {!isHome && role === "customer" && (
                     <div className={`md:hidden fixed inset-0 bg-midnight-navy/95 backdrop-blur-sm z-40 transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                         <nav className="flex flex-col items-center justify-center h-full gap-6 p-4">
-                            {role === "customer" && (
-                                <>
-                                    <Link onClick={toggleMenu} className={`text-xl font-medium ${isActive("/restaurants") ? "text-wave-crest-blue" : "text-starlight-white"}`} to="/restaurants">
-                                        Restaurants
-                                    </Link>
-                                    <Link onClick={toggleMenu} className={`text-xl font-medium ${isActive("/orders") ? "text-wave-crest-blue" : "text-starlight-white"}`} to="/orders">
-                                        My Orders
-                                    </Link>
-                                </>
-                            )}
-                            {role === "manager" && (
-                                <span className="text-xl font-medium text-amber-warning flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-amber-warning animate-pulse"></span>
-                                    Manager Mode
-                                </span>
-                            )}
-                            {role === "customer" && (
-                                <Link onClick={toggleMenu} to="/cart" className="mt-4 inline-flex items-center gap-2 bg-starlight-white text-midnight-navy px-8 py-3 rounded-full font-bold shadow-lg">
-                                    <span className="text-xl">🛒</span>
-                                     Cart
-                                </Link>
-                            )}
+                            <Link onClick={toggleMenu} className={`text-xl font-medium ${isActive("/restaurants") ? "text-wave-crest-blue" : "text-starlight-white"}`} to="/restaurants">
+                                Restaurants
+                            </Link>
+                            <Link onClick={toggleMenu} className={`text-xl font-medium ${isActive("/orders") ? "text-wave-crest-blue" : "text-starlight-white"}`} to="/orders">
+                                My Orders
+                            </Link>
+                            <Link onClick={toggleMenu} to="/cart" className="mt-4 inline-flex items-center gap-2 bg-starlight-white text-midnight-navy px-8 py-3 rounded-full font-bold shadow-lg">
+                                <span className="text-xl">🛒</span>
+                                 Cart
+                            </Link>
                         </nav>
                     </div>
                 )}
