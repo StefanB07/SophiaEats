@@ -1,6 +1,6 @@
 package unit;
 
-import domain.*;
+import domain.catalog.*;`nimport domain.order.*;
 import org.junit.jupiter.api.Test;
 import repository.CartRepository;
 import repository.RestaurantRepository;
@@ -15,8 +15,8 @@ class CartServiceTest {
 
     @Test
     void listenerCalledOnAddAndClear() {
-        CartRepository cartRepo = new CartRepository();
-        RestaurantRepository restRepo = new RestaurantRepository();
+        CartRepository cartRepo = new repository.InMemoryCartRepository();
+        RestaurantRepository restRepo = new repository.InMemoryRestaurantRepository();
         restRepo.clear();
         Restaurant r = new Restaurant("R", "Italian", "$$");
         Dish d = new Dish("Pizza", "", 10.0, DishCategory.MAIN_COURSE, "");

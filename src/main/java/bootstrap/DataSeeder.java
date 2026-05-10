@@ -1,6 +1,11 @@
 package bootstrap;
+import repository.interfaces.RestaurantRepository;
+import repository.interfaces.OrderRepository;
+import repository.interfaces.DeliveryCatalogRepository;
+import repository.interfaces.CartRepository;
+import repository.interfaces.CampusUserRepository;
 
-import domain.*;
+import domain.catalog.*;`nimport domain.order.*;
 import repository.*;
 
 import java.time.LocalDateTime;
@@ -70,7 +75,7 @@ public final class DataSeeder {
         System.out.println(user4);
 
         // ============================
-        // RESTAURANT A — Italian
+        // RESTAURANT A â€” Italian
         // ============================
 
         Restaurant restA = new Restaurant("Restaurant A", "Italian", "$$");
@@ -97,7 +102,7 @@ public final class DataSeeder {
 
         Dish lasagna = new Dish(
                 "Lasagna",
-                "Layers of pasta with ragu and béchamel.",
+                "Layers of pasta with ragu and bÃ©chamel.",
                 12.0,
                 DishCategory.MAIN_COURSE,
                 "Contains gluten"
@@ -127,7 +132,7 @@ public final class DataSeeder {
         System.out.println(restA);
 
         // ============================
-        // RESTAURANT B — Asian
+        // RESTAURANT B â€” Asian
         // ============================
 
         Restaurant restB = new Restaurant("Second Place", "Asian", "$$$");
@@ -175,7 +180,7 @@ public final class DataSeeder {
         System.out.println(restB);
 
         // ============================
-        // RESTAURANT C — Green Garden (Vegetarian)
+        // RESTAURANT C â€” Green Garden (Vegetarian)
         // ============================
 
         Restaurant restC = new Restaurant("Green Garden", "Vegetarian", "$$");
@@ -225,7 +230,7 @@ public final class DataSeeder {
         System.out.println(restC);
 
         // ============================
-        // RESTAURANT D — Burger Hub (Fast food)
+        // RESTAURANT D â€” Burger Hub (Fast food)
         // ============================
 
         Restaurant restD = new Restaurant("Burger Hub", "Fast food", "$");
@@ -274,7 +279,7 @@ public final class DataSeeder {
         // DELIVERY LOCATIONS
         // ============================
 
-        delivery.addLocation(new DeliveryLocation("Bât A", "Main entrance"));
+        delivery.addLocation(new DeliveryLocation("BÃ¢t A", "Main entrance"));
         delivery.addLocation(new DeliveryLocation("Library", "Front desk"));
         delivery.addLocation(new DeliveryLocation("Cafeteria", "Pickup zone"));
         delivery.addLocation(new DeliveryLocation("Sports Hall", "Side entrance"));

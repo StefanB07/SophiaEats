@@ -1,8 +1,8 @@
 package service;
 
-import domain.Order;
-import domain.Payment;
-import domain.PaymentMethod;
+import domain.order.Order;
+import domain.order.Payment;
+import domain.order.PaymentMethod;
 
 public class DummyExternalPaymentProvider implements PaymentProvider {
     @Override
@@ -14,4 +14,5 @@ public class DummyExternalPaymentProvider implements PaymentProvider {
         return p;
     }
 }
+
 

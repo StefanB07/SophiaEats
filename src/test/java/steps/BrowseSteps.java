@@ -2,9 +2,9 @@
 package steps;
 
 import bootstrap.DataSeeder;
-import domain.DeliveryLocation;
-import domain.Dish;
-import domain.Restaurant;
+import domain.order.DeliveryLocation;
+import domain.catalog.Dish;
+import domain.catalog.Restaurant;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -23,7 +23,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BrowseSteps {
-    // Minimal backend context for browsing + the “cannot order” check
+    // Minimal backend context for browsing + the Ã¢â‚¬Å“cannot orderÃ¢â‚¬Â check
     private RestaurantRepository restaurants;
     private CartRepository carts;
     private DeliveryCatalogRepository delivery;
@@ -36,11 +36,11 @@ public class BrowseSteps {
     @Before
     public void setup() {
         // Repos needed to seed demo data
-        var users = new CampusUserRepository();
-        restaurants = new RestaurantRepository();
-        carts = new CartRepository();
-        var orders = new OrderRepository();
-        delivery = new DeliveryCatalogRepository();
+        var users = new repository.InMemoryCampusUserRepository();
+        restaurants = new repository.InMemoryRestaurantRepository();
+        carts = new repository.InMemoryCartRepository();
+        var orders = new repository.InMemoryOrderRepository();
+        delivery = new repository.InMemoryDeliveryCatalogRepository();
 
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
 
@@ -101,10 +101,10 @@ public class BrowseSteps {
         var cart = carts.createCart();
         
 //        Exception ex = assertThrows(IllegalArgumentException.class,
-//                () -> orderService.placeOrder(cart, "Bât A", LocalDateTime.now().plusMinutes(30)));
+//                () -> orderService.placeOrder(cart, "BÃƒÂ¢t A", LocalDateTime.now().plusMinutes(30)));
 //        assertTrue(ex.getMessage().toLowerCase().contains("cart"));
-        DeliveryLocation location = delivery.findLocation("Bât A")
-                .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: Bât A"));
+        DeliveryLocation location = delivery.findLocation("BÃƒÂ¢t A")
+                .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: BÃƒÂ¢t A"));
 
         Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> orderService.placeOrder(cart, location, LocalDateTime.now().plusMinutes(30)));

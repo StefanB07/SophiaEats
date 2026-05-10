@@ -1,6 +1,6 @@
 package unit;
 
-import domain.DeliverySlot;
+import domain.catalog.DeliverySlot;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;

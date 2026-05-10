@@ -1,17 +1,19 @@
 package handlers;
+import repository.interfaces.OrderRepository;
+import repository.interfaces.CampusUserRepository;
 
 import com.sun.net.httpserver.HttpExchange;
-import domain.CampusUser;
-import domain.DeliveryLocation;
-import domain.Dish;
-import domain.Order;
-import domain.Payment;
-import domain.PaymentMethod;
-import repository.CampusUserRepository;
+import domain.order.CampusUser;
+import domain.order.DeliveryLocation;
+import domain.catalog.Dish;
+import domain.order.Order;
+import domain.order.Payment;
+import domain.order.PaymentMethod;
+import repository.interfaces.CampusUserRepository;
 import service.CartService;
 import service.CatalogService;
 import service.OrderService;
-import repository.OrderRepository;
+import repository.interfaces.OrderRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -313,3 +315,4 @@ public class OrderApiHandler extends BaseHandler {
         sendJson(ex, 200, "{\"cleared\":true,\"userId\":\"" + esc(userId) + "\"}");
     }
 }
+

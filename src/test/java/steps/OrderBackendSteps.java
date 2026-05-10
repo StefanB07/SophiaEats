@@ -1,6 +1,6 @@
 package steps;
 
-import domain.*;
+import domain.catalog.*;`nimport domain.order.*;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -52,11 +52,11 @@ public class OrderBackendSteps {
 
     @Before
     public void setup() {
-        users = new CampusUserRepository();
-        restaurants = new RestaurantRepository();
-        carts = new CartRepository();
-        orders = new OrderRepository();
-        delivery = new DeliveryCatalogRepository();
+        users = new repository.InMemoryCampusUserRepository();
+        restaurants = new repository.InMemoryRestaurantRepository();
+        carts = new repository.InMemoryCartRepository();
+        orders = new repository.InMemoryOrderRepository();
+        delivery = new repository.InMemoryDeliveryCatalogRepository();
         DataSeeder.resetAndSeed(users, restaurants, carts, orders, delivery);
 
         cartService = new CartService(carts, restaurants);
@@ -188,7 +188,7 @@ public class OrderBackendSteps {
         assertFalse(slots.isEmpty(), "No delivery slots available for restaurant");
         var when = slots.get(0).getStart();
         // Use a valid seeded location
-        String place = "Bât A";
+        String place = "BÃƒÂ¢t A";
         DeliveryLocation location = delivery.findLocation(place)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: " + place));
         order = orderService.placeOrder(cart, location, when);
@@ -350,7 +350,7 @@ public class OrderBackendSteps {
         var slots = delivery.slotsFor(selectedRestaurant.getId());
         assertFalse(slots.isEmpty(), "No delivery slots available for restaurant");
         var when = slots.get(0).getStart();
-        String place = "Bât A";
+        String place = "BÃƒÂ¢t A";
 
         DeliveryLocation location = delivery.findLocation(place)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid delivery location: " + place));
@@ -535,7 +535,7 @@ public class OrderBackendSteps {
             view.put("orderId", o.getId());
             view.put("status", o.getStatus().name());
             view.put("total", o.getTotal());
-            // IMPORTANT: nu punem payment / method în view-ul de restaurant
+            // IMPORTANT: nu punem payment / method ÃƒÂ®n view-ul de restaurant
             restaurantViewOrders.add(view);
         }
         assertFalse(restaurantViewOrders.isEmpty(), "Restaurant order view is empty");

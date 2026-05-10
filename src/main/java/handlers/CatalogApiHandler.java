@@ -1,11 +1,11 @@
 package handlers;
 
 import com.sun.net.httpserver.HttpExchange;
-import domain.DeliverySlot;
-import domain.FilterCriteria;
+import domain.catalog.DeliverySlot;
+import domain.catalog.FilterCriteria;
 import service.CatalogService;
-import domain.Dish;
-import domain.DishCategory;
+import domain.catalog.Dish;
+import domain.catalog.DishCategory;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -312,7 +312,7 @@ public class CatalogApiHandler extends BaseHandler {
 
         try {
             catalog.deleteDishForRestaurant(restaurantName, dishName);
-            // 204 No Content ar fi ok, dar dăm 200 cu un mic JSON pt debugging
+            // 204 No Content ar fi ok, dar dÄƒm 200 cu un mic JSON pt debugging
             sendJson(ex, 200, "{\"deleted\":true}");
         } catch (IllegalArgumentException e) {
             sendError(ex, 404, e.getMessage());
@@ -424,7 +424,7 @@ public class CatalogApiHandler extends BaseHandler {
             return;
         }
 
-        // luăm label-ul din query: /restaurants/{name}/slots?label=...
+        // luÄƒm label-ul din query: /restaurants/{name}/slots?label=...
         URI uri = ex.getRequestURI();
         Map<String, String> params = queryToMap(uri.getRawQuery());
 
@@ -541,7 +541,7 @@ public class CatalogApiHandler extends BaseHandler {
                 + "\"id\":"          + qs(d.getId()) + ","                                           // id unic
                 + "\"name\":"        + qs(d.getName()) + ","                                         // nume
                 + "\"description\":" + qs(d.getDescription()) + ","                                  // descriere
-                + "\"price\":"       + d.getPrice() + ","                                            // preț
+                + "\"price\":"       + d.getPrice() + ","                                            // preÈ›
                 + "\"category\":"    + (d.getCategory() != null                                      // MAIN_COURSE, STARTER etc.
                 ? qs(d.getCategory().name())
                 : "null") + ","
@@ -610,3 +610,4 @@ public class CatalogApiHandler extends BaseHandler {
         sendJson(ex, 200, json);
     }
 }
+

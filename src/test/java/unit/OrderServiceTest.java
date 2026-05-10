@@ -1,6 +1,6 @@
 package unit;
 
-import domain.*;
+import domain.catalog.*;`nimport domain.order.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import repository.DeliveryCatalogRepository;
@@ -24,8 +24,8 @@ class OrderServiceTest {
 
     @BeforeEach
     void setUp() {
-        restaurants = new RestaurantRepository();
-        delivery = new DeliveryCatalogRepository();
+        restaurants = new repository.InMemoryRestaurantRepository();
+        delivery = new repository.InMemoryDeliveryCatalogRepository();
         orderService = new OrderService(delivery, restaurants);
 
         // clean default and start new

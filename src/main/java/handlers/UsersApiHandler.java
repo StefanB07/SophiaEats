@@ -1,8 +1,9 @@
 package handlers;
+import repository.interfaces.CampusUserRepository;
 
 import com.sun.net.httpserver.HttpExchange;
-import domain.CampusUser;
-import repository.CampusUserRepository;
+import domain.order.CampusUser;
+import repository.interfaces.CampusUserRepository;
 
 import java.io.IOException;
 import java.util.List;
@@ -51,3 +52,4 @@ public class UsersApiHandler extends BaseHandler {
         sendJson(ex, 200, "[" + json + "]");
     }
 }
+

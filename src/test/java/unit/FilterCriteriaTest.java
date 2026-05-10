@@ -1,6 +1,6 @@
 package unit;
 
-import domain.FilterCriteria;
+import domain.catalog.FilterCriteria;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
