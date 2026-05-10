@@ -1,6 +1,5 @@
 package handlers;
-import repository.interfaces.OrderRepository;
-import repository.interfaces.CampusUserRepository;
+
 
 import com.sun.net.httpserver.HttpExchange;
 import domain.order.CampusUser;
@@ -217,7 +216,7 @@ public class OrderApiHandler extends BaseHandler {
         }
 
         var locations = catalog.getAllLocations();
-        java.util.List<domain.DeliverySlot> slots = restaurantName != null ? catalog.getSlotsForRestaurant(restaurantName) : java.util.Collections.emptyList();
+        java.util.List<domain.catalog.DeliverySlot> slots = restaurantName != null ? catalog.getSlotsForRestaurant(restaurantName) : java.util.Collections.emptyList();
 
         String locationsJson = locations.stream()
                 .map(l -> "{\"name\":\"" + esc(l.getName()) + "\"}")

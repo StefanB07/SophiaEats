@@ -1,5 +1,6 @@
 import bootstrap.DataSeeder;
-import domain.catalog.*;`nimport domain.order.*;
+import domain.catalog.*;
+import domain.order.*;
 import repository.*;
 import repository.interfaces.*;
 import service.CartService;

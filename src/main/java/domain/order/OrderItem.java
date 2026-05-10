@@ -1,5 +1,8 @@
 package domain.order;
 
+import domain.catalog.Dish;
+import domain.catalog.ExtraOption;
+
 import java.util.ArrayList;
 import java.util.List;
 

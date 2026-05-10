@@ -528,7 +528,7 @@ public class CatalogApiHandler extends BaseHandler {
     }
 
     // New helper methods to avoid duplicated JSON building
-    private String dishToJson(domain.Dish d) {
+    private String dishToJson(domain.catalog.Dish d) {
         // Build dietaryTags JSON array
         String tagsJson = "[]";
         if (d.getDietaryTags() != null && !d.getDietaryTags().isEmpty()) {
@@ -541,7 +541,7 @@ public class CatalogApiHandler extends BaseHandler {
                 + "\"id\":"          + qs(d.getId()) + ","                                           // id unic
                 + "\"name\":"        + qs(d.getName()) + ","                                         // nume
                 + "\"description\":" + qs(d.getDescription()) + ","                                  // descriere
-                + "\"price\":"       + d.getPrice() + ","                                            // preÈ›
+                + "\"price\":"       + d.getPrice() + ","                                            // preț
                 + "\"category\":"    + (d.getCategory() != null                                      // MAIN_COURSE, STARTER etc.
                 ? qs(d.getCategory().name())
                 : "null") + ","
@@ -551,7 +551,7 @@ public class CatalogApiHandler extends BaseHandler {
     }
 
 
-    private String restaurantSummaryJson(domain.Restaurant r) {
+    private String restaurantSummaryJson(domain.catalog.Restaurant r) {
         return "{"
                 + "\"name\":"        + qs(r.getName())        + ","
                 + "\"cuisineType\":" + qs(r.getCuisineType()) + ","
@@ -559,7 +559,7 @@ public class CatalogApiHandler extends BaseHandler {
                 + "}";
     }
 
-    private String restaurantFullJson(domain.Restaurant r) {
+    private String restaurantFullJson(domain.catalog.Restaurant r) {
         var menu = r.getMenu().stream()
                 .map(this::dishToJson)
                 .collect(Collectors.joining(","));
@@ -572,19 +572,20 @@ public class CatalogApiHandler extends BaseHandler {
                 + "}";
     }
 
-    private String locationToJson(domain.DeliveryLocation l) {
+    private String locationToJson(domain.order.DeliveryLocation l) {
         return "{"
                 + "\"name\":" + qs(l.getName()) + ","
                 + "\"description\":" + qs(l.getDescription())
                 + "}";
     }
 
-    private String slotToJson(domain.DeliverySlot s) {
+    private String slotToJson(domain.catalog.DeliverySlot s) {
         return "{"
                 + "\"label\":" + qs(s.getLabel()) + ","
                 + "\"capacity\":" + s.getRemainingCapacity()
                 + "}";
     }
+
 
     private void getLocations(HttpExchange ex) throws IOException {
         var json = "[" + catalog.getAllLocations().stream()
