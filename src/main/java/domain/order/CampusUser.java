@@ -2,36 +2,17 @@ package domain.order;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
-public class CampusUser {
-    private final String id;
-    private String name;
-    private String email;
+public class CampusUser extends User {
     private String country;
     private StudentCredit studentCredit;
-
-    // NEW: simple order history to record user's orders/payments
     private List<Order> orders;
 
     public CampusUser(String name, String email, String country) {
-        this.id = UUID.randomUUID().toString();
-        this.name = name;
-        this.email = email;
+        super(name, email);
         this.country = country;
-        this.studentCredit = null; // se poate ataÈ™a ulterior
+        this.studentCredit = null;
         this.orders = new ArrayList<>();
-    }
-
-    public String getId() {
-        return id;
-    }
-    public String getName() {
-        return name;
-    }
-
-    public String getEmail() {
-        return email;
     }
 
     public String getCountry() {
@@ -65,11 +46,10 @@ public class CampusUser {
     @Override
     public String toString() {
         return "CampusUser{" +
-                "name='" + name + '\'' +
-                ", email='" + email + '\'' +
+                "name='" + getName() + '\'' +
+                ", email='" + getEmail() + '\'' +
                 ", studentCredit=" + studentCredit +
                 '}';
     }
-
 }
 

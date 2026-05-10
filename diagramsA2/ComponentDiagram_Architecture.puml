@@ -18,6 +18,7 @@ package "Data Access Layer (Repository)" {
   [OrderRepository] as orderRepo
   [RestaurantRepository] as restRepo
   [DeliveryCatalogRepository] as deliveryRepo
+  note bottom of orderRepo : Includes In-Memory\nand JDBC implementations
 }
 
 package "Domain Layer" {

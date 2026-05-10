@@ -28,13 +28,18 @@ LACTOSE_FREE
 }
 
 ' ==== Core domain only essential attributes ====
-class CampusUser {
+abstract class User {
   - id: String
   - name: String
   - email: String
+}
+
+class CampusUser {
   - country: String
   - studentCredit: StudentCredit
 }
+
+User <|-- CampusUser
 class StudentCredit {
  - budget: double
  - blocked: boolean

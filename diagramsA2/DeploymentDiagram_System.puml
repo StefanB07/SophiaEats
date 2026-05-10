@@ -15,11 +15,11 @@ node "Backend Server (e.g. AWS EC2 / Heroku)" as ServerNode {
     
     component "API Handlers"
     component "Services"
-    component "Repositories (In-Memory)"
+    component "Repositories (JDBC / In-Memory)"
     
     [SophiaTech Eats Application] *-- "API Handlers"
     [SophiaTech Eats Application] *-- "Services"
-    [SophiaTech Eats Application] *-- "Repositories (In-Memory)"
+    [SophiaTech Eats Application] *-- "Repositories (JDBC / In-Memory)"
   }
 }
 
