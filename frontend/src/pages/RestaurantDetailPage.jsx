@@ -499,6 +499,7 @@ import { useCart } from "../context/CartContext.jsx";
 import Button from "../components/Button.jsx";
 import Card from "../components/Card.jsx";
 import Badge from "../components/Badge.jsx";
+import { handleApiError } from "../utils/apiUtils.js";
 
 const CATALOG_API_BASE = import.meta.env.VITE_CATALOG_API_BASE;
 
@@ -599,7 +600,7 @@ export default function RestaurantDetailPage() {
                 const url = `${CATALOG_API_BASE}/restaurants/${encodeURIComponent(decodedName)}`;
                 const response = await fetch(url);
                 if (!response.ok) {
-                    throw new Error(`Backend responded with status ${response.status}`);
+                    await handleApiError(response);
                 }
                 const data = await response.json();
                 setRestaurant(data);

@@ -122,57 +122,57 @@ export default function OrderHistory() {
     return (
         <div className="py-8 space-y-8 animate-in fade-in duration-500">
             <div>
-                <h2 className="text-4xl font-heading font-bold text-deep-sea-navy mb-2">My Orders</h2>
-                <p className="text-slate-light text-lg">View your past orders and their status.</p>
+                <h2 className="text-4xl font-heading font-bold text-starlight-white mb-2">My Orders</h2>
+                <p className="text-fog-gray text-lg">View your past orders and their status.</p>
             </div>
 
             {orders.length === 0 ? (
-                <Card className="text-center py-20 border-dashed border-2">
+                <Card className="text-center py-20 border-dashed border-2 border-luminescent-line bg-transparent shadow-none">
                     <div className="text-5xl mb-4">🧾</div>
-                    <p className="text-xl font-heading font-bold text-slate-dark mb-2">No orders yet.</p>
-                    <p className="text-slate-light">When you place an order, it will appear here.</p>
+                    <p className="text-xl font-heading font-bold text-starlight-white mb-2">No orders yet.</p>
+                    <p className="text-fog-gray">When you place an order, it will appear here.</p>
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {orders.map((o) => (
-                        <Card key={o.id} className="flex flex-col p-0 overflow-hidden shadow-md hover:shadow-xl transition-shadow border-border-gray/60">
-                            <div className="bg-seabreeze-white px-6 py-4 border-b border-border-gray/50 flex justify-between items-center">
+                        <Card key={o.id} className="flex flex-col p-0 overflow-hidden shadow-md hover:shadow-xl transition-shadow border-luminescent-line">
+                            <div className="bg-midnight-navy px-6 py-4 border-b border-luminescent-line flex justify-between items-center">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-sm font-semibold text-slate-light uppercase tracking-wider">Order</span>
-                                    <span className="font-heading font-bold text-lg text-deep-sea-navy">#{o.id}</span>
+                                    <span className="text-sm font-semibold text-fog-gray uppercase tracking-wider">Order</span>
+                                    <span className="font-heading font-bold text-lg text-starlight-white">#{o.id}</span>
                                 </div>
                                 <Badge variant={getStatusVariant(o.status || "PAID")} className="shadow-sm">
                                     {String(o.status || "PAID").toUpperCase()}
                                 </Badge>
                             </div>
 
-                            <div className="p-6 flex flex-col flex-1 gap-6">
+                            <div className="p-6 flex flex-col flex-1 gap-6 bg-deep-sea-surface">
                                 <ul className="flex flex-col gap-3">
                                     {(o.items || []).map((it, idx) => (
-                                        <li key={idx} className="flex justify-between items-start border-b border-border-gray/30 pb-3 last:border-0 last:pb-0">
-                                            <span className="font-semibold text-slate-dark">{it.name} <span className="text-slate-light font-normal text-sm">× {it.qty ?? 1}</span></span>
-                                            <span className="font-medium text-ocean-blue">{it.lineTotal?.toFixed(2) || "0.00"} €</span>
+                                        <li key={idx} className="flex justify-between items-start border-b border-luminescent-line pb-3 last:border-0 last:pb-0">
+                                            <span className="font-semibold text-starlight-white">{it.name} <span className="text-fog-gray font-normal text-sm">× {it.qty ?? 1}</span></span>
+                                            <span className="font-medium text-wave-crest-blue">{it.lineTotal?.toFixed(2) || "0.00"} €</span>
                                         </li>
                                     ))}
                                 </ul>
 
-                                <div className="grid grid-cols-2 gap-4 bg-ocean-blue/5 p-4 rounded-xl mt-auto">
+                                <div className="grid grid-cols-2 gap-4 bg-midnight-navy p-4 rounded-xl mt-auto border border-luminescent-line">
                                     <div className="flex flex-col gap-1">
-                                        <span className="text-xs font-semibold text-slate-light uppercase tracking-wider">Location</span>
-                                        <span className="font-medium text-slate-dark text-sm">{o.deliveryPlace || "N/A"}</span>
+                                        <span className="text-xs font-semibold text-fog-gray uppercase tracking-wider">Location</span>
+                                        <span className="font-medium text-starlight-white text-sm">{o.deliveryPlace || "N/A"}</span>
                                     </div>
                                     <div className="flex flex-col gap-1">
-                                        <span className="text-xs font-semibold text-slate-light uppercase tracking-wider">Time</span>
-                                        <span className="font-medium text-slate-dark text-sm">{(o.deliveryTime || "").replace("T", " ") || "N/A"}</span>
+                                        <span className="text-xs font-semibold text-fog-gray uppercase tracking-wider">Time</span>
+                                        <span className="font-medium text-starlight-white text-sm">{(o.deliveryTime || "").replace("T", " ") || "N/A"}</span>
                                     </div>
                                     <div className="flex flex-col gap-1 col-span-2">
-                                        <span className="text-xs font-semibold text-slate-light uppercase tracking-wider">Payment Method</span>
-                                        <span className="font-medium text-slate-dark text-sm">{formatPayment(o.payment?.method || o.paymentMethod)}</span>
+                                        <span className="text-xs font-semibold text-fog-gray uppercase tracking-wider">Payment Method</span>
+                                        <span className="font-medium text-starlight-white text-sm">{formatPayment(o.payment?.method || o.paymentMethod)}</span>
                                     </div>
                                 </div>
 
-                                <div className="flex justify-between items-center pt-2 border-t border-border-gray">
-                                    <span className="text-lg font-heading font-medium text-slate-dark">Total</span>
+                                <div className="flex justify-between items-center pt-2 border-t border-luminescent-line">
+                                    <span className="text-lg font-heading font-medium text-starlight-white">Total</span>
                                     <span className="text-2xl font-heading font-bold text-sunset-coral">{Number(o.total || 0).toFixed(2)} €</span>
                                 </div>
                             </div>

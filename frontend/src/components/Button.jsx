@@ -1,10 +1,10 @@
 export default function Button({ children, variant = "primary", className = "", ...props }) {
-  const baseClasses = "px-4 py-2 rounded-lg font-medium transition-colors duration-200 inline-flex items-center justify-center";
+  const baseClasses = "px-4 py-2 rounded-lg font-bold transition-all duration-200 inline-flex items-center justify-center border-none";
   const variants = {
-    primary: "bg-sunset-coral text-pure-white hover:bg-red-500",
-    secondary: "bg-border-gray text-slate-dark hover:bg-gray-300",
-    outline: "border-2 border-deep-sea-navy text-deep-sea-navy hover:bg-deep-sea-navy hover:text-pure-white",
-    danger: "bg-crimson-alert text-pure-white hover:bg-red-600",
+    primary: "bg-sunset-coral text-midnight-navy hover:bg-sunset-coral/90 shadow-md hover:shadow-lg",
+    secondary: "bg-luminescent-line text-starlight-white hover:bg-luminescent-line/80",
+    outline: "border-2 border-wave-crest-blue text-wave-crest-blue hover:bg-wave-crest-blue hover:text-midnight-navy",
+    danger: "bg-crimson-alert text-starlight-white hover:bg-crimson-alert/90 shadow-md hover:shadow-lg",
   };
 
   return (
