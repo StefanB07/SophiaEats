@@ -4,8 +4,6 @@ import { useUser } from "./UserContext.jsx";
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-    // items = [{ key, restaurantName, dish, quantity }]
-    // keep carts per user id: { [userId]: items[] }
     const [carts, setCarts] = useState(() => {
         try {
             return JSON.parse(localStorage.getItem("carts") || "{}");
@@ -15,7 +13,6 @@ export function CartProvider({ children }) {
         }
     });
 
-    // [NEW] State to hold delivery options (location & slot)
     const [deliveryInfo, setDeliveryInfo] = useState(() => {
         try {
             return JSON.parse(localStorage.getItem("deliveryInfo") || "{}");
@@ -26,7 +23,6 @@ export function CartProvider({ children }) {
 
     const { currentUser } = useUser();
 
-    // derive current user's items (empty array if none)
     const items = carts[currentUser] ?? [];
 
     useEffect(() => {
@@ -37,7 +33,6 @@ export function CartProvider({ children }) {
         }
     }, [carts]);
 
-    // [NEW] Persist delivery info when it changes
     useEffect(() => {
         try {
             localStorage.setItem("deliveryInfo", JSON.stringify(deliveryInfo));
@@ -46,7 +41,6 @@ export function CartProvider({ children }) {
         }
     }, [deliveryInfo]);
 
-    // [NEW] Helper to update delivery info (partial updates allowed)
     function updateDelivery(info) {
         setDeliveryInfo((prev) => ({ ...prev, ...info }));
     }
@@ -84,7 +78,6 @@ export function CartProvider({ children }) {
                 ];
             }
 
-            // Fire-and-forget backend sync (POST /cart)
             try {
                 fetch("/api/cart", {
                     method: "POST",
@@ -98,10 +91,8 @@ export function CartProvider({ children }) {
                         qty: 1,
                     }),
                 }).catch(() => {
-                    /* ignore for now */
                 });
             } catch {
-                /* ignore */
             }
 
             return { ...prev, [currentUser]: newUserCart };
@@ -116,9 +107,8 @@ export function CartProvider({ children }) {
             fetch('/api/cart', {
                 method: 'DELETE',
                 headers: { 'X-User-Id': currentUser }
-            }).catch(() => { /* ignore network error; local state cleared */ });
+            }).catch(() => {  });
         } catch {
-            /* ignore */
         }
     }
 
@@ -126,14 +116,12 @@ export function CartProvider({ children }) {
         setDeliveryInfo({});
     }
 
-    // Provide both original keys and aliases expected by CartAndDeliveryPage
     const value = {
         items,
         addItem,
         clearCart,
         deliveryInfo,
         updateDelivery,
-        // aliases for backward compatibility / current page expectations
         deliveryOptions: deliveryInfo,
         updateDeliveryOptions: (address, slot) => updateDelivery({ address, slot }),
         resetDeliveryOptions
@@ -142,7 +130,6 @@ export function CartProvider({ children }) {
     return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useCart() {
     const ctx = useContext(CartContext);
     if (!ctx) {
