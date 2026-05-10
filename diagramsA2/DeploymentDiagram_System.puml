@@ -1,0 +1,34 @@
+@startuml
+title Deployment Diagram - SophiaTech Eats
+
+' Aceasta diagrama descrie arhitectura de deployment (infrastructura fizica/logica).
+
+node "User Device (Smartphone / Laptop)" as ClientNode {
+  node "Web Browser / Mobile App" {
+    [Frontend UI]
+  }
+}
+
+node "Backend Server (e.g. AWS EC2 / Heroku)" as ServerNode {
+  node "Java Virtual Machine (JVM)" {
+    [SophiaTech Eats Application]
+    
+    component "API Handlers"
+    component "Services"
+    component "Repositories (In-Memory)"
+    
+    [SophiaTech Eats Application] *-- "API Handlers"
+    [SophiaTech Eats Application] *-- "Services"
+    [SophiaTech Eats Application] *-- "Repositories (In-Memory)"
+  }
+}
+
+cloud "External Services" as ExternalNode {
+  [External Payment Gateway (e.g. Stripe)] as Stripe
+}
+
+' Connections
+ClientNode <--> ServerNode : HTTP/REST over TCP/IP
+ServerNode --> ExternalNode : HTTPS (Payment Verification)
+
+@enduml

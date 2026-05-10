@@ -1,0 +1,31 @@
+@startuml
+title State Diagram - Order Class Lifecycle
+
+' Aceasta diagrama descrie starile clasei "Order" pe baza enum-ului "OrderStatus".
+' (Conform precizarilor din rubrica pentru diagrama de stare).
+
+[*] --> CREATED : Order placed successfully
+
+state CREATED {
+  CREATED : entry / Initialize total and items
+  CREATED : do / Wait for payment
+}
+
+CREATED --> PAID : User processes payment successfully (OrderService.pay)
+CREATED --> CANCELLED : Payment failed / User cancels
+
+state PAID {
+  PAID : entry / Set paidAt timestamp
+  PAID : do / Wait for restaurant preparation and delivery
+}
+
+PAID --> DELIVERED : Order physically delivered (OrderService.markAsDelivered)
+
+state DELIVERED {
+  DELIVERED : entry / Set deliveredAt timestamp
+}
+
+DELIVERED --> [*]
+CANCELLED --> [*]
+
+@enduml

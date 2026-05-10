@@ -1,0 +1,38 @@
+@startuml
+title Activity Diagram - Filter Restaurants
+
+' Aceasta diagrama detaliaza cazul de utilizare "Filter Restaurants"
+' si operatia RestaurantFilters.filter()
+'
+' Conform cerintelor (Punctul 9 din rubrica), acest scenariu este validat de 
+' urmatoarele teste JUnit:
+' - RestaurantFiltersTest.filterByCuisineAndAvailability()
+' - RestaurantFiltersTest.filterByDietaryTagAndPrice()
+
+start
+
+:Receive List of Restaurants and FilterCriteria;
+
+:Initialize an empty Output List;
+
+while (More Restaurants in List?) is (Yes)
+  :Get Next Restaurant;
+  
+  if (Criteria: onlyAvailable == True AND Restaurant is Closed?) then (Yes)
+    :Skip Restaurant;
+  elseif (Criteria: has CuisineType AND Cuisine mismatches?) then (Yes)
+    :Skip Restaurant;
+  elseif (Criteria: has DietaryTag AND menu lacks tag?) then (Yes)
+    :Skip Restaurant;
+  elseif (Criteria: has PriceRange AND PriceRange mismatches?) then (Yes)
+    :Skip Restaurant;
+  else (No filter failed)
+    :Add Restaurant to Output List;
+  endif
+  
+endwhile (No)
+
+:Return Output List;
+
+stop
+@enduml
